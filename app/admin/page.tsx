@@ -47,6 +47,22 @@ export default function AdminPage() {
     setIsCheckingState(true);
     setError('');
     try {
+      // First check if the program is deployed
+      const { verifyProgramDeployment } = await import('@/lib/solana');
+      const programCheck = await verifyProgramDeployment();
+      
+      if (!programCheck.deployed) {
+        setError(`❌ Smart Contract Issue: ${programCheck.error}`);
+        toast({
+          title: "⚠️ Smart Contract Not Deployed", 
+          description: "The Solana program is not properly deployed to devnet. Please deploy the contract first.",
+          variant: "destructive",
+          duration: 8000,
+        });
+        return;
+      }
+
+      // Then check platform state
       const result = await getPlatformState();
       
       if (result.success) {
@@ -588,6 +604,44 @@ export default function AdminPage() {
                 <li>You can always check platform stats after initialization</li>
                 <li>Platform initialization is a one-time setup process</li>
               </ul>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Smart Contract Debugging Section */}
+        <Card className="border-orange-500/30">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2 text-orange-700">
+              <AlertTriangle className="w-5 h-5" />
+              <span>Smart Contract Diagnostics</span>
+            </CardTitle>
+            <CardDescription>
+              Debug information for the Solana program deployment
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+              <h4 className="font-semibold text-orange-800 mb-2">🔍 Current Issue Analysis</h4>
+              <div className="text-sm text-orange-700 space-y-2">
+                <p><strong>Program Status:</strong> ✅ Deployed and executable</p>
+                <p><strong>Program ID:</strong> <code className="bg-orange-100 px-1 rounded">BKyaw9S5QkkSQ3dc3FdivbsYRWw2ADw9zN4bjnLStWbT</code></p>
+                <p><strong>Platform State:</strong> ❌ Not initialized (no PDA found)</p>
+                <p><strong>Error Type:</strong> <code className="bg-red-100 px-1 rounded text-red-700">ProgramFailedToComplete</code></p>
+              </div>
+            </div>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-semibold text-blue-800 mb-2">💡 Recommended Actions</h4>
+              <div className="text-sm text-blue-700 space-y-2">
+                <p><strong>1. Contract Issue:</strong> The deployed smart contract has a bug causing initialization to fail</p>
+                <p><strong>2. Temporary Solutions:</strong></p>
+                <ul className="list-disc list-inside ml-4 space-y-1">
+                  <li>Use Algorand instead (fully working)</li>
+                  <li>Contact the contract developer to fix and redeploy</li>
+                  <li>Deploy a corrected version of the contract</li>
+                </ul>
+                <p><strong>3. For Developers:</strong> Check simulation logs for specific error details</p>
+              </div>
             </div>
           </CardContent>
         </Card>

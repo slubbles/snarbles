@@ -2,10 +2,25 @@
 
 A comprehensive, production-ready token creation platform built with Next.js, featuring mobile-optimized design and blockchain integration.
 
+## 🚨 Current Status
+
+### ✅ Algorand Network - Fully Operational
+- **Token Creation**: ✅ Working perfectly
+- **Dashboard**: ✅ Full analytics and management
+- **Verification**: ✅ Complete token verification system
+- **Tokenomics**: ✅ Advanced modeling tools
+
+### ⚠️ Solana Network - Temporarily Unavailable  
+- **Status**: Smart contract initialization issues
+- **Issue**: `ProgramFailedToComplete` error during platform setup
+- **Solution**: Contract debugging and redeployment needed
+- **Alternative**: Use Algorand for immediate token creation
+
 ## ✨ Features
 
 ### 🎨 Token Creation
 - **Intuitive Builder**: Create tokens in under 30 seconds
+- **Multi-Chain Support**: Algorand (active) + Solana (pending fix)
 - **Custom Features**: Mintable, burnable, and pausable options
 - **Rich Metadata**: Add logos, descriptions, and social links
 - **Real-time Preview**: See your token before deployment
@@ -39,6 +54,21 @@ A comprehensive, production-ready token creation platform built with Next.js, fe
 - **Direct Blockchain Integration**: All data comes from on-chain sources
 - **Zero Central Dependencies**: Works without any centralized services
 - **True Web3 Experience**: Complete decentralization
+
+## 🎯 Quick Start Guide
+
+### For Token Creation (Recommended):
+1. **Visit**: [Create Page](/create)
+2. **Connect**: Pera Wallet (Algorand)
+3. **Choose**: Algorand Mainnet or Testnet
+4. **Create**: Fill in token details and deploy
+5. **Manage**: Use dashboard for analytics and operations
+
+### For Solana Development:
+1. **Check Status**: Visit [Admin Page](/admin) with admin wallet
+2. **Run Diagnostics**: `node scripts/check-solana-program.js`
+3. **Review Issues**: See `SOLANA_FIX_GUIDE.md` for details
+4. **Deploy Fix**: Redeploy smart contract when ready
 
 ## 🛠️ Technology Stack
 

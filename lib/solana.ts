@@ -15,6 +15,33 @@ export const PROGRAM_ID = new PublicKey('BKyaw9S5QkkSQ3dc3FdivbsYRWw2ADw9zN4bjnL
 // Network endpoint
 export const NETWORK_ENDPOINT = 'https://api.devnet.solana.com';
 
+// Verify if program is deployed and accessible
+export async function verifyProgramDeployment(): Promise<{ deployed: boolean; error?: string }> {
+  try {
+    const accountInfo = await connection.getAccountInfo(PROGRAM_ID);
+    if (!accountInfo) {
+      return { 
+        deployed: false, 
+        error: `Program ${PROGRAM_ID.toString()} not found on devnet. Please deploy the contract first.`
+      };
+    }
+    
+    if (!accountInfo.executable) {
+      return { 
+        deployed: false, 
+        error: `Account ${PROGRAM_ID.toString()} exists but is not executable (not a program).`
+      };
+    }
+    
+    return { deployed: true };
+  } catch (error) {
+    return { 
+      deployed: false, 
+      error: `Failed to verify program deployment: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
+}
+
 // Event dispatcher for wallet state changes
 export const dispatchWalletEvent = () => {
   if (typeof window !== 'undefined') {
@@ -601,6 +628,15 @@ function extractTransactionLogs(error: any): string[] {
 // Initialize platform (admin only) with improved error handling
 export async function initializePlatform(wallet: WalletInterface, creationFee: number = 0) {
   try {
+    // First verify the program is deployed
+    const programCheck = await verifyProgramDeployment();
+    if (!programCheck.deployed) {
+      return {
+        success: false,
+        error: `Smart contract not deployed: ${programCheck.error}`,
+      };
+    }
+
     // Validate wallet
     if (!wallet || !wallet.publicKey) {
       throw new Error('Invalid wallet provided');
@@ -674,11 +710,37 @@ export async function initializePlatform(wallet: WalletInterface, creationFee: n
         console.error('Simulation failed:', simulation.value.err);
         console.error('Simulation logs:', simulation.value.logs);
         
-        throw new Error(`Transaction simulation failed: ${JSON.stringify(simulation.value.err)}`);
+        // Provide more specific error messages based on simulation logs
+        const logs = simulation.value.logs || [];
+        let errorHint = '';
+        
+        for (const log of logs) {
+          if (log.includes('insufficient funds')) {
+            errorHint = ' - Insufficient funds for transaction';
+            break;
+          } else if (log.includes('access violation')) {
+            errorHint = ' - Smart contract memory access error (contract bug)';
+            break;
+          } else if (log.includes('already in use')) {
+            errorHint = ' - Account already exists or in use';
+            break;
+          } else if (log.includes('invalid instruction')) {
+            errorHint = ' - Invalid instruction or account configuration';
+            break;
+          }
+        }
+        
+        throw new Error(`Transaction simulation failed: ${JSON.stringify(simulation.value.err)}${errorHint}`);
       }
       console.log('Simulation successful');
     } catch (simError) {
       console.error('Simulation error:', simError);
+      
+      // For ProgramFailedToComplete errors, provide specific guidance
+      if (simError instanceof Error && simError.message.includes('ProgramFailedToComplete')) {
+        throw new Error(`Smart contract execution failed. This indicates a bug in the deployed program that needs to be fixed by redeploying the contract. Error: ${simError.message}`);
+      }
+      
       throw new Error(`Transaction simulation failed: ${simError instanceof Error ? simError.message : 'Unknown simulation error'}`);
     }
 

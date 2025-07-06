@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import TokenForm from '@/components/TokenFormNew';
 import TokenPreview from '@/components/TokenPreviewNew';
+import SolanaStatusBanner from '@/components/SolanaStatusBanner';
 import { CheckCircle, Zap, AlertTriangle, Wallet, Clock, Shield, TrendingUp, ChevronRight, Sparkles, Rocket, HelpCircle, Minus, Plus, Star, Users, BarChart3, Lock, Coins, Network } from 'lucide-react';
 import { Callout } from '@/components/ui/callout';
 import { Button } from '@/components/ui/button';
@@ -203,6 +204,11 @@ export default function CreateTokenPage() {
             </div>
           </div>
         )}
+
+        {/* Solana Status Banner */}
+        <div className={`mb-8 transition-all duration-500 delay-600 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+          <SolanaStatusBanner />
+        </div>
 
         {/* Success Status */}
         {isAnyWalletConnected && (

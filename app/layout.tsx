@@ -2,7 +2,6 @@
     import type { Metadata } from 'next';
     import Footer from '@/components/layout/Footer';
     import Navbar from '@/components/layout/Navbar';
-    import NetworkStatusBanner from '@/components/NetworkStatusBanner';
     import { Toaster } from '@/components/ui/toaster';
     import { SupabaseAuthProvider } from '@/components/providers/SupabaseAuthProvider';
     import dynamic from 'next/dynamic';
@@ -86,7 +85,6 @@
               <SupabaseAuthProvider>
                 <div className="relative min-h-screen">
                   <Navbar />
-                  <NetworkStatusBanner />
                   <main className="pt-16">
                     {children}
                   </main>

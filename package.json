@@ -12,7 +12,9 @@
     "analyze": "cross-env ANALYZE=true npm run build",
     "clean": "rm -rf .next out",
     "clean:all": "rm -rf .next out node_modules package-lock.json",
-    "fresh": "npm run clean:all && npm install && npm run dev"
+    "fresh": "npm run clean:all && npm install && npm run dev",
+    "check-solana": "node scripts/check-solana-program.js",
+    "diagnose": "node scripts/check-solana-program.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.839.0",

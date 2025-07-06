@@ -313,13 +313,22 @@ export async function createAlgorandToken(
     const decimalsMultiplier = BigInt(Math.pow(10, tokenData.decimals));
     const totalSupplyBigInt = baseSupply * decimalsMultiplier;
     
-    // Convert to number and ensure it's within safe limits
-    const totalSupplyWithDecimals = Number(totalSupplyBigInt);
-    
-    // Validate that the number is safe for JavaScript
-    if (!Number.isSafeInteger(totalSupplyWithDecimals)) {
-      throw new Error(`Total supply ${totalSupplyWithDecimals} exceeds JavaScript's safe integer limit. Please reduce the total supply or decimals.`);
+    // Check if the BigInt value exceeds what Algorand can handle (2^64 - 1)
+    const maxAlgorandSupply = BigInt('18446744073709551615'); // 2^64 - 1
+    if (totalSupplyBigInt > maxAlgorandSupply) {
+      throw new Error(`Total supply with decimals (${totalSupplyBigInt.toString()}) exceeds Algorand's maximum. Please reduce total supply or decimals.`);
     }
+    
+    // For Algorand, we can use the BigInt directly, but for logging convert to number if safe
+    let totalSupplyForLogging: number | string;
+    if (Number.isSafeInteger(Number(totalSupplyBigInt))) {
+      totalSupplyForLogging = Number(totalSupplyBigInt);
+    } else {
+      totalSupplyForLogging = totalSupplyBigInt.toString();
+    }
+    
+    // Use BigInt for the actual total supply value
+    const totalSupplyWithDecimals = totalSupplyBigInt;
     
     // Set manager addresses based on features
     const managerAddress = tokenData.mintable ? creatorAddress : undefined;
@@ -332,46 +341,75 @@ export async function createAlgorandToken(
     console.log('- Reserve:', reserveAddress);
     console.log('- Freeze (pausable):', freezeAddress);
     console.log('- Clawback (burnable):', clawbackAddress);
-    console.log('- Total supply:', totalSupplyWithDecimals);
+    console.log('- Total supply:', totalSupplyForLogging);
     
     if (onStepUpdate) {
       onStepUpdate('wallet-approval', 'in-progress', { message: 'Please approve transaction in Pera Wallet' });
     }
     
-    // Create asset creation transaction
-    const assetCreateTxn = algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
-      sender: creatorAddress,
-      suggestedParams,
-      defaultFrozen: false,
-      unitName: tokenData.symbol,
-      assetName: tokenData.name,
-      manager: managerAddress,
-      reserve: reserveAddress,
-      freeze: freezeAddress,
-      clawback: clawbackAddress,
-      total: totalSupplyWithDecimals,
-      decimals: tokenData.decimals,
-      assetURL: metadataUrl,
-      assetMetadataHash: undefined, // We could add hash validation here
-    });
-    
+    // For Algorand SDK, convert to number if within safe range, otherwise error
+    let assetCreateTxn;
+    let totalSupplyForAlgorand: number | bigint = totalSupplyBigInt;
+    try {
+      // Try to use BigInt directly (algosdk >= 2.7.0+ supports BigInt for total)
+      assetCreateTxn = algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
+        sender: creatorAddress,
+        suggestedParams,
+        defaultFrozen: false,
+        unitName: tokenData.symbol,
+        assetName: tokenData.name,
+        manager: managerAddress,
+        reserve: reserveAddress,
+        freeze: freezeAddress,
+        clawback: clawbackAddress,
+        total: totalSupplyForAlgorand,
+        decimals: tokenData.decimals,
+        assetURL: metadataUrl,
+        assetMetadataHash: undefined, // We could add hash validation here
+        note: undefined,
+      });
+    } catch (err) {
+      // If BigInt is not supported, fallback to number if safe
+      if (totalSupplyBigInt <= BigInt(Number.MAX_SAFE_INTEGER)) {
+        totalSupplyForAlgorand = Number(totalSupplyBigInt);
+        assetCreateTxn = algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
+          sender: creatorAddress,
+          suggestedParams,
+          defaultFrozen: false,
+          unitName: tokenData.symbol,
+          assetName: tokenData.name,
+          manager: managerAddress,
+          reserve: reserveAddress,
+          freeze: freezeAddress,
+          clawback: clawbackAddress,
+          total: totalSupplyForAlgorand,
+          decimals: tokenData.decimals,
+          assetURL: metadataUrl,
+          assetMetadataHash: undefined, // We could add hash validation here
+          note: undefined,
+        });
+      } else {
+        throw new Error(`Total supply (${totalSupplyBigInt.toString()}) is too large for this environment. Please reduce total supply or decimals, or upgrade algosdk to a version that supports BigInt.`);
+      }
+    }
+
     console.log('📝 Signing transaction...');
     const signedTxn = await signTransaction(assetCreateTxn);
-    
+
     if (onStepUpdate) {
       onStepUpdate('wallet-approval', 'completed', { message: 'Transaction signed in wallet' });
       onStepUpdate('transaction-broadcast', 'in-progress', { message: 'Broadcasting to Algorand network...' });
     }
-    
+
     console.log('📡 Sending transaction to network...');
     const response = await algodClient.sendRawTransaction(signedTxn).do();
     const txId = response.txid;
-    
+
     if (onStepUpdate) {
       onStepUpdate('transaction-broadcast', 'completed', { txId, message: `Transaction broadcasted: ${txId}` });
       onStepUpdate('confirmation', 'in-progress', { message: 'Waiting for network confirmation...' });
     }
-    
+
     console.log('⏳ Waiting for confirmation...');
     let confirmedTxn;
     

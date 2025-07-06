@@ -14,7 +14,7 @@ const nextConfig = {
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    contentSecurityPolicy: "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-eval' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' data: https://*.supabase.co https://api.devnet.solana.com https://api.mainnet-beta.solana.com https://testnet-api.algonode.cloud https://mainnet-api.algonode.cloud https://testnet-idx.algonode.cloud https://mainnet-idx.algonode.cloud https://wc.perawallet.app https://*.perawallet.app https://s3.amazonaws.com wss://*.perawallet.app wss://*.bridge.walletconnect.org wss://*.walletconnect.org https://*.walletconnect.org;",
   },    
   eslint: {
     ignoreDuringBuilds: true,
