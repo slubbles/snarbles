@@ -73,12 +73,15 @@
               href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" 
               rel="stylesheet" 
             />
-            <link rel="icon" href="/2.png" />
-            <link rel="apple-touch-icon" href="/2.png" />
+            <link rel="icon" href="/favicon2.png" />
+            <link rel="apple-touch-icon" href="/favicon2.png" />
             <link rel="manifest" href="/manifest.json" />
             <meta name="theme-color" content="#EF4444" />
             <link rel="dns-prefetch" href="https://api.devnet.solana.com" />
             <link rel="dns-prefetch" href="https://testnet-api.algonode.cloud" />
+            <link rel="dns-prefetch" href="https://mainnet-api.algonode.cloud" />
+            <link rel="dns-prefetch" href="https://testnet-idx.algonode.cloud" />
+            <link rel="dns-prefetch" href="https://mainnet-idx.algonode.cloud" />
           </head>
           <body className="font-inter antialiased">
             <WalletContextProvider>

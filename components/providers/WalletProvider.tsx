@@ -11,8 +11,8 @@ import {
 import { NETWORK_ENDPOINT } from '@/lib/solana';
 import { AlgorandWalletProvider } from './AlgorandWalletProvider';
 
-// Import wallet adapter CSS
-import '@solana/wallet-adapter-react-ui/styles.css';
+// Import wallet adapter CSS - temporarily disabled due to CSP issues
+// import '@solana/wallet-adapter-react-ui/styles.css';
 
 interface WalletContextProviderProps {
   children: React.ReactNode;

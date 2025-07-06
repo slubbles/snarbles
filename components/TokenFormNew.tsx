@@ -151,23 +151,6 @@ export default function TokenFormNew({ onTokenCreate, defaultNetwork = 'algorand
       setError('Please fill in all required fields');
       return;
     }
-
-    // Validate total supply and decimals combination
-    try {
-      const totalSupply = BigInt(formData.totalSupply);
-      const decimals = parseInt(formData.decimals);
-      const totalWithDecimals = totalSupply * BigInt(Math.pow(10, decimals));
-      
-      // Check if it exceeds safe limits
-      if (totalWithDecimals > BigInt(Number.MAX_SAFE_INTEGER)) {
-        const maxSafeSupply = Math.floor(Number.MAX_SAFE_INTEGER / Math.pow(10, decimals));
-        setError(`Total supply too large! With ${decimals} decimals, maximum supply is ${maxSafeSupply.toLocaleString()}. Try reducing decimals or total supply.`);
-        return;
-      }
-    } catch (err) {
-      setError('Invalid total supply. Please enter a valid number.');
-      return;
-    }
     
     // Check wallet connection
     const isAlgorand = network.startsWith('algorand');
@@ -348,7 +331,7 @@ export default function TokenFormNew({ onTokenCreate, defaultNetwork = 'algorand
           {!isDeploying && !deploymentComplete && (
             <form onSubmit={handleSubmit} className="space-y-10">
               {/* Network Selection - Enhanced */}
-              <div className="space-y-6 p-6 bg-gradient-to-br from-blue-50/50 to-blue-100/30 rounded-xl border border-blue-200/30">
+              <div className="space-y-6">
                 <Label htmlFor="network" className="text-foreground font-semibold text-xl flex items-center space-x-3">
                   <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
                     <div className="w-4 h-4 bg-white rounded-full" />
@@ -359,15 +342,12 @@ export default function TokenFormNew({ onTokenCreate, defaultNetwork = 'algorand
                   id="network"
                   value={network}
                   onChange={(e) => setNetwork(e.target.value)}
-                  className="w-full p-5 rounded-xl bg-card border border-border text-foreground focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-300 font-medium text-lg shadow-sm"
+                  className="w-full p-5 rounded-xl bg-card border border-border text-foreground focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all duration-300 font-medium text-lg"
                 >
                   <option value="algorand-testnet">Algorand Testnet (Free Testing)</option>
                   <option value="algorand-mainnet">Algorand Mainnet (~$0.001)</option>
                   <option value="solana-devnet">Solana Devnet (Free Testing)</option>
                 </select>
-                <div className="text-sm text-muted-foreground bg-white/50 p-3 rounded-lg">
-                  <strong>Recommendation:</strong> Use Algorand Testnet for free testing, or Algorand Mainnet for production deployment.
-                </div>
               </div>
 
               {/* Token Basics Section */}
@@ -482,45 +462,12 @@ export default function TokenFormNew({ onTokenCreate, defaultNetwork = 'algorand
                         : 'tokens'}
                     </div>
                   </div>
-
-                  {/* Real-time Validation Display */}
-                  {formData.totalSupply && formData.decimals && (() => {
-                    try {
-                      const totalSupply = BigInt(formData.totalSupply);
-                      const decimals = parseInt(formData.decimals);
-                      const totalWithDecimals = totalSupply * BigInt(Math.pow(10, decimals));
-                      const isValid = totalWithDecimals <= BigInt(Number.MAX_SAFE_INTEGER);
-                      
-                      return (
-                        <div className={`p-3 rounded-lg border ${isValid ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
-                          <div className="flex items-center space-x-2">
-                            {isValid ? (
-                              <CheckCircle className="w-4 h-4 text-green-500" />
-                            ) : (
-                              <AlertCircle className="w-4 h-4 text-red-500" />
-                            )}
-                            <span className={`text-sm font-medium ${isValid ? 'text-green-700' : 'text-red-700'}`}>
-                              {isValid ? 'Valid token supply' : 'Supply too large!'}
-                            </span>
-                          </div>
-                          {!isValid && (
-                            <p className="text-xs text-red-600 mt-1">
-                              With {decimals} decimals, max supply is {Math.floor(Number.MAX_SAFE_INTEGER / Math.pow(10, decimals)).toLocaleString()}
-                            </p>
-                          )}
-                        </div>
-                      );
-                    } catch {
-                      return null;
-                    }
-                  })()}
-
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {[
                       { label: '1M', value: '1000000' },
                       { label: '100M', value: '100000000' },
                       { label: '1B', value: '1000000000' },
-                      { label: 'Max Safe', value: Math.floor(Number.MAX_SAFE_INTEGER / Math.pow(10, parseInt(formData.decimals) || 9)).toString() }
+                      { label: '1T', value: '1000000000000' }
                     ].map((preset) => (
                       <Button
                         key={preset.label}
@@ -535,7 +482,7 @@ export default function TokenFormNew({ onTokenCreate, defaultNetwork = 'algorand
                     ))}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Recommended: 1B for utility tokens, 100M for governance. With 9 decimals, max safe supply is ~9 quintillion.
+                    Maximum: 1 trillion tokens. Popular choices: 1B for utility, 100M for governance
                   </p>
                 </div>
 

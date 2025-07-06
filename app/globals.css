@@ -2,8 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Import Inter font */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap') layer(fonts);
+/* Font is loaded via HTML link tag in layout.tsx */
 
 :root {
   --foreground-rgb: 254, 253, 224;
