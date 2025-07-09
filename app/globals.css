@@ -1,0 +1,1678 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Font is loaded via HTML link tag in layout.tsx */
+
+:root {
+  --foreground-rgb: 254, 253, 224;
+  --background-start-rgb: 0, 0, 0;
+  --background-end-rgb: 0, 0, 0;
+}
+
+[data-theme="dark"] {
+  --background: 0 0% 3%;
+  --foreground: 58 94% 96%;
+  --card: 0 0% 5%;
+  --card-foreground: 58 94% 96%;
+  --popover: 0 0% 5%;
+  --popover-foreground: 58 94% 96%;
+  --primary: 0 85% 60%;
+  --primary-foreground: 58 94% 96%;
+  --secondary: 0 0% 8%;
+  --secondary-foreground: 58 94% 96%;
+  --muted: 0 0% 8%;
+  --muted-foreground: 0 0% 65%;
+  --accent: 0 0% 8%;
+  --accent-foreground: 58 94% 96%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 58 94% 96%;
+  --border: 0 0% 12%;
+  --input: 0 0% 8%;
+  --ring: 0 84% 60%;
+  --radius: 0.75rem;
+}
+
+[data-theme="light"] {
+  --background: 58 94% 97%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 58 94% 98%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 58 94% 98%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 0 84% 60%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 210 40% 98%;
+  --secondary-foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 0 84% 60%;
+  --radius: 0.75rem;
+}
+
+/* Custom animations for enhanced UX */
+@keyframes bounce-once {
+  0%, 20%, 53%, 80%, 100% {
+    animation-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000);
+    transform: translate3d(0, 0, 0);
+  }
+  40%, 43% {
+    animation-timing-function: cubic-bezier(0.755, 0.050, 0.855, 0.060);
+    transform: translate3d(0, -8px, 0);
+  }
+  70% {
+    animation-timing-function: cubic-bezier(0.755, 0.050, 0.855, 0.060);
+    transform: translate3d(0, -4px, 0);
+  }
+  90% {
+    transform: translate3d(0, -2px, 0);
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.6);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-bounce-once {
+  animation: bounce-once 1.5s;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Add bounce-once animation */
+@keyframes bounce-once {
+  0%, 100% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.8,0,1,1);
+  }
+  50% {
+    transform: translateY(-20%);
+    animation-timing-function: cubic-bezier(0,0,0.2,1);
+  }
+}
+.animate-bounce-once {
+  animation: bounce-once 1s ease-in-out;
+}
+
+@layer utilities {
+  .input-focus-ring {
+    @apply focus-visible:ring-4 focus-visible:ring-red-500/30 focus-visible:border-red-500 transition-all duration-300;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-display: swap;
+  }
+  
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    min-height: 100vh;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: background-color, color;
+    -webkit-font-smoothing: subpixel-antialiased;
+    -moz-osx-font-smoothing: auto;
+  }
+  
+  [data-theme="dark"] body {
+    background: radial-gradient(ellipse at top, rgba(15, 15, 15, 0.9) 0%, rgba(0, 0, 0, 1) 100%);
+  }
+  
+  [data-theme="light"] body {
+    background: radial-gradient(ellipse at top, rgba(254, 253, 224, 0.9) 0%, rgba(248, 250, 252, 1) 100%);
+  }
+}
+
+@layer components {
+  .font-inter {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  }
+
+  .app-background {
+    @apply bg-background relative;
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  [data-theme="dark"] .app-background {
+    background: radial-gradient(ellipse at top, rgba(15, 15, 15, 0.9) 0%, rgba(0, 0, 0, 1) 100%);
+  }
+  
+  [data-theme="light"] .app-background {
+    background: radial-gradient(ellipse at top, rgba(254, 253, 224, 0.9) 0%, rgba(248, 250, 252, 1) 100%);
+  }
+  
+  .glass-card {
+    @apply backdrop-blur-xl border rounded-xl transition-all duration-300;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+  
+  [data-theme="dark"] .glass-card {
+    background: rgba(5, 5, 5, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  
+  [data-theme="light"] .glass-card {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+  
+  .glass-card-hover {
+    @apply glass-card transition-all duration-300 cursor-pointer;
+  }
+  
+  .glass-card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  }
+  
+  [data-theme="dark"] .glass-card-hover:hover {
+    background: rgba(10, 10, 10, 0.9);
+    border-color: rgba(239, 68, 68, 0.3);
+    box-shadow: 
+      0 12px 40px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(239, 68, 68, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+  
+  [data-theme="light"] .glass-card-hover:hover {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(239, 68, 68, 0.3);
+    box-shadow: 
+      0 12px 40px rgba(0, 0, 0, 0.12),
+      0 0 0 1px rgba(239, 68, 68, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 1);
+  }
+  
+  .gradient-text {
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 50%, #B91C1C 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+  }
+  
+  .token-preview-circle {
+    @apply w-32 h-32 rounded-full flex items-center justify-center font-bold text-2xl;
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 50%, #B91C1C 100%);
+    color: #ffffff;
+    box-shadow: 
+      0 15px 35px rgba(239, 68, 68, 0.5),
+      0 0 0 8px rgba(239, 68, 68, 0.15);
+    position: relative;
+  }
+  
+  [data-theme="light"] .token-preview-circle {
+    color: #ffffff;
+  }
+  
+  .token-preview-circle::before {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, #EF4444, #DC2626, #B91C1C);
+    z-index: -1;
+    opacity: 0.5;
+    filter: blur(15px);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { 
+      opacity: 0.5;
+      filter: blur(15px);
+    }
+    50% { 
+      opacity: 0.7;
+      filter: blur(20px);
+    }
+  }
+  
+  .feature-card {
+    @apply glass-card p-6 cursor-pointer transition-all duration-300;
+    border-radius: 16px;
+  }
+  
+  .feature-card:hover {
+    transform: translateY(-1px);
+  }
+  
+  .feature-card.active {
+    border-color: rgba(239, 68, 68, 0.6);
+    background: rgba(239, 68, 68, 0.1);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+  }
+  
+  [data-theme="dark"] .feature-card.active {
+    background: rgba(239, 68, 68, 0.1);
+    box-shadow: 
+      0 8px 32px rgba(239, 68, 68, 0.2),
+      inset 0 1px 0 rgba(239, 68, 68, 0.2);
+  }
+  
+  [data-theme="light"] .feature-card.active {
+    background: rgba(239, 68, 68, 0.08);
+    box-shadow: 
+      0 8px 32px rgba(239, 68, 68, 0.15),
+      inset 0 1px 0 rgba(239, 68, 68, 0.1);
+  }
+
+  .hero-section {
+    @apply bg-background relative overflow-hidden;
+    min-height: 100vh;
+  }
+  
+  .hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 20% 80%, rgba(239, 68, 68, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(239, 68, 68, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .stats-card {
+    @apply glass-card p-6 text-center transition-all duration-300;
+  }
+  
+  .stats-card:hover {
+    transform: translateY(-2px);
+  }
+
+  .feature-icon {
+    @apply w-12 h-12 mx-auto mb-4 p-3 rounded-xl text-red-500 transition-all duration-300;
+    background: rgba(239, 68, 68, 0.1);
+  }
+
+  .step-number {
+    @apply w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm;
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+    color: #fefde0;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  }
+  
+  [data-theme="light"] .step-number {
+    color: #ffffff;
+  }
+
+  .testimonial-card {
+    @apply glass-card p-8 text-left transition-all duration-300;
+  }
+  
+  .testimonial-card:hover {
+    transform: translateY(-2px);
+  }
+
+  .cta-section {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.95) 0%, rgba(220, 38, 38, 0.95) 100%);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .cta-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+    pointer-events: none;
+  }
+
+  .input-enhanced {
+    @apply border text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 transition-all duration-300;
+    backdrop-filter: blur(10px);
+  }
+  
+  [data-theme="dark"] .input-enhanced {
+    background: rgba(5, 5, 5, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  [data-theme="light"] .input-enhanced {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.12);
+  }
+  
+  .input-enhanced:focus {
+    box-shadow: 
+      0 0 0 4px rgba(239, 68, 68, 0.15),
+      0 6px 16px rgba(0, 0, 0, 0.12);
+  }
+
+  .button-enhanced {
+    @apply transition-all duration-200 font-medium relative overflow-hidden;
+    letter-spacing: -0.01em;
+    padding: 0.5rem 1rem;
+  }
+  
+  .button-enhanced::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+  }
+  
+  .button-enhanced:hover::before {
+    left: 100%;
+  }
+
+  /* Enhanced form styles */
+  .form-section {
+    @apply space-y-6;
+  }
+
+  .form-group {
+    @apply space-y-4;
+  }
+
+  .form-label {
+    @apply text-base font-semibold text-foreground;
+  }
+
+  .form-input {
+    @apply input-enhanced h-12 text-base;
+  }
+
+  .form-textarea {
+    @apply input-enhanced min-h-[120px] text-base;
+  }
+
+  .network-card {
+    @apply p-6 rounded-xl border transition-all relative overflow-hidden cursor-pointer;
+    min-height: 80px;
+  }
+
+  .network-card.active {
+    @apply border-red-500/50 bg-red-500/10 ring-2 ring-red-500/30;
+  }
+
+  .network-card.available:hover {
+    @apply border-red-500/30 bg-red-500/5 transform -translate-y-1;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  }
+
+  .network-card.disabled {
+    @apply border-border/50 bg-muted/30 cursor-not-allowed opacity-60;
+  }
+
+  .network-card.coming-soon {
+    @apply border-border/50 bg-muted/30 cursor-not-allowed;
+  }
+
+  /* Algorand specific styling */
+  .algorand-card {
+    @apply bg-gradient-to-br from-[#76f935]/5 to-transparent;
+  }
+
+  .algorand-badge {
+    @apply bg-[#76f935]/20 text-[#76f935] border-[#76f935]/30;
+  }
+
+  .algorand-mainnet-badge {
+    @apply bg-[#00d4aa]/20 text-[#00d4aa] border-[#00d4aa]/30;
+  }
+
+  /* Coming soon overlay */
+  .coming-soon-overlay {
+    @apply absolute top-3 right-3;
+  }
+
+  .coming-soon-badge {
+    @apply bg-yellow-500/20 text-yellow-600 border-yellow-500/30 text-xs font-semibold;
+  }
+
+  /* Enhanced token form animations */
+  .token-form-card {
+    @apply glass-card transition-all duration-500 hover:shadow-2xl;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.02) 0%, rgba(239, 68, 68, 0.05) 100%);
+  }
+
+  .form-input-enhanced {
+    @apply input-enhanced transition-all duration-300 focus:ring-4 focus:ring-red-500/30 focus:border-red-500/50;
+  }
+
+  .form-input-enhanced:focus {
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.25), 0 8px 20px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    border-color: rgba(239, 68, 68, 0.5);
+  }
+
+  /* Success state animations */
+  .success-pulse {
+    animation: successPulse 2s infinite;
+  }
+
+  @keyframes successPulse {
+    0%, 100% { 
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+    }
+    50% { 
+      box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+    }
+  }
+
+  /* Loading shimmer effect */
+  .loading-shimmer {
+    background: linear-gradient(90deg, 
+      rgba(255, 255, 255, 0) 0%, 
+      rgba(255, 255, 255, 0.1) 50%, 
+      rgba(255, 255, 255, 0) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .text-enhanced {
+    letter-spacing: -0.01em;
+    line-height: 1.6;
+  }
+
+  /* Enhanced wallet button animations */
+  .wallet-connect-button {
+    @apply relative overflow-hidden;
+    background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+    box-shadow: 
+      0 4px 14px rgba(59, 130, 246, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .wallet-connect-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 
+      0 8px 25px rgba(59, 130, 246, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+
+  .wallet-connect-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.6s;
+  }
+
+  .wallet-connect-button:hover::before {
+    left: 100%;
+  }
+
+  /* Algorand wallet button styling with new green color */
+  .algorand-wallet-button {
+    @apply relative overflow-hidden;
+    background: linear-gradient(135deg, #76f935 0%, #5dd128 100%);
+    box-shadow: 
+      0 4px 14px rgba(118, 249, 53, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .algorand-wallet-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 
+      0 8px 25px rgba(118, 249, 53, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+
+  .algorand-wallet-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.6s;
+  }
+
+  .algorand-wallet-button:hover::before {
+    left: 100%;
+  }
+
+  /* Wallet status indicators */
+  .wallet-status-connected {
+    @apply relative;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(22, 163, 74, 0.1) 100%);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    backdrop-filter: blur(10px);
+  }
+
+  .wallet-status-connected::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.05), rgba(22, 163, 74, 0.05));
+    z-index: -1;
+  }
+
+  .enhanced-tabs {
+    @apply p-1 rounded-xl h-14;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+  }
+
+  .enhanced-tab-trigger {
+    @apply text-foreground rounded-lg font-semibold transition-all duration-200 h-12 text-base relative;
+    box-shadow: none;
+    padding: 0.75rem 1rem;
+  }
+
+  .enhanced-tab-trigger[data-state="active"] {
+    background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+    color: #fefde0;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+  
+  [data-theme="light"] .enhanced-tab-trigger[data-state="active"] {
+    color: #ffffff;
+  }
+
+  .enhanced-tab-trigger:hover:not([data-state="active"]) {
+    background: rgba(239, 68, 68, 0.1);
+  }
+  
+  .floating-action {
+    @apply fixed bottom-6 right-6 z-50;
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+  
+  .progress-indicator {
+    @apply fixed top-0 left-0 right-0 h-1 bg-red-500 z-50;
+    transform-origin: left;
+    animation: progress 2s ease-out;
+  }
+  
+  @keyframes progress {
+    0% { transform: scaleX(0); }
+    100% { transform: scaleX(1); }
+  }
+  
+  .pulse-ring {
+    @apply absolute inset-0 rounded-full border-2 border-red-500;
+    animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+  }
+  
+  @keyframes pulse-ring {
+    0% {
+      transform: scale(0.8);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1.2);
+      opacity: 0;
+    }
+  }
+  
+  .shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  /* Enhanced animations */
+  @keyframes slide-in-from-top {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-in {
+    animation-fill-mode: both;
+  }
+
+  .slide-in-from-top-2 {
+    animation: slide-in-from-top 0.2s ease-out;
+  }
+
+  /* Light mode specific improvements */
+  [data-theme="light"] .cta-section {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(220, 38, 38, 0.9) 100%);
+    color: white;
+  }
+
+  [data-theme="light"] .cta-section h2,
+  [data-theme="light"] .cta-section h3,
+  [data-theme="light"] .cta-section p {
+    color: white !important;
+  }
+
+  [data-theme="light"] .hero-section {
+    background: radial-gradient(ellipse at top, rgba(254, 253, 224, 0.95) 0%, rgba(248, 250, 252, 1) 100%);
+  }
+
+  /* Better contrast for light mode text */
+  [data-theme="light"] .text-muted-foreground {
+    color: hsl(215.4 16.3% 35%) !important;
+  }
+
+  [data-theme="light"] .glass-card .text-muted-foreground {
+    color: hsl(215.4 16.3% 40%) !important;
+  }
+
+  /* Enhanced button styles for light mode */
+  [data-theme="light"] .button-enhanced {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  [data-theme="light"] .button-enhanced:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Loading states */
+  .loading-skeleton {
+    @apply bg-muted rounded relative overflow-hidden;
+    animation: skeleton-pulse 2s ease-in-out infinite;
+  }
+  
+  @keyframes skeleton-pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+  
+  .loading-skeleton::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: skeleton-shimmer 2s infinite;
+  }
+  
+  @keyframes skeleton-shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  /* Micro-interactions */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Mobile optimizations */
+  @media (max-width: 768px) {
+    .glass-card {
+      border-radius: 12px;
+    }
+    
+    .hero-section {
+      padding-top: 2rem;
+    }
+    
+    .token-preview-circle {
+      @apply w-20 h-20 text-lg;
+    }
+  }
+
+  /* Reduced motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Toast positioning optimizations for mobile */
+  @media (max-width: 768px) {
+    /* Ensure toasts don't interfere with mobile navigation */
+    [data-sonner-toaster] {
+      bottom: env(safe-area-inset-bottom, 20px) !important;
+      left: 16px !important;
+      right: 16px !important;
+      width: auto !important;
+    }
+    
+    [data-sonner-toast] {
+      margin: 8px 0 !important;
+      border-radius: 12px !important;
+      font-size: 14px !important;
+      max-width: none !important;
+      min-height: 60px !important;
+    }
+    
+    [data-sonner-toast][data-type="error"] {
+      border-left: 4px solid #EF4444 !important;
+    }
+    
+    [data-sonner-toast][data-type="success"] {
+      border-left: 4px solid #10B981 !important;
+    }
+    
+    [data-sonner-toast][data-type="warning"] {
+      border-left: 4px solid #F59E0B !important;
+    }
+    
+    [data-sonner-toast][data-type="info"] {
+      border-left: 4px solid #3B82F6 !important;
+    }
+  }
+  
+  /* Desktop toast positioning */
+  @media (min-width: 769px) {
+    [data-sonner-toaster] {
+      bottom: 20px !important;
+      right: 20px !important;
+      left: auto !important;
+      width: 356px !important;
+    }
+  }
+  
+  /* Enhanced toast animations */
+  [data-sonner-toast] {
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+  }
+  
+  [data-theme="dark"] [data-sonner-toast] {
+    background: rgba(10, 10, 10, 0.95) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+  
+  [data-theme="light"] [data-sonner-toast] {
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: rgba(0, 0, 0, 0.9) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  }
+}
+
+/* Technology carousel animation */
+/* Enhanced scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, rgba(239, 68, 68, 0.6), rgba(220, 38, 38, 0.6));
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, rgba(239, 68, 68, 0.8), rgba(220, 38, 38, 0.8));
+}
+
+/* Typography improvements */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  @apply text-foreground;
+}
+
+p {
+  letter-spacing: -0.01em;
+  line-height: 1.7;
+  @apply text-foreground;
+}
+
+/* Focus styles for accessibility */
+*:focus-visible {
+  outline: 2px solid rgba(239, 68, 68, 0.5);
+  outline-offset: 2px;
+}
+
+/* Enhanced wallet adapter button styling */
+.wallet-adapter-button {
+  @apply font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl;
+  letter-spacing: -0.01em;
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%) !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.75rem 1.5rem !important;
+  font-weight: 600 !important;
+}
+
+.wallet-adapter-button:not([disabled]):hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
+}
+
+/* Enhanced input field focus states and animations */
+.form-input-enhanced {
+  @apply input-enhanced transition-all duration-300 focus:ring-4 focus:ring-red-500/30 focus:border-red-500/50;
+  position: relative;
+}
+
+.form-input-enhanced:focus {
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15), 0 8px 20px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+  background: rgba(239, 68, 68, 0.02);
+}
+
+.form-input-enhanced:focus::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #EF4444, #DC2626, #B91C1C, #EF4444);
+  border-radius: inherit;
+  z-index: -1;
+  animation: borderGlow 2s linear infinite;
+  background-size: 400% 400%;
+}
+
+/* Standardize wallet adapter button to match Algorand button size */
+.wallet-adapter-button-trigger .wallet-adapter-button {
+  @apply h-12 px-6 text-base min-w-[140px] !important;
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%) !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.75rem 1.5rem !important;
+  font-weight: 600 !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3) !important;
+}
+
+.wallet-adapter-button-trigger .wallet-adapter-button:hover {
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4) !important;
+}
+
+/* Success pop-up animation for deployment */
+.deployment-success-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  color: white;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 20px 60px rgba(16, 185, 129, 0.4);
+  animation: successPopup 3s ease-out forwards;
+  max-width: 400px;
+  text-align: center;
+}
+
+@keyframes successPopup {
+  0% { 
+    opacity: 0; 
+    transform: translate(-50%, -50%) scale(0.5); 
+  }
+  20% { 
+    opacity: 1; 
+    transform: translate(-50%, -50%) scale(1.1); 
+  }
+  30% { 
+    transform: translate(-50%, -50%) scale(1); 
+  }
+  85% { 
+    opacity: 1; 
+    transform: translate(-50%, -50%) scale(1); 
+  }
+  100% { 
+    opacity: 0; 
+    transform: translate(-50%, -50%) scale(0.9); 
+  }
+}
+
+/* Enhanced file upload styling */
+.file-upload-area {
+  border: 2px dashed #cbd5e1;
+  border-radius: 0.75rem;
+  background: rgba(248, 250, 252, 0.5);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.file-upload-area:hover {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+}
+
+[data-theme="dark"] .file-upload-area {
+  background: rgba(15, 23, 42, 0.5);
+  border-color: #475569;
+}
+
+[data-theme="dark"] .file-upload-area:hover {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+@keyframes borderGlow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Enhanced feature toggle success animations */
+
+.feature-toggle-success::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #10B981;
+  font-size: 1.5rem;
+  font-weight: bold;
+  opacity: 0;
+  animation: checkmarkAppear 0.8s ease-out;
+  pointer-events: none;
+}
+
+@keyframes featureUnlock {
+  0% { transform: scale(1); }
+  20% { transform: scale(1.02); }
+  50% { transform: scale(1.05); background-color: rgba(16, 185, 129, 0.1); }
+  80% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+@keyframes checkmarkAppear {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  40% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Success celebration animation */
+.celebration-animation {
+  animation: celebrate 1.5s ease-out;
+  position: relative;
+}
+
+.celebration-animation::before {
+  content: '🎉';
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 2rem;
+  animation: confettiBurst 1.5s ease-out;
+  pointer-events: none;
+}
+
+@keyframes celebrate {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  25% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); }
+  50% { transform: scale(1.02); box-shadow: 0 0 0 40px rgba(239, 68, 68, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+@keyframes confettiBurst {
+  0% { opacity: 0; transform: translateX(-50%) translateY(0px) scale(0); }
+  20% { opacity: 1; transform: translateX(-50%) translateY(-10px) scale(1); }
+  80% { opacity: 1; transform: translateX(-50%) translateY(-30px) scale(1.2); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-50px) scale(0.5); }
+}
+
+/* Enhanced wallet connection indicator */
+.wallet-status-enhanced {
+  position: relative;
+  overflow: hidden;
+}
+
+.wallet-status-enhanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmerWallet 2s infinite;
+}
+
+@keyframes shimmerWallet {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.wallet-pulse-indicator {
+  position: relative;
+}
+
+.wallet-pulse-indicator::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  background: #10B981;
+  border-radius: 50%;
+  animation: walletPulse 2s infinite;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+}
+
+@keyframes walletPulse {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* Enhanced progress animations */
+.enhanced-progress-bar {
+  position: relative;
+  overflow: hidden;
+}
+
+.enhanced-progress-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 30%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  animation: progressShimmer 2s infinite;
+}
+
+@keyframes progressShimmer {
+  0% { left: -30%; }
+  100% { left: 100%; }
+}
+
+/* Personalized token glow effects */
+.token-glow-red {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3), 0 0 40px rgba(239, 68, 68, 0.1);
+}
+
+.token-glow-blue {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3), 0 0 40px rgba(59, 130, 246, 0.1);
+}
+
+.token-glow-green {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3), 0 0 40px rgba(16, 185, 129, 0.1);
+}
+
+.token-glow-purple {
+  box-shadow: 0 0 20px rgba(147, 51, 234, 0.3), 0 0 40px rgba(147, 51, 234, 0.1);
+}
+
+.token-glow-yellow {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.3), 0 0 40px rgba(245, 158, 11, 0.1);
+}
+
+/* Interactive chart tooltips */
+.custom-tooltip {
+  background: rgba(0, 0, 0, 0.9) !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+  backdrop-filter: blur(12px) !important;
+  animation: tooltipFadeIn 0.2s ease-out !important;
+}
+
+[data-theme="light"] .custom-tooltip {
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: #000 !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+}
+
+@keyframes tooltipFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Touch targets for mobile */
+.touch-target {
+  min-height: 48px;
+  min-width: 48px;
+}
+
+.touch-target-switch {
+  min-height: 48px !important;
+  min-width: 48px !important;
+  transform: scale(1.2);
+}
+
+.mobile-friendly-spacing {
+  padding: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .mobile-friendly-spacing {
+    padding: 1rem;
+  }
+  
+  .touch-target-switch {
+    transform: scale(1);
+  }
+}
+
+/* Dashboard loading indicator */
+.dashboard-loading::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #EF4444, #DC2626, #B91C1C);
+  z-index: 9999;
+  animation: dashboardProgress 2s ease-out;
+}
+
+@keyframes dashboardProgress {
+  0% { transform: scaleX(0); transform-origin: left; }
+  50% { transform: scaleX(0.7); transform-origin: left; }
+  100% { transform: scaleX(1); transform-origin: left; }
+}
+
+/* Custom Feature Toggle Buttons */
+.feature-toggle-button {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 3px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.feature-toggle-button-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+/* Dark theme styles */
+[data-theme="dark"] .feature-toggle-button {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .feature-toggle-button-inner {
+  background: rgba(0, 0, 0, 0.6);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+[data-theme="dark"] .feature-toggle-button-inner.active {
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  color: white;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+}
+
+[data-theme="dark"] .feature-toggle-button:hover .feature-toggle-button-inner:not(.active) {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Light theme styles */
+[data-theme="light"] .feature-toggle-button {
+  border-color: rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+[data-theme="light"] .feature-toggle-button-inner {
+  background: rgba(255, 255, 255, 0.9);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="light"] .feature-toggle-button-inner.active {
+  background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+  color: white;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+[data-theme="light"] .feature-toggle-button:hover .feature-toggle-button-inner:not(.active) {
+  background: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.8);
+}
+
+/* Custom wallet button overrides */
+.wallet-adapter-button-trigger .wallet-adapter-button {
+  @apply h-12 px-6 text-base !bg-gradient-to-r !from-red-500 !to-red-600 hover:!from-red-600 hover:!to-red-700 !border-0 !text-white !font-semibold !rounded-xl transition-all;
+  box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3) !important;
+}
+
+.wallet-adapter-button-trigger .wallet-adapter-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 15px 30px rgba(239, 68, 68, 0.4) !important;
+}
+
+/* Wallet adapter modal styling with improved glass effect and z-index */
+.wallet-adapter-modal {
+  @apply backdrop-blur-xl !important;
+  background-color: rgba(0, 0, 0, 0.8) !important;
+  z-index: 99999 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  pointer-events: auto !important;
+}
+
+.wallet-adapter-modal .wallet-adapter-modal-container {
+  @apply bg-background border border-border rounded-xl shadow-2xl !important;
+  background: rgba(15, 15, 15, 0.95) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 
+    0 25px 50px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  border-radius: 1rem !important;
+  padding: 1.5rem !important;
+  z-index: 100000 !important;
+  position: relative !important;
+  pointer-events: auto !important;
+}
+
+/* Style the wallet adapter buttons */
+.wallet-adapter-modal-button-close {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  z-index: 100002 !important;
+}
+
+.wallet-adapter-modal-title {
+  @apply !text-xl !font-bold !mb-4 text-center !text-white;
+}
+
+.wallet-adapter-modal-list {
+  @apply !space-y-3 !mt-6;
+}
+
+.wallet-adapter-modal-list .wallet-adapter-button {
+  @apply !rounded-xl !bg-muted/30 hover:!bg-red-500/20 transition-all !border !border-transparent hover:!border-red-500/30 !shadow-none !h-14;
+  color: white !important;
+  background: rgba(30, 30, 30, 0.5) !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  z-index: 100001 !important;
+  position: relative !important;
+}
+
+.wallet-adapter-modal-list .wallet-adapter-button:hover {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  transform: translateY(-1px) !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure all wallet adapter elements are clickable */
+.wallet-adapter-modal * {
+  pointer-events: auto !important;
+}
+
+.wallet-adapter-modal button {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.wallet-adapter-modal-list-item {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Override any potential blocking elements */
+.wallet-adapter-modal-overlay {
+  pointer-events: auto !important;
+}
+
+.wallet-adapter-modal .wallet-adapter-modal-title {
+  @apply text-foreground font-bold text-xl;
+}
+
+.wallet-adapter-modal .wallet-adapter-modal-list {
+  @apply space-y-2;
+}
+
+.wallet-adapter-modal .wallet-adapter-modal-list-item {
+  @apply !bg-muted/30 hover:!bg-muted/50 !rounded-xl transition-all !py-4 !px-5;
+  color: white !important;
+}
+
+.wallet-adapter-modal .wallet-adapter-modal-list-item:hover {
+  @apply bg-red-500/10 border-red-500/30 !important;
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+/* Fix wallet button reactivity and z-index issues */
+.wallet-adapter-button {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  position: relative !important;
+  z-index: 1000 !important;
+}
+
+.wallet-adapter-modal {
+  z-index: 9999 !important;
+}
+
+.wallet-adapter-modal .wallet-adapter-modal-container {
+  z-index: 10000 !important;
+}
+
+.wallet-adapter-button-trigger {
+  z-index: 1001 !important;
+  position: relative !important;
+}
+
+.wallet-adapter-dropdown-list-active {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  z-index: 10001 !important;
+}
+
+/* Make sure wallet dropdown is visible */
+.wallet-adapter-dropdown-list {
+  top: 100% !important;
+  transform: translateY(10px) !important;
+  z-index: 10002 !important;
+}
+
+/* Wallet connection states */
+.wallet-adapter-button[data-state="connected"] {
+  @apply !bg-green-500 hover:!bg-green-600;
+}
+
+.wallet-adapter-button[data-state="connecting"] {
+  @apply !bg-yellow-500 hover:!bg-yellow-600;
+}
+
+.wallet-adapter-button[data-state="disconnecting"] {
+  @apply !bg-red-500 hover:!bg-red-600;
+}
+
+/* Enhanced wallet pulse animation */
+@keyframes walletPulseRing {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+}
+
+.wallet-pulse-indicator {
+  position: relative;
+}
+
+.wallet-pulse-indicator::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: inherit;
+  opacity: 0.5;
+  z-index: -1;
+  animation: walletPulseRing 2s ease infinite;
+}
+
+/* Enhanced Infinite carousel animation */
+@keyframes carousel {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-33.333%); }
+}
+
+@keyframes carousel-mobile {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-carousel {
+  animation: carousel 45s linear infinite;
+  will-change: transform;
+}
+
+/* Pause animation on hover for desktop only */
+@media (min-width: 769px) {
+  .animate-carousel:hover {
+    animation-play-state: paused;
+  }
+}
+
+/* Mobile responsive carousel */
+@media (max-width: 768px) {
+  .animate-carousel {
+    animation: carousel-mobile 30s linear infinite;
+  }
+  
+  /* Keep animation running on mobile */
+  .animate-carousel:hover {
+    animation-play-state: running;
+  }
+}
+
+/* Respect user's reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .animate-carousel {
+    animation: none;
+    transform: translateX(0);
+  }
+}
+
+/* Pulse ring animation */
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); opacity: 0.7; }
+  50% { transform: scale(1.05); opacity: 0.4; }
+  100% { transform: scale(0.95); opacity: 0.7; }
+}
+
+.pulse-ring {
+  position: relative;
+}
+
+.pulse-ring::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  border: 2px solid currentColor;
+  opacity: 0.3;
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Wallet Adapter Custom Styles */
+.wallet-adapter-button {
+  @apply bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200;
+}
+
+.wallet-adapter-button:not([disabled]):hover {
+  @apply bg-red-600 transform scale-105;
+}
+
+.wallet-adapter-button[disabled] {
+  @apply bg-gray-400 cursor-not-allowed;
+}
+
+.wallet-adapter-modal {
+  @apply backdrop-blur-sm;
+}
+
+.wallet-adapter-modal-container {
+  @apply bg-background border border-border rounded-xl shadow-2xl;
+}
+
+.wallet-adapter-modal-title {
+  @apply text-foreground text-xl font-semibold;
+}
+
+.wallet-adapter-modal-list {
+  @apply space-y-2;
+}
+
+.wallet-adapter-modal-list-item {
+  @apply bg-muted/50 hover:bg-muted border border-border rounded-lg transition-all;
+}
+
+/* Additional fixes for wallet modal clickability */
+.wallet-adapter-modal-wrapper {
+  z-index: 99999 !important;
+  position: fixed !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure wallet buttons are always on top and clickable */
+.wallet-adapter-button[data-testid] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  z-index: 100001 !important;
+  position: relative !important;
+}
+
+/* Fix for any overlay issues */
+body:has(.wallet-adapter-modal) {
+  overflow: hidden;
+}
+
+.wallet-adapter-modal:not(.wallet-adapter-modal-fade-out) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Make sure the modal content is interactive */
+.wallet-adapter-modal-container * {
+  pointer-events: auto !important;
+}
+
+/* Specific fix for wallet list items */
+.wallet-adapter-modal-list-item button {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+}
