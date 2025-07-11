@@ -1,0 +1,926 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { useToast } from '@/hooks/use-toast';
+import { initializePlatform, getPlatformState, ADMIN_WALLET } from '@/lib/solana';
+import { 
+  getAllPricingConfigs, 
+  updatePricingConfig, 
+  getPricingHistory,
+  getFeeCollectionSummary,
+  validateWalletAddress,
+  formatFeeAmount,
+  type PricingConfig,
+  type PricingHistory,
+  type FeeCollectionSummary
+} from '@/lib/dynamic-pricing';
+import { 
+  AlertTriangle, CheckCircle, Settings, Loader2, Shield, 
+  Wallet, ArrowLeft, Rocket, BarChart3, Activity, 
+  PieChart, Info, FileText, Crown, Zap, Sparkles,
+  Database, Server, Lock, Users, DollarSign, Edit,
+  Save, X, History, TrendingUp, Coins, Globe
+} from 'lucide-react';
+import Link from 'next/link';
+
+export default function AdminPage() {
+  // Solana platform states
+  const [creationFee, setCreationFee] = useState('0');
+  const [isInitializing, setIsInitializing] = useState(false);
+  const [isCheckingState, setIsCheckingState] = useState(false);
+  const [initResult, setInitResult] = useState<any>(null);
+  const [stateInfo, setStateInfo] = useState<any>(null);
+  const [error, setError] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  // Dynamic pricing states
+  const [pricingConfigs, setPricingConfigs] = useState<PricingConfig[]>([]);
+  const [editingConfig, setEditingConfig] = useState<string | null>(null);
+  const [editFormData, setEditFormData] = useState<Partial<PricingConfig>>({});
+  const [pricingHistory, setPricingHistory] = useState<PricingHistory[]>([]);
+  const [feeCollectionSummary, setFeeCollectionSummary] = useState<FeeCollectionSummary[]>([]);
+  const [loadingPricing, setLoadingPricing] = useState(false);
+  const [savingPricing, setSavingPricing] = useState(false);
+  const [pricingError, setPricingError] = useState('');
+
+  // Solana wallet
+  const { connected, publicKey, wallet, signTransaction, signAllTransactions } = useWallet();
+  const { toast } = useToast();
+
+  // Handle hydration
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Load pricing configurations
+  useEffect(() => {
+    if (mounted && connected && publicKey && publicKey.toString() === ADMIN_WALLET.toString()) {
+      loadPricingData();
+    }
+  }, [mounted, connected, publicKey]);
+
+  const loadPricingData = async () => {
+    setLoadingPricing(true);
+    try {
+      // Load pricing configurations
+      const configsResult = await getAllPricingConfigs();
+      if (configsResult.success && configsResult.data) {
+        setPricingConfigs(configsResult.data);
+      }
+
+      // Load fee collection summary
+      const summaryResult = await getFeeCollectionSummary();
+      if (summaryResult.success && summaryResult.data) {
+        setFeeCollectionSummary(summaryResult.data);
+      }
+    } catch (error) {
+      console.error('Error loading pricing data:', error);
+      setPricingError('Failed to load pricing configuration');
+    } finally {
+      setLoadingPricing(false);
+    }
+  };
+
+  const handleEditPricing = (config: PricingConfig) => {
+    setEditingConfig(config.network);
+    setEditFormData({
+      base_fee_amount: config.base_fee_amount,
+      fee_destination_wallet: config.fee_destination_wallet,
+      fee_destination_name: config.fee_destination_name,
+      pricing_enabled: config.pricing_enabled,
+      minimum_balance_required: config.minimum_balance_required,
+      notes: config.notes
+    });
+  };
+
+  const handleSavePricing = async (network: string) => {
+    if (!publicKey) return;
+
+    setSavingPricing(true);
+    setPricingError('');
+
+    try {
+      // Validate wallet address if provided
+      if (editFormData.fee_destination_wallet && 
+          !validateWalletAddress(editFormData.fee_destination_wallet, network)) {
+        throw new Error('Invalid wallet address format');
+      }
+
+      // Convert ALGO to microAlgos if needed
+      const feeAmount = editFormData.base_fee_amount || 0;
+      const feeInMicroAlgos = network.includes('algorand') ? 
+        (feeAmount > 1000000 ? feeAmount : feeAmount * 1000000) : feeAmount;
+
+      const updateData = {
+        ...editFormData,
+        base_fee_amount: feeInMicroAlgos
+      };
+
+      const result = await updatePricingConfig(
+        network,
+        updateData,
+        publicKey.toString()
+      );
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update pricing configuration');
+      }
+
+      // Update local state
+      setPricingConfigs(prev => 
+        prev.map(config => 
+          config.network === network 
+            ? { ...config, ...result.data } 
+            : config
+        )
+      );
+
+      setEditingConfig(null);
+      setEditFormData({});
+
+      toast({
+        title: "✅ Pricing Updated",
+        description: `Successfully updated pricing for ${network}`,
+        duration: 5000,
+      });
+
+      // Reload data to get updated history
+      await loadPricingData();
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setPricingError(errorMessage);
+      toast({
+        title: "❌ Update Failed",
+        description: errorMessage,
+        variant: "destructive",
+        duration: 8000,
+      });
+    } finally {
+      setSavingPricing(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingConfig(null);
+    setEditFormData({});
+    setPricingError('');
+  };
+
+  const loadPricingHistory = async (network: string) => {
+    try {
+      const result = await getPricingHistory(network);
+      if (result.success && result.data) {
+        setPricingHistory(result.data);
+      }
+    } catch (error) {
+      console.error('Error loading pricing history:', error);
+    }
+  };
+
+  // [Previous Solana platform management functions remain the same]
+  const checkPlatformState = async () => {
+    if (!connected || !publicKey) {
+      setError('Please connect your wallet first');
+      return;
+    }
+
+    setIsCheckingState(true);
+    setError('');
+    try {
+      const { verifyProgramDeployment } = await import('@/lib/solana');
+      const programCheck = await verifyProgramDeployment();
+      
+      if (!programCheck.deployed) {
+        setError(`❌ Smart Contract Issue: ${programCheck.error}`);
+        toast({
+          title: "⚠️ Smart Contract Not Deployed", 
+          description: "The Solana program is not properly deployed to devnet. Please deploy the contract first.",
+          variant: "destructive",
+          duration: 8000,
+        });
+        return;
+      }
+
+      const result = await getPlatformState();
+      
+      if (result.success) {
+        setStateInfo(result.data);
+        setError('');
+        alert("Platform is properly initialized and ready for token creation.");
+      } else {
+        setStateInfo(null);
+        setError(result.error || 'Platform not yet initialized');
+        toast({
+          title: "⚠️ Platform Not Initialized", 
+          description: "The platform needs to be initialized before tokens can be created. Use the form below to initialize it.",
+          variant: "destructive",
+          duration: 6000,
+        });
+      }
+    } catch (err) {
+      setStateInfo(null);
+      setError('Platform not yet initialized - this is normal for a new deployment');
+    } finally {
+      setIsCheckingState(false);
+    }
+  };
+
+  const handleInitialize = async () => {
+    if (!connected || !publicKey || !wallet) {
+      setError('Please connect your wallet first');
+      return;
+    }
+
+    const feeInLamports = parseFloat(creationFee) * 1000000000;
+    if (feeInLamports < 0 || feeInLamports > 1000000000000) {
+      setError('Creation fee must be between 0 and 1000 SOL');
+      return;
+    }
+
+    if (publicKey && publicKey.toString() !== ADMIN_WALLET.toString()) {
+      setError(`❌ Admin access required. Only the designated admin wallet can initialize the platform.`);
+      alert("Platform initialization requires the admin wallet. Please connect the correct wallet.");
+      return;
+    }
+
+    console.log(`🚀 Initializing platform with fee: ${creationFee} SOL (${feeInLamports} lamports)`);
+        
+    setIsInitializing(true);
+    setError('');
+    setInitResult(null);
+
+    try {
+      const walletInterface = {
+        publicKey: publicKey!,
+        signTransaction: signTransaction!,
+        signAllTransactions: signAllTransactions!
+      };
+      
+      const result = await initializePlatform(walletInterface, feeInLamports);
+      
+      if (result.success) {
+        setInitResult(result);
+        setError('');
+        console.log('✅ Platform initialization successful:', result);
+          
+        setTimeout(() => {
+          alert(`🎉 Platform initialized successfully!\n\nCreation fee: ${creationFee} SOL\nState address: ${result.stateAddress}\nTransaction: ${result.signature}`);
+          checkPlatformState();
+        }, 2000);
+      } else {
+        const errorMsg = result.error || 'Failed to initialize platform';
+        setError(errorMsg);
+        
+        let userMessage = errorMsg;
+        if (errorMsg.includes('insufficient')) {
+          userMessage = "❌ Insufficient SOL balance. Please add SOL to your wallet and try again.";
+        } else if (errorMsg.includes('already initialized')) {
+          userMessage = "ℹ️ Platform is already initialized. No action needed.";
+        } else if (errorMsg.includes('access violation')) {
+          userMessage = "❌ Smart contract error. Please contact support or try again later.";
+        }
+          
+        setTimeout(() => {
+          alert(userMessage);
+        }, 500);
+      }
+    } catch (err) {
+      console.error('Initialization error:', err);
+      const errorMsg = err instanceof Error ? err.message : 'Failed to initialize platform';
+      setError(errorMsg);
+      alert(errorMsg.includes('insufficient') 
+        ? "Insufficient SOL balance. Please add SOL to your wallet and try again."
+        : `Unexpected error: ${errorMsg}. Please try again or contact support.`);
+    } finally {
+      setIsInitializing(false);
+    }
+  };
+
+  // Don't render until mounted to avoid hydration issues
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="snarbles-card p-8 text-center">
+          <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="snarbles-body">Loading Admin Panel...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show access denied if not admin wallet
+  if (connected && publicKey && publicKey.toString() !== ADMIN_WALLET.toString()) {
+    return (
+      <div className="min-h-screen relative overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-br from-red-500/15 to-red-600/15 rounded-full blur-3xl snarbles-animate-pulse" />
+          <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-br from-orange-500/10 to-orange-600/10 rounded-full blur-3xl snarbles-animate-pulse delay-1000" />
+        </div>
+
+        <div className="min-h-screen p-6 relative z-10">
+          <div className="max-w-2xl mx-auto">
+            <div className="mb-8">
+              <Link href="/" className="inline-flex items-center snarbles-button-ghost">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Home
+              </Link>
+            </div>
+
+            <div className="snarbles-card-premium p-8 snarbles-glow-red text-center">
+              <div className="w-20 h-20 rounded-full snarbles-gradient-red flex items-center justify-center mx-auto mb-6 shadow-lg shadow-red-500/40">
+                <Shield className="w-10 h-10 text-white" />
+              </div>
+              <h1 className="snarbles-heading text-3xl mb-4">Admin Access Required</h1>
+              <p className="snarbles-body mb-8 leading-relaxed">
+                This admin panel requires the designated admin wallet to access platform management tools.
+              </p>
+
+              <div className="snarbles-glass-subtle p-6 rounded-xl mb-8 snarbles-border-glow">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <AlertTriangle className="w-5 h-5 text-red-400" />
+                    <span className="snarbles-subheading text-red-400 font-semibold">Unauthorized Wallet</span>
+                  </div>
+                  <div className="space-y-3 text-sm">
+                    <div>
+                      <span className="snarbles-body">Connected:</span>
+                      <code className="block mt-1 snarbles-glass-subtle p-2 rounded text-xs font-mono break-all">
+                        {publicKey?.toString()}
+                      </code>
+                    </div>
+                    <div>
+                      <span className="snarbles-body">Required:</span>
+                      <code className="block mt-1 snarbles-glass-subtle p-2 rounded text-xs font-mono break-all border border-green-500/30">
+                        {ADMIN_WALLET.toString()}
+                      </code>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link href="/">
+                  <Button variant="outline" className="w-full sm:w-auto snarbles-button-ghost">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Return to Platform
+                  </Button>
+                </Link>
+                <Link href="/create">
+                  <Button className="w-full sm:w-auto snarbles-button-primary">
+                    <Rocket className="w-4 h-4 mr-2" />
+                    Create Token
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show wallet connection prompt if not connected
+  if (!connected) {
+    return (
+      <div className="min-h-screen relative overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-br from-purple-500/15 to-purple-600/15 rounded-full blur-3xl snarbles-animate-pulse" />
+          <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-full blur-3xl snarbles-animate-pulse delay-1000" />
+        </div>
+
+        <div className="min-h-screen p-6 relative z-10">
+          <div className="max-w-2xl mx-auto">
+            <div className="mb-8">
+              <Link href="/" className="inline-flex items-center snarbles-button-ghost">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Home
+              </Link>
+            </div>
+
+            <div className="snarbles-card-premium p-8 snarbles-glow-blue text-center">
+              <div className="w-20 h-20 rounded-full snarbles-gradient-blue flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/40">
+                <Wallet className="w-10 h-10 text-white" />
+              </div>
+              <h1 className="snarbles-heading text-3xl mb-4">Admin Panel Access</h1>
+              <p className="snarbles-body mb-8 leading-relaxed">
+                Connect the designated admin wallet to access platform management tools.
+              </p>
+
+              <div className="mb-8">
+                <WalletMultiButton className="snarbles-button-primary !min-h-[48px] !px-6 !text-base" />
+              </div>
+
+              <div className="snarbles-glass-subtle p-6 rounded-xl mb-8 snarbles-border-glow">
+                <div className="flex items-center gap-2 mb-4">
+                  <Shield className="w-5 h-5 text-orange-400" />
+                  <span className="snarbles-subheading text-orange-400 font-semibold">Admin Wallet Required</span>
+                </div>
+                <p className="snarbles-body mb-3">Only this specific wallet can access admin functions:</p>
+                <code className="block snarbles-glass-subtle p-3 rounded text-xs font-mono break-all border border-orange-500/30">
+                  {ADMIN_WALLET.toString()}
+                </code>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-sm snarbles-body">
+                  Don't have admin access? The platform is still fully functional:
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Link href="/create">
+                    <Button className="w-full sm:w-auto snarbles-button-primary">
+                      <Rocket className="w-4 h-4 mr-2" />
+                      Create Token
+                    </Button>
+                  </Link>
+                  <Link href="/dashboard">
+                    <Button variant="outline" className="w-full sm:w-auto snarbles-button-ghost">
+                      <BarChart3 className="w-4 h-4 mr-2" />
+                      View Dashboard
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Enhanced Admin panel content
+  return (
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Enhanced animated background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-br from-red-500/15 to-red-600/15 rounded-full blur-3xl snarbles-animate-pulse" />
+        <div className="absolute top-40 right-20 w-72 h-72 bg-gradient-to-br from-purple-500/12 to-purple-600/12 rounded-full blur-3xl snarbles-animate-pulse delay-700" />
+        <div className="absolute bottom-32 left-1/4 w-64 h-64 bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-full blur-3xl snarbles-animate-pulse delay-1000" />
+        <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-br from-green-500/8 to-green-600/8 rounded-full blur-3xl snarbles-animate-pulse delay-500" />
+      </div>
+
+      <div className="min-h-screen p-6 relative z-10">
+        <div className="max-w-7xl mx-auto space-y-8">
+          {/* Enhanced Header */}
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            <div className="space-y-4">
+              <div className="inline-flex items-center space-x-3 snarbles-glass-subtle px-6 py-3 snarbles-border-glow">
+                <Crown className="w-5 h-5 text-red-400 snarbles-animate-pulse" />
+                <span className="uppercase tracking-wider text-red-400 font-bold text-sm">Administrator Panel</span>
+                <div className="w-2 h-2 bg-red-400 rounded-full snarbles-animate-pulse"></div>
+              </div>
+              
+              <h1 className="snarbles-heading text-5xl md:text-6xl">
+                Platform
+                <span className="snarbles-gradient-text-red"> Control Center</span>
+              </h1>
+              
+              <p className="text-xl snarbles-body max-w-2xl leading-relaxed">
+                Enterprise-grade platform administration with dynamic pricing controls for Algorand and Solana networks.
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <Link href="/" className="snarbles-button-ghost">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Platform Home
+              </Link>
+            </div>
+          </div>
+
+          {/* Enhanced Wallet Status */}
+          <div className="snarbles-card-premium p-8 snarbles-glow-green">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl snarbles-gradient-green flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="snarbles-subheading text-xl">Admin Wallet Connected</h3>
+                  <p className="snarbles-body text-sm">Full administrative access granted</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="snarbles-glass-subtle p-6 rounded-xl">
+              <div className="flex items-center justify-between mb-4">
+                <span className="snarbles-body text-sm font-medium">Connected Wallet Address:</span>
+              </div>
+              <code className="block snarbles-glass-subtle p-4 rounded-lg text-sm font-mono break-all snarbles-border-glow">
+                {publicKey?.toString() || 'Wallet temporarily disabled'}
+              </code>
+            </div>
+          </div>
+
+          {/* Dynamic Pricing Management Section */}
+          <div className="snarbles-card-premium p-8 snarbles-glow-orange">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-12 h-12 rounded-xl snarbles-gradient-orange flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="snarbles-subheading text-2xl">Dynamic Pricing Configuration</h3>
+                <p className="snarbles-body">Configure network-specific pricing and fee destinations</p>
+              </div>
+            </div>
+
+            {loadingPricing ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                <span className="ml-3 snarbles-body">Loading pricing configurations...</span>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {pricingConfigs.map((config) => (
+                  <div key={config.network} className="snarbles-glass-subtle p-6 rounded-xl snarbles-border-glow">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <Globe className="w-5 h-5 text-blue-400" />
+                        <div>
+                          <h4 className="snarbles-subheading text-lg">{config.network_display_name}</h4>
+                          <p className="snarbles-body text-sm text-gray-400">{config.network}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Switch 
+                          checked={config.pricing_enabled}
+                          disabled={editingConfig === config.network}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditPricing(config)}
+                          disabled={editingConfig !== null}
+                          className="snarbles-button-ghost"
+                        >
+                          <Edit className="w-4 h-4 mr-2" />
+                          Edit
+                        </Button>
+                      </div>
+                    </div>
+
+                    {editingConfig === config.network ? (
+                      // Edit form
+                      <div className="space-y-4 border-t border-gray-700 pt-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label className="snarbles-subheading">Fee Amount ({config.base_fee_currency})</Label>
+                            <Input
+                              type="number"
+                              step="0.001"
+                              placeholder="10.000"
+                              value={editFormData.base_fee_amount ? 
+                                (config.network.includes('algorand') ? 
+                                  (editFormData.base_fee_amount / 1000000).toString() : 
+                                  editFormData.base_fee_amount.toString()) : ''}
+                              onChange={(e) => setEditFormData(prev => ({
+                                ...prev,
+                                base_fee_amount: parseFloat(e.target.value) || 0
+                              }))}
+                              className="snarbles-glass-subtle snarbles-border-glow"
+                            />
+                            <p className="text-xs snarbles-body mt-1">
+                              Current: {formatFeeAmount(config.base_fee_amount, config.base_fee_currency)}
+                            </p>
+                          </div>
+                          <div>
+                            <Label className="snarbles-subheading">Destination Name</Label>
+                            <Input
+                              placeholder="Fee Collection Wallet"
+                              value={editFormData.fee_destination_name || ''}
+                              onChange={(e) => setEditFormData(prev => ({
+                                ...prev,
+                                fee_destination_name: e.target.value
+                              }))}
+                              className="snarbles-glass-subtle snarbles-border-glow"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <Label className="snarbles-subheading">Destination Wallet Address</Label>
+                          <Input
+                            placeholder="Wallet address to receive fees"
+                            value={editFormData.fee_destination_wallet || ''}
+                            onChange={(e) => setEditFormData(prev => ({
+                              ...prev,
+                              fee_destination_wallet: e.target.value
+                            }))}
+                            className="snarbles-glass-subtle snarbles-border-glow font-mono text-sm"
+                          />
+                          <p className="text-xs snarbles-body mt-1">
+                            Must be a valid {config.network.includes('algorand') ? 'Algorand' : 'Solana'} wallet address
+                          </p>
+                        </div>
+
+                        <div>
+                          <Label className="snarbles-subheading">Notes</Label>
+                          <Textarea
+                            placeholder="Admin notes about this pricing configuration..."
+                            value={editFormData.notes || ''}
+                            onChange={(e) => setEditFormData(prev => ({
+                              ...prev,
+                              notes: e.target.value
+                            }))}
+                            className="snarbles-glass-subtle snarbles-border-glow"
+                            rows={3}
+                          />
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={editFormData.pricing_enabled ?? config.pricing_enabled}
+                            onCheckedChange={(checked) => setEditFormData(prev => ({
+                              ...prev,
+                              pricing_enabled: checked
+                            }))}
+                          />
+                          <Label className="snarbles-body">Enable pricing for this network</Label>
+                        </div>
+
+                        {pricingError && (
+                          <Alert className="border-red-500/30 bg-red-500/10">
+                            <AlertTriangle className="w-4 h-4" />
+                            <AlertDescription className="text-red-400">
+                              {pricingError}
+                            </AlertDescription>
+                          </Alert>
+                        )}
+
+                        <div className="flex gap-3 pt-4">
+                          <Button
+                            onClick={() => handleSavePricing(config.network)}
+                            disabled={savingPricing}
+                            className="snarbles-button-primary"
+                          >
+                            {savingPricing ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Saving...
+                              </>
+                            ) : (
+                              <>
+                                <Save className="w-4 h-4 mr-2" />
+                                Save Changes
+                              </>
+                            )}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={handleCancelEdit}
+                            disabled={savingPricing}
+                            className="snarbles-button-ghost"
+                          >
+                            <X className="w-4 h-4 mr-2" />
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      // Display current configuration
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="snarbles-glass-subtle p-4 rounded-lg">
+                          <p className="snarbles-body text-sm mb-1">Current Fee</p>
+                          <p className="snarbles-subheading text-lg">
+                            {config.pricing_enabled ? 
+                              formatFeeAmount(config.base_fee_amount, config.base_fee_currency) : 
+                              'Free'
+                            }
+                          </p>
+                        </div>
+                        <div className="snarbles-glass-subtle p-4 rounded-lg">
+                          <p className="snarbles-body text-sm mb-1">Status</p>
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${config.pricing_enabled ? 'bg-green-400' : 'bg-gray-400'}`}></div>
+                            <p className="snarbles-subheading text-sm">
+                              {config.pricing_enabled ? 'Enabled' : 'Disabled'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="snarbles-glass-subtle p-4 rounded-lg">
+                          <p className="snarbles-body text-sm mb-1">Destination</p>
+                          <p className="snarbles-subheading text-sm">
+                            {config.fee_destination_name || 'Not configured'}
+                          </p>
+                        </div>
+                        <div className="snarbles-glass-subtle p-4 rounded-lg">
+                          <p className="snarbles-body text-sm mb-1">Last Updated</p>
+                          <p className="snarbles-subheading text-sm">
+                            {config.updated_at ? new Date(config.updated_at).toLocaleDateString() : 'Never'}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Fee Collection Analytics */}
+          {feeCollectionSummary.length > 0 && (
+            <div className="snarbles-card-premium p-8 snarbles-glow-purple">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-12 h-12 rounded-xl snarbles-gradient-purple flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="snarbles-subheading text-2xl">Fee Collection Analytics</h3>
+                  <p className="snarbles-body">Real-time revenue and transaction metrics</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {feeCollectionSummary.map((summary) => (
+                  <div key={`${summary.network}-${summary.fee_currency}`} 
+                       className="snarbles-glass-subtle p-6 rounded-xl snarbles-border-glow">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="snarbles-subheading text-lg">{summary.network}</h4>
+                      <Coins className="w-5 h-5 text-purple-400" />
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="snarbles-body text-sm">Total Collected</span>
+                        <span className="snarbles-subheading">
+                          {formatFeeAmount(summary.confirmed_fees, summary.fee_currency)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="snarbles-body text-sm">Confirmed Txns</span>
+                        <span className="snarbles-gradient-text-green font-semibold">
+                          {summary.confirmed_count}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="snarbles-body text-sm">Pending Txns</span>
+                        <span className="snarbles-gradient-text-yellow font-semibold">
+                          {summary.pending_count}
+                        </span>
+                      </div>
+                      {summary.failed_count > 0 && (
+                        <div className="flex justify-between">
+                          <span className="snarbles-body text-sm">Failed Txns</span>
+                          <span className="snarbles-gradient-text-red font-semibold">
+                            {summary.failed_count}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Platform Management Grid (existing Solana platform controls) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Platform State Check */}
+            <div className="snarbles-card-premium p-8 snarbles-glow-blue">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-xl snarbles-gradient-blue flex items-center justify-center">
+                  <Database className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="snarbles-subheading text-xl">Solana Platform Status</h3>
+                  <p className="snarbles-body text-sm">Check Solana initialization and configuration</p>
+                </div>
+              </div>
+
+              <Button 
+                onClick={checkPlatformState}
+                disabled={isCheckingState}
+                className="w-full snarbles-button-primary mb-6"
+              >
+                {isCheckingState ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Checking Status...
+                  </>
+                ) : (
+                  <>
+                    <Server className="w-4 h-4 mr-2" />
+                    Check Solana Platform State
+                  </>
+                )}
+              </Button>
+
+              {stateInfo && (
+                <div className="snarbles-glass-subtle p-6 rounded-xl snarbles-glow-green">
+                  <div className="flex items-center gap-2 mb-4">
+                    <CheckCircle className="w-5 h-5 text-green-400" />
+                    <span className="snarbles-subheading text-green-400 font-semibold">Solana Platform Initialized</span>
+                  </div>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between">
+                      <span className="snarbles-body">Admin:</span>
+                      <code className="text-xs font-mono">{stateInfo.admin.toString().slice(0, 8)}...</code>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="snarbles-body">Creation Fee:</span>
+                      <span className="snarbles-gradient-text-green font-semibold">{stateInfo.creationFee.toString()} lamports</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="snarbles-body">Total Tokens:</span>
+                      <span className="snarbles-gradient-text-green font-semibold">{stateInfo.totalTokens.toString()}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {error && !stateInfo && (
+                <div className="snarbles-glass-subtle p-6 rounded-xl border border-yellow-500/30">
+                  <div className="flex items-center gap-2 mb-3">
+                    <AlertTriangle className="w-5 h-5 text-yellow-400" />
+                    <span className="snarbles-subheading text-yellow-400 font-semibold">Solana Platform Status</span>
+                  </div>
+                  <p className="snarbles-body text-sm mb-4">{error}</p>
+                  {error.includes('not yet initialized') && (
+                    <div className="text-sm snarbles-body">
+                      <p className="font-semibold mb-2">Next steps:</p>
+                      <ul className="list-disc list-inside space-y-1 text-xs">
+                        <li>Set your desired creation fee</li>
+                        <li>Click "Initialize Platform"</li>
+                        <li>Enable token creation for users</li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Platform Initialization */}
+            <div className="snarbles-card-premium p-8 snarbles-glow-cyan">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 rounded-xl snarbles-gradient-cyan flex items-center justify-center">
+                  <Zap className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="snarbles-subheading text-xl">Initialize Solana Platform</h3>
+                  <p className="snarbles-body text-sm">Configure Solana platform settings and fees</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="space-y-3">
+                  <Label htmlFor="creationFee" className="snarbles-subheading">Solana Creation Fee (SOL)</Label>
+                  <Input
+                    className="snarbles-glass-subtle h-12 text-base snarbles-border-glow"
+                    id="creationFee"
+                    type="number"
+                    step="0.001"
+                    placeholder="0.000"
+                    value={creationFee}
+                    onChange={(e) => setCreationFee(e.target.value)}
+                    disabled={isInitializing}
+                  />
+                  <p className="text-sm snarbles-body">
+                    Fee charged for creating new tokens on Solana (0 for free creation)
+                  </p>
+                </div>
+
+                <Button 
+                  onClick={handleInitialize}
+                  disabled={isInitializing}
+                  className="w-full snarbles-button-primary"
+                >
+                  {isInitializing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Initializing Platform...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Initialize Solana Platform
+                    </>
+                  )}
+                </Button>
+
+                {error && (
+                  <div className="snarbles-glass-subtle p-4 rounded-xl border border-red-500/30">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertTriangle className="w-4 h-4 text-red-400" />
+                      <span className="snarbles-subheading text-red-400 text-sm">Error</span>
+                    </div>
+                    <p className="snarbles-body text-sm">{error}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
