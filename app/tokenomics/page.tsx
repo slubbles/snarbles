@@ -318,10 +318,10 @@ export default function TokenomicsPage() {
   const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: any[]; label?: string }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="snarbles-glass-subtle p-4 text-sm snarbles-border-glow">
+        <div className="glass-card p-4 text-sm snarbles-border-glow">
           <p className="font-bold snarbles-gradient-text-red">{payload[0].name}</p>
-          <p className="snarbles-body">{payload[0].value}% of supply</p>
-          <p className="snarbles-body">{formatNumber(payload[0].payload.amount)} tokens</p>
+          <p className="text-muted-foreground">{payload[0].value}% of supply</p>
+          <p className="text-muted-foreground">{formatNumber(payload[0].payload.amount)} tokens</p>
         </div>
       );
     }
@@ -480,51 +480,51 @@ export default function TokenomicsPage() {
   if (!mounted) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="snarbles-card p-8 text-center">
+        <div className="glass-card p-8 text-center">
           <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="snarbles-body">Loading Tokenomics Simulator...</p>
+          <p className="text-muted-foreground">Loading Tokenomics Simulator...</p>
         </div>
       </div>
     );
   }
   
   return (
-    <div className="min-h-screen snarbles-background">
+    <div className="min-h-screen bg-background">
       {/* Enhanced animated background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-br from-red-500/15 to-red-600/15 rounded-full blur-3xl snarbles-animate-pulse" />
-        <div className="absolute top-40 right-20 w-72 h-72 bg-gradient-to-br from-blue-500/12 to-blue-600/12 rounded-full blur-3xl snarbles-animate-pulse delay-700" />
-        <div className="absolute bottom-32 left-1/4 w-64 h-64 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-full blur-3xl snarbles-animate-pulse delay-1000" />
-        <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-br from-purple-500/8 to-purple-600/8 rounded-full blur-3xl snarbles-animate-pulse delay-500" />
+        <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-br from-primary/15 to-primary/15 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute top-40 right-20 w-72 h-72 bg-gradient-to-br from-blue-500/12 to-blue-600/12 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '0.7s' }} />
+        <div className="absolute bottom-32 left-1/4 w-64 h-64 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-br from-purple-500/8 to-purple-600/8 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '0.5s' }} />
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
         {/* Enhanced Header */}
-        <div className="text-center mb-16 space-y-8 snarbles-animate-fade-in">
-          <div className="inline-flex items-center space-x-3 snarbles-glass-subtle px-6 py-3 snarbles-border-glow">
-            <Calculator className="w-5 h-5 text-red-400 snarbles-animate-pulse" />
-            <span className="uppercase tracking-wider text-red-400 font-bold text-sm">Professional Tokenomics</span>
-            <div className="w-2 h-2 bg-red-400 rounded-full snarbles-animate-pulse"></div>
+        <div className="text-center mb-16 space-y-8">
+          <div className="inline-flex items-center space-x-3 glass-card px-6 py-3">
+            <Calculator className="w-5 h-5 text-primary animate-pulse" />
+            <span className="uppercase tracking-wider text-primary font-bold text-sm">Professional Tokenomics</span>
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
           </div>
           
-          <h1 className="snarbles-heading text-5xl md:text-6xl lg:text-7xl leading-tight">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-foreground leading-tight">
             Design Optimal Token 
-            <span className="snarbles-gradient-text-red"> Distribution</span>
+            <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent"> Distribution</span>
           </h1>
           
-          <p className="text-xl md:text-2xl snarbles-body max-w-4xl mx-auto leading-relaxed">
+          <p className="text-xl md:text-2xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
             Create professional tokenomics with our advanced visual designer, then apply directly to your token creation
           </p>
         </div>
 
         {/* Success banner */}
         {savedSuccess && (
-          <div className="mb-8 snarbles-card-premium p-6 snarbles-glow-green snarbles-animate-fade-in">
+          <div className="mb-8 glass-card-premium p-6 snarbles-glow-green snarbles-animate-fade-in">
             <div className="flex items-center space-x-4">
               <Check className="w-8 h-8 text-green-400" />
               <div>
                 <h3 className="snarbles-subheading text-lg snarbles-gradient-text-green">Configuration Saved!</h3>
-                <p className="snarbles-body">Your tokenomics have been saved and can be applied to token creation.</p>
+                <p className="text-muted-foreground">Your tokenomics have been saved and can be applied to token creation.</p>
               </div>
             </div>
           </div>
@@ -535,43 +535,43 @@ export default function TokenomicsPage() {
           {/* Left Column - Enhanced Controls */}
           <div className="lg:col-span-5 space-y-8">
             {/* Supply Settings */}
-            <Card className="snarbles-card-premium snarbles-border-glow snarbles-animate-fade-in">
+            <Card className="glass-card-premium snarbles-border-glow snarbles-animate-fade-in">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-3">
                   <TrendingUp className="w-6 h-6 text-red-400" />
                   <span className="snarbles-subheading">Supply Configuration</span>
                 </CardTitle>
-                <CardDescription className="snarbles-body">
+                <CardDescription className="text-muted-foreground">
                   Define your token's total supply and economics model
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="totalSupply" className="snarbles-body font-semibold">Total Supply</Label>
+                    <Label htmlFor="totalSupply" className="text-sm font-semibold text-foreground">Total Supply</Label>
                     <Input
                       id="totalSupply"
                       type="number"
                       defaultValue={totalSupply}
                       onChange={handleTotalSupplyChange}
                       min="0"
-                      className="snarbles-input"
+                      className="bg-background border-border text-foreground"
                     />
-                    <p className="text-sm snarbles-body-muted">
+                    <p className="text-sm text-muted-foreground">
                       Recommended: 100M-1B for utility tokens, 10-100M for governance
                     </p>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label className="snarbles-body font-semibold">Supply Type</Label>
+                    <Label className="text-sm font-semibold text-foreground">Supply Type</Label>
                     <div className="flex space-x-2">
                       <Button
                         variant={supplyType === 'fixed' ? 'default' : 'outline'}
                         onClick={() => setSupplyType('fixed')}
                         className={`flex-1 transition-all duration-300 ${
                           supplyType === 'fixed' 
-                            ? 'snarbles-button-primary' 
-                            : 'snarbles-button-secondary'
+                            ? 'bg-primary hover:bg-primary/90' 
+                            : 'border-border hover:bg-muted'
                         }`}
                       >
                         Fixed Supply
@@ -581,8 +581,8 @@ export default function TokenomicsPage() {
                         onClick={() => setSupplyType('inflationary')}
                         className={`flex-1 transition-all duration-300 ${
                           supplyType === 'inflationary' 
-                            ? 'snarbles-button-primary' 
-                            : 'snarbles-button-secondary'
+                            ? 'bg-primary hover:bg-primary/90' 
+                            : 'border-border hover:bg-muted'
                         }`}
                       >
                         Inflationary
@@ -592,8 +592,8 @@ export default function TokenomicsPage() {
                         onClick={() => setSupplyType('deflationary')}
                         className={`flex-1 transition-all duration-300 ${
                           supplyType === 'deflationary' 
-                            ? 'snarbles-button-primary' 
-                            : 'snarbles-button-secondary'
+                            ? 'bg-primary hover:bg-primary/90' 
+                            : 'border-border hover:bg-muted'
                         }`}
                       >
                         Deflationary
@@ -628,9 +628,9 @@ export default function TokenomicsPage() {
                               ...vestingSchedule,
                               team: { ...vestingSchedule.team, period: values[0] }
                             })}
-                            className="flex-1 snarbles-glass-subtle snarbles-border-glow"
+                            className="flex-1 glass-card snarbles-border-glow"
                           />
-                          <span className="w-10 text-center font-mono snarbles-glass-subtle snarbles-border-glow">
+                          <span className="w-10 text-center font-mono glass-card snarbles-border-glow">
                             {vestingSchedule.team.period}
                           </span>
                         </div>
@@ -648,17 +648,17 @@ export default function TokenomicsPage() {
                               ...vestingSchedule,
                               investors: { ...vestingSchedule.investors, period: values[0] }
                             })}
-                            className="flex-1 snarbles-glass-subtle snarbles-border-glow"
+                            className="flex-1 glass-card snarbles-border-glow"
                           />
-                          <span className="w-10 text-center font-mono snarbles-glass-subtle snarbles-border-glow">
+                          <span className="w-10 text-center font-mono glass-card snarbles-border-glow">
                             {vestingSchedule.investors.period}
                           </span>
                         </div>
                       </div>
                       
-                      <div className="flex items-center space-x-4 mt-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg snarbles-glass-subtle snarbles-border-glow">
+                      <div className="flex items-center space-x-4 mt-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg glass-card snarbles-border-glow">
                         <Clock className="w-5 h-5 text-blue-500 flex-shrink-0" />
-                        <p className="text-sm text-blue-600 snarbles-body">
+                        <p className="text-sm text-blue-600 text-muted-foreground">
                           Vesting schedules increase investor confidence by demonstrating long-term commitment
                         </p>
                       </div>
@@ -669,32 +669,32 @@ export default function TokenomicsPage() {
             </Card>
             
             {/* Distribution Settings */}
-            <Card className="snarbles-card-premium snarbles-border-glow snarbles-animate-fade-in">
+            <Card className="glass-card-premium snarbles-border-glow snarbles-animate-fade-in">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <PieChartIcon className="w-5 h-5 text-red-500" />
                   <span className="snarbles-subheading">Token Distribution</span>
                 </CardTitle>
-                <CardDescription className="snarbles-body">
+                <CardDescription className="text-muted-foreground">
                   Allocate your token supply across different stakeholders
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Tabs defaultValue="sliders" className="space-y-6">
-                  <TabsList className="grid w-full grid-cols-2 snarbles-glass-subtle snarbles-border-glow">
-                    <TabsTrigger value="sliders" className="snarbles-body">Sliders</TabsTrigger>
-                    <TabsTrigger value="manual" className="snarbles-body">Manual Entry</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-2 glass-card snarbles-border-glow">
+                    <TabsTrigger value="sliders" className="text-muted-foreground">Sliders</TabsTrigger>
+                    <TabsTrigger value="manual" className="text-muted-foreground">Manual Entry</TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="sliders" className="space-y-6">
                     {Object.keys(distribution).map((key) => (
-                      <div key={key} className="space-y-2 snarbles-glass-subtle snarbles-border-glow">
+                      <div key={key} className="space-y-2 glass-card snarbles-border-glow">
                         <div className="flex items-center justify-between">
-                          <Label className="flex items-center snarbles-body">
+                          <Label className="flex items-center text-muted-foreground">
                             <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: distribution[key as keyof typeof distribution].color }}></div>
                             {distribution[key as keyof typeof distribution].label}
                           </Label>
-                          <span className="text-sm font-mono snarbles-body">
+                          <span className="text-sm font-mono text-muted-foreground">
                             {distribution[key as keyof typeof distribution].value}% ({formatNumber(Math.round(totalSupply * distribution[key as keyof typeof distribution].value / 100))})
                           </span>
                         </div>
@@ -704,18 +704,18 @@ export default function TokenomicsPage() {
                           max={100}
                           step={1}
                           onValueChange={(values) => handleDistributionChange(key, values[0])}
-                          className="flex-1 snarbles-glass-subtle snarbles-border-glow"
+                          className="flex-1 glass-card snarbles-border-glow"
                         />
                       </div>
                     ))}
                   </TabsContent>
                   
-                  <TabsContent value="manual" className="space-y-4 snarbles-glass-subtle snarbles-border-glow">
+                  <TabsContent value="manual" className="space-y-4 glass-card snarbles-border-glow">
                     {Object.keys(distribution).map((key) => (
-                      <div key={key} className="grid grid-cols-4 gap-4 items-center snarbles-glass-subtle snarbles-border-glow">
+                      <div key={key} className="grid grid-cols-4 gap-4 items-center glass-card snarbles-border-glow">
                         <div className="col-span-2 flex items-center space-x-2">
                           <div className="w-3 h-3 rounded-full" style={{ backgroundColor: distribution[key as keyof typeof distribution].color }}></div>
-                          <Label className="snarbles-body">{distribution[key as keyof typeof distribution].label}</Label>
+                          <Label className="text-muted-foreground">{distribution[key as keyof typeof distribution].label}</Label>
                         </div>
                         <div className="col-span-2 flex space-x-2">
                           <Input
@@ -724,9 +724,9 @@ export default function TokenomicsPage() {
                             max="100"
                             value={distribution[key as keyof typeof distribution].value}
                             onChange={(e) => handleDistributionChange(key, parseFloat(e.target.value) || 0)}
-                            className="input-enhanced snarbles-glass-subtle snarbles-border-glow"
+                            className="input-enhanced glass-card snarbles-border-glow"
                           />
-                          <div className="w-10 text-center flex items-center snarbles-body">
+                          <div className="w-10 text-center flex items-center text-muted-foreground">
                             <span className="text-sm font-mono">%</span>
                           </div>
                         </div>
@@ -735,18 +735,18 @@ export default function TokenomicsPage() {
                   </TabsContent>
                 </Tabs>
                 
-                <div className="mt-6 pt-4 border-t border-border snarbles-glass-subtle snarbles-border-glow">
+                <div className="mt-6 pt-4 border-t border-border glass-card snarbles-border-glow">
                   <div className={`flex items-center space-x-3 p-4 rounded-lg ${healthIndicator.color}`}>
                     <Shield className="w-5 h-5" />
-                    <div className="flex-1 snarbles-body">
-                      <div className="flex items-center space-x-2 snarbles-body">
-                        <p className="font-semibold snarbles-body">Tokenomics Health Score: {healthScore}%</p>
-                        <div className="flex items-center snarbles-body">
+                    <div className="flex-1 text-muted-foreground">
+                      <div className="flex items-center space-x-2 text-muted-foreground">
+                        <p className="font-semibold text-muted-foreground">Tokenomics Health Score: {healthScore}%</p>
+                        <div className="flex items-center text-muted-foreground">
                           {healthIndicator.icon}
-                          <span className="text-sm ml-1 snarbles-body">{healthIndicator.label}</span>
+                          <span className="text-sm ml-1 text-muted-foreground">{healthIndicator.label}</span>
                         </div>
                       </div>
-                      <div className="w-full h-2 bg-muted rounded-full mt-2 snarbles-glass-subtle snarbles-border-glow">
+                      <div className="w-full h-2 bg-muted rounded-full mt-2 glass-card snarbles-border-glow">
                         <div 
                           className="h-2 rounded-full" 
                           style={{ 
@@ -771,8 +771,8 @@ export default function TokenomicsPage() {
                 variant="outline" 
                 className={`flex-1 transition-all duration-300 ${
                   savedSuccess 
-                    ? 'snarbles-button-primary' 
-                    : 'snarbles-button-secondary'
+                    ? 'bg-primary hover:bg-primary/90' 
+                    : 'border-border hover:bg-muted'
                 }`}
               >
                 {savedSuccess ? (
@@ -789,7 +789,7 @@ export default function TokenomicsPage() {
               </Button>
               <Button 
                 onClick={applyToToken} 
-                className="snarbles-button-primary flex-1"
+                className="bg-primary hover:bg-primary/90 flex-1"
               >
                 <Rocket className="w-4 h-4 mr-2" />
                 Apply to Token
@@ -800,20 +800,20 @@ export default function TokenomicsPage() {
           {/* Right Column - Visualization */}
           <div className="lg:col-span-7 space-y-6">
             {/* Distribution Chart */}
-            <Card className="snarbles-card-premium snarbles-border-glow snarbles-animate-fade-in">
+            <Card className="glass-card-premium snarbles-border-glow snarbles-animate-fade-in">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <PieChartIcon className="w-5 h-5 text-red-500" />
                   <span className="snarbles-subheading">Distribution Visualization</span>
                 </CardTitle>
-                <CardDescription className="snarbles-body">
+                <CardDescription className="text-muted-foreground">
                   Visual breakdown of your token allocation
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Pie Chart */}
-                  <div className="h-[300px] sm:h-[400px] flex items-center justify-center snarbles-glass-subtle rounded-xl">
+                  <div className="h-[300px] sm:h-[400px] flex items-center justify-center glass-card rounded-xl">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
@@ -837,7 +837,7 @@ export default function TokenomicsPage() {
                   </div>
                   
                   {/* Custom Legend */}
-                  <div className="flex flex-col justify-center space-y-3 snarbles-glass-subtle rounded-xl p-4">
+                  <div className="flex flex-col justify-center space-y-3 glass-card rounded-xl p-4">
                     <h4 className="font-semibold mb-2 snarbles-subheading">Distribution</h4>
                                           {getDistributionData().map((entry, index) => (
                         <div key={index} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-white/5 transition-colors">
@@ -847,14 +847,14 @@ export default function TokenomicsPage() {
                           />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium truncate snarbles-body">
+                              <span className="text-sm font-medium truncate text-muted-foreground">
                                 {entry.name}
                               </span>
-                              <span className="text-sm font-bold ml-2 snarbles-body">
+                              <span className="text-sm font-bold ml-2 text-muted-foreground">
                                 {entry.value}%
                               </span>
                             </div>
-                            <div className="text-xs snarbles-body-muted">
+                            <div className="text-xs text-muted-foreground-muted">
                               {(totalSupply * (entry.value / 100)).toLocaleString()} tokens
                             </div>
                           </div>
@@ -875,18 +875,18 @@ export default function TokenomicsPage() {
                         (key === 'team' || key === 'investors' || key === 'advisors');
                       
                                               return (
-                          <div key={key} className="p-4 snarbles-glass-subtle rounded-lg border border-border/20">
+                          <div key={key} className="p-4 glass-card rounded-lg border border-border/20">
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center space-x-2">
                                 <div 
                                   className="w-3 h-3 rounded-full" 
                                   style={{ backgroundColor: distribution[key as keyof typeof distribution].color }}
                                 />
-                                <span className="font-medium snarbles-body">{distribution[key as keyof typeof distribution].label}</span>
+                                <span className="font-medium text-muted-foreground">{distribution[key as keyof typeof distribution].label}</span>
                               </div>
-                              <span className="font-mono text-lg font-semibold snarbles-body">{distribution[key as keyof typeof distribution].value}%</span>
+                              <span className="font-mono text-lg font-semibold text-muted-foreground">{distribution[key as keyof typeof distribution].value}%</span>
                             </div>
-                            <div className="flex justify-between text-sm snarbles-body-muted">
+                            <div className="flex justify-between text-sm text-muted-foreground-muted">
                               <span>Tokens: {formatNumber(Math.round(tokenAmount))}</span>
                               {hasVesting && vestingSchedule[key as keyof typeof vestingSchedule] && typeof vestingSchedule[key as keyof typeof vestingSchedule] === 'object' && (
                                 <span>Vesting: {(vestingSchedule[key as keyof typeof vestingSchedule] as any).period} months</span>
@@ -902,10 +902,10 @@ export default function TokenomicsPage() {
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-border">
-                          <th className="text-left py-3 px-4 snarbles-body-muted font-medium">Category</th>
-                          <th className="text-center py-3 px-4 snarbles-body-muted font-medium">Percentage</th>
-                          <th className="text-right py-3 px-4 snarbles-body-muted font-medium">Token Amount</th>
-                          {vestingEnabled && <th className="text-right py-3 px-4 snarbles-body-muted font-medium">Vesting</th>}
+                          <th className="text-left py-3 px-4 text-muted-foreground-muted font-medium">Category</th>
+                          <th className="text-center py-3 px-4 text-muted-foreground-muted font-medium">Percentage</th>
+                          <th className="text-right py-3 px-4 text-muted-foreground-muted font-medium">Token Amount</th>
+                          {vestingEnabled && <th className="text-right py-3 px-4 text-muted-foreground-muted font-medium">Vesting</th>}
                         </tr>
                       </thead>
                       <tbody>
@@ -922,23 +922,23 @@ export default function TokenomicsPage() {
                                     className="w-3 h-3 rounded-full" 
                                     style={{ backgroundColor: distribution[key as keyof typeof distribution].color }}
                                   ></div>
-                                  <span className="font-medium snarbles-body">{distribution[key as keyof typeof distribution].label}</span>
+                                  <span className="font-medium text-muted-foreground">{distribution[key as keyof typeof distribution].label}</span>
                                 </div>
                               </td>
                               <td className="py-4 px-4 text-center">
-                                <span className="font-mono snarbles-body">{distribution[key as keyof typeof distribution].value}%</span>
+                                <span className="font-mono text-muted-foreground">{distribution[key as keyof typeof distribution].value}%</span>
                               </td>
                               <td className="py-4 px-4 text-right">
-                                <span className="font-mono snarbles-body">{formatNumber(Math.round(tokenAmount))}</span>
+                                <span className="font-mono text-muted-foreground">{formatNumber(Math.round(tokenAmount))}</span>
                               </td>
                               {vestingEnabled && (
-                                <td className="py-4 px-4 text-right snarbles-body">
+                                <td className="py-4 px-4 text-right text-muted-foreground">
                                   {hasVesting && vestingSchedule[key as keyof typeof vestingSchedule] && typeof vestingSchedule[key as keyof typeof vestingSchedule] === 'object' ? (
-                                    <span className="text-sm snarbles-body">
+                                    <span className="text-sm text-muted-foreground">
                                       {(vestingSchedule[key as keyof typeof vestingSchedule] as any).period} months
                                     </span>
                                   ) : (
-                                    <span className="text-sm text-muted-foreground snarbles-body">None</span>
+                                    <span className="text-sm text-muted-foreground text-muted-foreground">None</span>
                                   )}
                                 </td>
                               )}
@@ -953,29 +953,29 @@ export default function TokenomicsPage() {
             </Card>
             
             {/* Recommendations */}
-            <Card className="snarbles-card-premium snarbles-border-glow">
+            <Card className="glass-card-premium snarbles-border-glow">
               <CardHeader>
-                <CardTitle className="snarbles-body">Expert Recommendations</CardTitle>
-                <CardDescription className="snarbles-body">Based on your token distribution and market patterns</CardDescription>
+                <CardTitle className="text-muted-foreground">Expert Recommendations</CardTitle>
+                <CardDescription className="text-muted-foreground">Based on your token distribution and market patterns</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4 snarbles-glass-subtle snarbles-border-glow">
-                  <div className="flex items-start space-x-3 p-4 bg-green-500/5 rounded-lg border border-green-500/20 snarbles-glass-subtle snarbles-border-glow">
+                <div className="space-y-4 glass-card snarbles-border-glow">
+                  <div className="flex items-start space-x-3 p-4 bg-green-500/5 rounded-lg border border-green-500/20 glass-card snarbles-border-glow">
                     <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="font-medium text-green-700 snarbles-body">Community-centric allocation</p>
-                      <p className="text-sm text-green-600 snarbles-body">
+                      <p className="font-medium text-green-700 text-muted-foreground">Community-centric allocation</p>
+                      <p className="text-sm text-green-600 text-muted-foreground">
                         Your {distribution.community.value}% community allocation supports organic growth and helps ensure broad distribution from launch.
                       </p>
                     </div>
                   </div>
                   
                   {distribution.team.value > 20 && (
-                    <div className="flex items-start space-x-3 p-4 bg-yellow-500/5 rounded-lg border border-yellow-500/20 snarbles-glass-subtle snarbles-border-glow">
+                    <div className="flex items-start space-x-3 p-4 bg-yellow-500/5 rounded-lg border border-yellow-500/20 glass-card snarbles-border-glow">
                       <AlertTriangle className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="font-medium text-yellow-700 snarbles-body">Team allocation high</p>
-                        <p className="text-sm text-yellow-600 snarbles-body">
+                        <p className="font-medium text-yellow-700 text-muted-foreground">Team allocation high</p>
+                        <p className="text-sm text-yellow-600 text-muted-foreground">
                           Your team allocation of {distribution.team.value}% is above market average of 15-18%. Consider reducing or extending vesting.
                         </p>
                       </div>
@@ -983,11 +983,11 @@ export default function TokenomicsPage() {
                   )}
                   
                   {distribution.liquidity.value < 15 && (
-                    <div className="flex items-start space-x-3 p-4 bg-yellow-500/5 rounded-lg border border-yellow-500/20 snarbles-glass-subtle snarbles-border-glow">
+                    <div className="flex items-start space-x-3 p-4 bg-yellow-500/5 rounded-lg border border-yellow-500/20 glass-card snarbles-border-glow">
                       <AlertTriangle className="w-5 h-5 text-yellow-500 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="font-medium text-yellow-700 snarbles-body">Consider increasing liquidity</p>
-                        <p className="text-sm text-yellow-600 snarbles-body">
+                        <p className="font-medium text-yellow-700 text-muted-foreground">Consider increasing liquidity</p>
+                        <p className="text-sm text-yellow-600 text-muted-foreground">
                           Liquidity allocation of {distribution.liquidity.value}% may lead to higher price volatility. 15-20% is recommended.
                         </p>
                       </div>
@@ -995,18 +995,18 @@ export default function TokenomicsPage() {
                   )}
                   
                   {vestingEnabled && (
-                    <div className="flex items-start space-x-3 p-4 bg-green-500/5 rounded-lg border border-green-500/20 snarbles-glass-subtle snarbles-border-glow">
+                    <div className="flex items-start space-x-3 p-4 bg-green-500/5 rounded-lg border border-green-500/20 glass-card snarbles-border-glow">
                       <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="font-medium text-green-700 snarbles-body">Vesting schedule</p>
-                        <p className="text-sm text-green-600 snarbles-body">
+                        <p className="font-medium text-green-700 text-muted-foreground">Vesting schedule</p>
+                        <p className="text-sm text-green-600 text-muted-foreground">
                           Your vesting schedules demonstrate long-term commitment and reduces selling pressure after launch.
                         </p>
                       </div>
                     </div>
                   )}
                   
-                  <div className="flex items-start space-x-3 p-4 snarbles-glass-subtle rounded-lg border border-border/20 mt-4">
+                  <div className="flex items-start space-x-3 p-4 glass-card rounded-lg border border-border/20 mt-4">
                     <Shield className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0 snarbles-animate-pulse" />
                     <div>
                       <p className="font-medium snarbles-subheading">Tokenomics Health Score: {healthScore}/100</p>
@@ -1022,7 +1022,7 @@ export default function TokenomicsPage() {
                           }}
                         ></div>
                       </div>
-                      <p className="text-sm snarbles-body">
+                      <p className="text-sm text-muted-foreground">
                         {healthScore >= 80 ? 'Excellent tokenomics design with balanced allocations and strong governance mechanisms.' :
                          healthScore >= 60 ? 'Good tokenomics with some room for improvement. Consider adjustments to optimize distribution.' :
                          healthScore >= 40 ? 'Basic tokenomics with several areas that need attention for long-term success.' :
@@ -1039,14 +1039,14 @@ export default function TokenomicsPage() {
               <Button 
                 onClick={exportTokenomics}
                 variant="outline" 
-                className="snarbles-button-secondary flex-1"
+                className="border-border hover:bg-muted flex-1"
               >
                 <Download className="w-4 h-4 mr-2" />
                 Export as PDF
               </Button>
               <Button 
                 onClick={applyToToken}
-                className="snarbles-button-primary flex-1"
+                className="bg-primary hover:bg-primary/90 flex-1"
               >
                 <Rocket className="w-4 h-4 mr-2" />
                 Apply to Token Creation
@@ -1059,61 +1059,61 @@ export default function TokenomicsPage() {
         <div className="mt-16 space-y-6 snarbles-animate-fade-in">
           <div className="text-center">
             <h2 className="text-2xl font-bold snarbles-subheading">Tokenomics Templates Gallery</h2>
-            <p className="snarbles-body-muted">Start with a proven template based on your project's needs</p>
+            <p className="text-muted-foreground-muted">Start with a proven template based on your project's needs</p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="snarbles-card-premium hover:scale-[1.02] transition-all duration-300 cursor-pointer">
+            <Card className="glass-card-premium hover:scale-[1.02] transition-all duration-300 cursor-pointer">
               <CardHeader>
                 <CardTitle className="snarbles-subheading">DeFi Protocol</CardTitle>
-                <CardDescription className="snarbles-body">Optimized for decentralized finance applications</CardDescription>
+                <CardDescription className="text-muted-foreground">Optimized for decentralized finance applications</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="snarbles-body-muted">Community</span>
-                  <span className="font-semibold snarbles-body">40%</span>
+                  <span className="text-muted-foreground-muted">Community</span>
+                  <span className="font-semibold text-muted-foreground">40%</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="snarbles-body-muted">Team</span>
-                  <span className="font-semibold snarbles-body">15%</span>
+                  <span className="text-muted-foreground-muted">Team</span>
+                  <span className="font-semibold text-muted-foreground">15%</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="snarbles-body-muted">Treasury</span>
-                  <span className="font-semibold snarbles-body">25%</span>
+                  <span className="text-muted-foreground-muted">Treasury</span>
+                  <span className="font-semibold text-muted-foreground">25%</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="snarbles-body-muted">Liquidity</span>
-                  <span className="font-semibold snarbles-body">20%</span>
+                  <span className="text-muted-foreground-muted">Liquidity</span>
+                  <span className="font-semibold text-muted-foreground">20%</span>
                 </div>
                 
-                <Button className="w-full snarbles-button-primary" onClick={() => applyTemplate('defi')}>
+                <Button className="w-full bg-primary hover:bg-primary/90" onClick={() => applyTemplate('defi')}>
                   <ChevronRight className="w-4 h-4 mr-2" />
                   Use Template
                 </Button>
               </CardContent>
             </Card>
             
-            <Card className="snarbles-card-premium hover:scale-105 transition-all duration-300 cursor-pointer snarbles-glass-subtle snarbles-border-glow">
+            <Card className="glass-card-premium hover:scale-105 transition-all duration-300 cursor-pointer glass-card snarbles-border-glow">
               <CardHeader>
-                <CardTitle className="snarbles-body">DAO Governance</CardTitle>
-                <CardDescription className="snarbles-body">Balanced model for decentralized governance</CardDescription>
+                <CardTitle className="text-muted-foreground">DAO Governance</CardTitle>
+                <CardDescription className="text-muted-foreground">Balanced model for decentralized governance</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4 snarbles-glass-subtle snarbles-border-glow">
-                <div className="flex items-center justify-between snarbles-body">
-                  <span className="text-muted-foreground snarbles-body">Community</span>
-                  <span className="font-semibold snarbles-body">60%</span>
+              <CardContent className="space-y-4 glass-card snarbles-border-glow">
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span className="text-muted-foreground text-muted-foreground">Community</span>
+                  <span className="font-semibold text-muted-foreground">60%</span>
                 </div>
-                <div className="flex items-center justify-between snarbles-body">
-                  <span className="text-muted-foreground snarbles-body">Team</span>
-                  <span className="font-semibold snarbles-body">10%</span>
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span className="text-muted-foreground text-muted-foreground">Team</span>
+                  <span className="font-semibold text-muted-foreground">10%</span>
                 </div>
-                <div className="flex items-center justify-between snarbles-body">
-                  <span className="text-muted-foreground snarbles-body">Investors</span>
-                  <span className="font-semibold snarbles-body">15%</span>
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span className="text-muted-foreground text-muted-foreground">Investors</span>
+                  <span className="font-semibold text-muted-foreground">15%</span>
                 </div>
-                <div className="flex items-center justify-between snarbles-body">
-                  <span className="text-muted-foreground snarbles-body">Treasury</span>
-                  <span className="font-semibold snarbles-body">15%</span>
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span className="text-muted-foreground text-muted-foreground">Treasury</span>
+                  <span className="font-semibold text-muted-foreground">15%</span>
                 </div>
                 
                 <Button className="w-full" onClick={() => applyTemplate('dao')}>
@@ -1123,27 +1123,27 @@ export default function TokenomicsPage() {
               </CardContent>
             </Card>
             
-            <Card className="snarbles-card-premium hover:scale-105 transition-all duration-300 cursor-pointer snarbles-glass-subtle snarbles-border-glow">
+            <Card className="glass-card-premium hover:scale-105 transition-all duration-300 cursor-pointer glass-card snarbles-border-glow">
               <CardHeader>
-                <CardTitle className="snarbles-body">GameFi Project</CardTitle>
-                <CardDescription className="snarbles-body">Optimized for gaming and metaverse projects</CardDescription>
+                <CardTitle className="text-muted-foreground">GameFi Project</CardTitle>
+                <CardDescription className="text-muted-foreground">Optimized for gaming and metaverse projects</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4 snarbles-glass-subtle snarbles-border-glow">
-                <div className="flex items-center justify-between snarbles-body">
-                  <span className="text-muted-foreground snarbles-body">Players & Rewards</span>
-                  <span className="font-semibold snarbles-body">35%</span>
+              <CardContent className="space-y-4 glass-card snarbles-border-glow">
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span className="text-muted-foreground text-muted-foreground">Players & Rewards</span>
+                  <span className="font-semibold text-muted-foreground">35%</span>
                 </div>
-                <div className="flex items-center justify-between snarbles-body">
-                  <span className="text-muted-foreground snarbles-body">Team</span>
-                  <span className="font-semibold snarbles-body">18%</span>
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span className="text-muted-foreground text-muted-foreground">Team</span>
+                  <span className="font-semibold text-muted-foreground">18%</span>
                 </div>
-                <div className="flex items-center justify-between snarbles-body">
-                  <span className="text-muted-foreground snarbles-body">Investors</span>
-                  <span className="font-semibold snarbles-body">22%</span>
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span className="text-muted-foreground text-muted-foreground">Investors</span>
+                  <span className="font-semibold text-muted-foreground">22%</span>
                 </div>
-                <div className="flex items-center justify-between snarbles-body">
-                  <span className="text-muted-foreground snarbles-body">Marketing</span>
-                  <span className="font-semibold snarbles-body">25%</span>
+                <div className="flex items-center justify-between text-muted-foreground">
+                  <span className="text-muted-foreground text-muted-foreground">Marketing</span>
+                  <span className="font-semibold text-muted-foreground">25%</span>
                 </div>
                 
                 <Button className="w-full" onClick={() => applyTemplate('gamefi')}>
@@ -1158,12 +1158,12 @@ export default function TokenomicsPage() {
         {/* Expert Recommendations */}
         <div className="mt-20 text-center snarbles-animate-fade-in">
           <Link href="/create">
-            <Button className="snarbles-button-primary text-lg px-8 py-4 font-semibold">
+            <Button className="bg-primary hover:bg-primary/90 text-lg px-8 py-4 font-semibold">
               <Rocket className="w-5 h-5 mr-2" />
               Create Your Token Now
             </Button>
           </Link>
-          <p className="mt-4 snarbles-body">Apply this tokenomics design directly to your token creation</p>
+          <p className="mt-4 text-muted-foreground">Apply this tokenomics design directly to your token creation</p>
         </div>
       </div>
     </div>

@@ -5,43 +5,43 @@ import { Button } from '@/components/ui/button';
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Enhanced animated background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-br from-red-500/15 to-red-600/15 rounded-full blur-3xl snarbles-animate-pulse" />
-        <div className="absolute top-40 right-20 w-72 h-72 bg-gradient-to-br from-blue-500/12 to-blue-600/12 rounded-full blur-3xl snarbles-animate-pulse delay-700" />
-        <div className="absolute bottom-32 left-1/4 w-64 h-64 bg-gradient-to-br from-green-500/10 to-green-600/10 rounded-full blur-3xl snarbles-animate-pulse delay-1000" />
-        <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-br from-purple-500/8 to-purple-600/8 rounded-full blur-3xl snarbles-animate-pulse delay-500" />
+        <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-br from-primary/15 to-primary/15 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute top-40 right-20 w-72 h-72 bg-gradient-to-br from-blue-500/12 to-blue-600/12 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '0.7s' }} />
+        <div className="absolute bottom-32 left-1/4 w-64 h-64 bg-gradient-to-br from-green-500/10 to-green-600/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-br from-purple-500/8 to-purple-600/8 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '0.5s' }} />
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
         {/* Enhanced Hero Section */}
         <div className="text-center mb-20">
-          <div className="inline-flex items-center space-x-3 snarbles-glass-subtle px-8 py-4 snarbles-border-glow mb-8">
-            <Crown className="w-5 h-5 text-red-400 snarbles-animate-pulse" />
-            <span className="uppercase tracking-wider text-red-400 font-bold text-sm">About Snarbles</span>
-            <div className="w-2 h-2 bg-red-400 rounded-full snarbles-animate-pulse"></div>
+          <div className="inline-flex items-center space-x-3 glass-card px-8 py-4 mb-8">
+            <Crown className="w-5 h-5 text-primary animate-pulse" />
+            <span className="uppercase tracking-wider text-primary font-bold text-sm">About Snarbles</span>
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
           </div>
           
-          <h1 className="snarbles-heading text-5xl md:text-6xl mb-6">
+          <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6">
             Building the Future of
-            <span className="snarbles-gradient-text-red"> Token Creation</span>
+            <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent"> Token Creation</span>
           </h1>
-          <p className="text-xl snarbles-body max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
             We're democratizing blockchain technology—one token at a time.
           </p>
         </div>
         
         {/* Enhanced Our Mission */}
-        <div className="snarbles-card-premium p-8 mb-16 snarbles-glow-red">
+        <div className="glass-card p-8 mb-16 border-primary/20">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
-              <div className="inline-flex items-center space-x-2 snarbles-glass-subtle px-4 py-2 rounded-full snarbles-border-glow">
-                <Sparkles className="w-4 h-4 text-red-400" />
-                <span className="snarbles-gradient-text-red font-bold text-sm">Our Mission</span>
+              <div className="inline-flex items-center space-x-2 glass-card px-4 py-2 rounded-full">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent font-bold text-sm">Our Mission</span>
               </div>
-              <h2 className="snarbles-subheading text-3xl">Democratizing Token Creation</h2>
-              <p className="snarbles-body leading-relaxed">
+              <h2 className="text-3xl font-bold text-foreground">Democratizing Token Creation</h2>
+              <p className="text-muted-foreground leading-relaxed">
                 We believe that creating and managing tokens should be accessible to everyone—not just 
                 developers or those with technical expertise. By removing barriers to entry, we're 
                 empowering a new wave of creators, communities, and businesses to participate fully 

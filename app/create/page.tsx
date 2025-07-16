@@ -84,13 +84,13 @@ export default function CreateTokenPage() {
   ];
 
   return (
-    <div className="min-h-screen snarbles-background">
-      <div className="snarbles-container py-8">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <Link 
             href="/" 
-            className="inline-flex items-center gap-2 snarbles-body text-gray-400 hover:text-white transition-colors mb-6"
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Home
@@ -98,20 +98,20 @@ export default function CreateTokenPage() {
           
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
             <div>
-              <h1 className="snarbles-heading-2 mb-2">Create Your Token</h1>
-              <p className="snarbles-body-large text-gray-300 max-w-2xl">
+              <h1 className="text-3xl font-bold text-foreground mb-2">Create Your Token</h1>
+              <p className="text-lg text-muted-foreground max-w-2xl">
                 Turn your idea into a real token in minutes. Simple, secure, and professional.
               </p>
             </div>
             
             {/* Credits Display */}
             {!isLoading && (
-              <div className="snarbles-card p-4 min-w-[200px]">
+              <div className="glass-card p-4 min-w-[200px]">
                 <div className="flex items-center gap-3">
-                  <CreditCard className="w-5 h-5 text-blue-400" />
+                  <CreditCard className="w-5 h-5 text-primary" />
                   <div>
-                    <div className="snarbles-body-small text-gray-400">Your Credits</div>
-                    <div className="snarbles-heading-5">
+                    <div className="text-sm text-muted-foreground">Your Credits</div>
+                    <div className="text-xl font-bold text-foreground">
                       {userCredits !== null ? formatCredits(userCredits) : 'Loading...'}
                     </div>
                   </div>
@@ -121,33 +121,33 @@ export default function CreateTokenPage() {
           </div>
 
           {/* Progress Bar */}
-          <div className="snarbles-card p-6 mb-8">
+          <div className="glass-card p-6 mb-8">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="snarbles-heading-5">Token Setup Progress</h3>
-              <span className="snarbles-heading-5 text-green-400">{progressPercentage}%</span>
+              <h3 className="text-lg font-semibold text-foreground">Token Setup Progress</h3>
+              <span className="text-lg font-bold text-green-400">{progressPercentage}%</span>
             </div>
             
-            <div className="w-full bg-gray-800 rounded-full h-2 mb-4">
+            <div className="w-full bg-muted rounded-full h-2 mb-4">
               <div 
-                className="bg-gradient-to-r from-red-500 to-green-500 h-2 rounded-full transition-all duration-500"
+                className="bg-gradient-to-r from-primary to-green-500 h-2 rounded-full transition-all duration-500"
                 style={{ width: `${progressPercentage}%` }}
               />
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              <div className={`flex flex-col items-center gap-2 ${tokenData.name?.length >= 3 ? 'text-green-400' : 'text-gray-400'}`}>
+              <div className={`flex flex-col items-center gap-2 ${tokenData.name?.length >= 3 ? 'text-green-400' : 'text-muted-foreground'}`}>
                 <CheckCircle className="w-5 h-5" />
                 <span className="text-xs">Name</span>
               </div>
-              <div className={`flex flex-col items-center gap-2 ${tokenData.symbol?.length >= 2 ? 'text-green-400' : 'text-gray-400'}`}>
+              <div className={`flex flex-col items-center gap-2 ${tokenData.symbol?.length >= 2 ? 'text-green-400' : 'text-muted-foreground'}`}>
                 <CheckCircle className="w-5 h-5" />
                 <span className="text-xs">Symbol</span>
               </div>
-              <div className={`flex flex-col items-center gap-2 ${tokenData.description?.length >= 10 ? 'text-green-400' : 'text-gray-400'}`}>
+              <div className={`flex flex-col items-center gap-2 ${tokenData.description?.length >= 10 ? 'text-green-400' : 'text-muted-foreground'}`}>
                 <CheckCircle className="w-5 h-5" />
                 <span className="text-xs">Description</span>
               </div>
-              <div className={`flex flex-col items-center gap-2 ${tokenData.totalSupply && parseFloat(tokenData.totalSupply) > 0 ? 'text-green-400' : 'text-gray-400'}`}>
+              <div className={`flex flex-col items-center gap-2 ${tokenData.totalSupply && parseFloat(tokenData.totalSupply) > 0 ? 'text-green-400' : 'text-muted-foreground'}`}>
                 <CheckCircle className="w-5 h-5" />
                 <span className="text-xs">Supply</span>
               </div>

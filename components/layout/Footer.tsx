@@ -33,7 +33,7 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="app-background border-t border-border mt-20">
+    <footer className="bg-background border-t border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           <div className="space-y-5">
@@ -43,7 +43,7 @@ export default function Footer() {
                 alt="Snarbles Logo" 
                 className="w-8 h-8 rounded-lg object-contain mr-3"
               />
-              <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-600">
+              <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/80">
                 Snarbles
               </span>
             </div>

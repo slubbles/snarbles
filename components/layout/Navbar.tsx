@@ -174,9 +174,9 @@ export default function Navbar() {
     }`} 
          style={{
            backgroundColor: isScrolled 
-             ? (theme === 'dark' ? 'rgba(0, 0, 0, 0.95)' : 'rgba(254, 253, 224, 0.95)')
-             : (theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(254, 253, 224, 0.8)'),
-           borderColor: theme === 'dark' ? 'rgb(31, 41, 55)' : 'rgb(229, 231, 235)'
+             ? 'rgba(0, 0, 0, 0.95)'
+             : 'rgba(0, 0, 0, 0.8)',
+           borderColor: 'rgb(31, 41, 55)'
          }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">

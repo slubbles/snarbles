@@ -1,5 +1,3 @@
-@import '../styles/design-tokens.css';
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,95 +7,190 @@
 
 @layer base {
   :root {
-    /* Snarbles Brand Colors using CSS custom properties */
-    --background: var(--bg-primary);
-    --foreground: var(--text-primary);
+    /* Snarbles.xyz exact color system - extracted from live site */
+    --background: 210 4% 3.1%; /* rgb(8, 8, 8) */
+    --foreground: 60 9% 99%; /* rgb(254, 254, 235) */
 
-    --card: var(--bg-card);
-    --card-foreground: var(--text-primary);
+    --card: 210 4% 2%; /* rgba(5, 5, 5, 0.8) */
+    --card-foreground: 60 9% 99%;
 
-    --popover: var(--bg-elevated);
-    --popover-foreground: var(--text-primary);
+    --popover: 210 4% 2%;
+    --popover-foreground: 60 9% 99%;
 
-    --primary: var(--snarbles-red-500);
-    --primary-foreground: var(--text-primary);
+    --primary: 0 84% 60%; /* rgb(239, 68, 68) - red-500 */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: var(--bg-secondary);
-    --secondary-foreground: var(--text-secondary);
+    --secondary: 0 0% 8%; /* rgb(20, 20, 20) */
+    --secondary-foreground: 60 9% 99%;
 
-    --muted: var(--bg-tertiary);
-    --muted-foreground: var(--text-muted);
+    --muted: 0 0% 8%; /* rgb(20, 20, 20) */
+    --muted-foreground: 0 0% 65%; /* rgb(166, 166, 166) */
 
-    --accent: var(--text-accent);
-    --accent-foreground: var(--text-primary);
+    --accent: 0 0% 8%;
+    --accent-foreground: 60 9% 99%;
 
-    --destructive: var(--error);
-    --destructive-foreground: var(--text-primary);
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: var(--border-primary);
-    --input: var(--border-primary);
-    --ring: var(--border-focus);
+    --border: 0 0% 12%; /* rgb(31, 31, 31) */
+    --input: 0 0% 12%;
+    --ring: 0 84% 60%;
 
-    --radius: var(--radius-lg);
-
-    /* Success state */
-    --success: var(--success);
-    --success-foreground: var(--text-primary);
-
-    /* Warning state */
-    --warning: var(--warning);
-    --warning-foreground: var(--text-primary);
+    --radius: 0.75rem; /* 12px border radius from extracted data */
   }
 
   .dark {
-    /* Enhanced dark mode with Snarbles branding */
-    --background: var(--bg-primary);
-    --foreground: var(--text-primary);
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
 
-    --card: var(--bg-card);
-    --card-foreground: var(--text-primary);
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: var(--bg-elevated);
-    --popover-foreground: var(--text-primary);
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: var(--snarbles-red-500);
-    --primary-foreground: var(--text-primary);
+    --primary: 0 72.2% 50.6%;
+    --primary-foreground: 0 85.7% 97.3%;
 
-    --secondary: var(--bg-secondary);
-    --secondary-foreground: var(--text-secondary);
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: var(--bg-tertiary);
-    --muted-foreground: var(--text-muted);
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
 
-    --accent: var(--text-accent);
-    --accent-foreground: var(--text-primary);
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
 
-    --destructive: var(--error);
-    --destructive-foreground: var(--text-primary);
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: var(--border-primary);
-    --input: var(--border-primary);
-    --ring: var(--border-focus);
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 72.2% 50.6%;
   }
 }
 
 /* Global Base Styles */
 * {
   border-color: hsl(var(--border));
-  }
-  
-  html {
-    scroll-behavior: smooth;
-  }
-  
-  body {
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   font-feature-settings: 'rlig' 1, 'calt' 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  line-height: 1.6;
+}
+
+.font-inter {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+/* App Background - Exact match from snarbles.xyz */
+.app-background {
+  background-color: rgb(8, 8, 8); /* Exact background color from extraction */
+}
+
+/* Glass Card - Exact match from snarbles.xyz */
+.glass-card {
+  background-color: rgba(5, 5, 5, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 
+    rgba(0, 0, 0, 0.3) 0px 8px 32px 0px,
+    rgba(255, 255, 255, 0.1) 0px 1px 0px 0px inset;
+  backdrop-filter: blur(10px);
+}
+
+/* Hero Section Background */
+.hero-section {
+  background-color: rgb(8, 8, 8);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Token Preview Circle - Exact match */
+.token-preview-circle {
+  background: linear-gradient(135deg, rgb(239, 68, 68), rgb(220, 38, 38) 50%, rgb(185, 28, 28));
+  border-radius: 9999px;
+  box-shadow: 
+    rgba(239, 68, 68, 0.5) 0px 15px 35px 0px,
+    rgba(239, 68, 68, 0.15) 0px 0px 0px 8px;
+  color: rgb(255, 255, 255);
+  font-size: 24px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* Button Enhanced - Exact match */
+.button-enhanced {
+  background: linear-gradient(135deg, rgb(239, 68, 68) 0%, rgb(220, 38, 38) 100%);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  box-shadow: 
+    rgba(239, 68, 68, 0.4) 0px 10px 30px 0px,
+    rgba(239, 68, 68, 0.2) 0px 0px 0px 1px;
+  color: rgb(255, 255, 255);
+  font-weight: 600;
+  padding: 16px 32px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: scale(1);
+  position: relative;
+  z-index: 10;
+}
+
+.button-enhanced:hover {
+  transform: scale(1.05);
+  box-shadow: 
+    rgba(239, 68, 68, 0.6) 0px 15px 40px 0px,
+    rgba(239, 68, 68, 0.3) 0px 0px 0px 1px;
+}
+
+/* Wallet Connect Button - Exact match */
+.wallet-connect-button {
+  background: linear-gradient(to right, rgb(239, 68, 68), rgb(220, 38, 38));
+  border-radius: 12px;
+  box-shadow: 
+    rgba(0, 0, 0, 0.1) 0px 10px 15px -3px,
+    rgba(0, 0, 0, 0.1) 0px 4px 6px -4px;
+  color: rgb(255, 255, 255);
+  font-weight: 600;
+  padding: 8px 16px;
+  height: 36px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wallet-connect-button:hover {
+  background: linear-gradient(to right, rgb(220, 38, 38), rgb(185, 28, 28));
+  box-shadow: 
+    rgba(0, 0, 0, 0.2) 0px 20px 25px -5px,
+    rgba(0, 0, 0, 0.1) 0px 10px 10px -5px;
+}
+
+/* Testimonial Card - Exact match */
+.testimonial-card {
+  background-color: rgba(5, 5, 5, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 
+    rgba(0, 0, 0, 0.3) 0px 8px 32px 0px,
+    rgba(255, 255, 255, 0.1) 0px 1px 0px 0px inset;
+  color: rgb(254, 254, 235);
+  padding: 32px;
+  text-align: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Enhanced Snarbles Background & Layout */

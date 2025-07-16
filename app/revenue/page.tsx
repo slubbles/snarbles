@@ -48,7 +48,7 @@ export default function RevenueDashboard() {
   const conversionRate = (tokensCreated / activeUsers) * 100;
 
   return (
-    <div className="min-h-screen app-background p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

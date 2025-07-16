@@ -609,48 +609,48 @@ export default function VerifyPage() {
   if (!mounted) {
     return (
       <div className="min-h-screen flex items-center justify-center app-background">
-        <div className="snarbles-card p-8 text-center">
+        <div className="glass-card p-8 text-center">
           <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="snarbles-body">Loading Token Verification...</p>
+          <p className="text-muted-foreground">Loading Token Verification...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen app-background relative overflow-hidden">
+    <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Enhanced animated background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-br from-red-500/15 to-red-600/15 rounded-full blur-3xl snarbles-animate-pulse" />
-        <div className="absolute top-40 right-20 w-72 h-72 bg-gradient-to-br from-green-500/12 to-emerald-500/12 rounded-full blur-3xl snarbles-animate-pulse delay-700" />
-        <div className="absolute bottom-32 left-1/4 w-64 h-64 bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-full blur-3xl snarbles-animate-pulse delay-1000" />
-        <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-br from-purple-500/8 to-purple-600/8 rounded-full blur-3xl snarbles-animate-pulse delay-500" />
+        <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-br from-primary/15 to-primary/15 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute top-40 right-20 w-72 h-72 bg-gradient-to-br from-green-500/12 to-emerald-500/12 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '0.7s' }} />
+        <div className="absolute bottom-32 left-1/4 w-64 h-64 bg-gradient-to-br from-blue-500/10 to-blue-600/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-br from-purple-500/8 to-purple-600/8 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '0.5s' }} />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10 space-y-12">
         {/* Enhanced Header */}
         <div className="text-center mb-20 space-y-8">
-          <div className="inline-flex items-center space-x-3 snarbles-glass-subtle px-6 py-3 rounded-full snarbles-border-glow">
-            <Shield className="w-5 h-5 text-red-400 snarbles-animate-pulse" />
-            <span className="uppercase tracking-wider text-red-400 font-bold text-sm">Professional Token Verification</span>
-            <div className="w-2 h-2 bg-red-400 rounded-full snarbles-animate-pulse"></div>
+          <div className="inline-flex items-center space-x-3 glass-card px-6 py-3 rounded-full">
+            <Shield className="w-5 h-5 text-primary animate-pulse" />
+            <span className="uppercase tracking-wider text-primary font-bold text-sm">Professional Token Verification</span>
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
           </div>
           
-          <h1 className="snarbles-heading text-5xl md:text-6xl lg:text-7xl leading-tight">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-foreground leading-tight">
             Verify Token 
-            <span className="snarbles-gradient-text-multi"> Safety & Authenticity</span>
+            <span className="bg-gradient-to-r from-primary via-blue-500 to-green-500 bg-clip-text text-transparent"> Safety & Authenticity</span>
           </h1>
           
-          <p className="text-xl md:text-2xl snarbles-body max-w-4xl mx-auto leading-relaxed">
+          <p className="text-xl md:text-2xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
             Advanced blockchain verification with 
-            <span className="snarbles-gradient-text-red font-semibold"> real-time security analysis</span>, 
+            <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent font-semibold"> real-time security analysis</span>, 
             cross-network detection, and comprehensive scoring for Solana and Algorand tokens.
           </p>
         </div>
 
         {/* Enhanced Network Status */}
         <div className="flex justify-center mb-12">
-          <div className="snarbles-card-premium p-6 snarbles-glow-green">
+          <div className="glass-card-premium p-6 snarbles-glow-green">
             <div className="flex items-center space-x-4">
               <div className={`w-6 h-6 rounded-full ${networkStatus.color} shadow-lg snarbles-animate-pulse`}></div>
               <networkStatus.icon className="w-7 h-7 text-green-400" />
@@ -666,7 +666,7 @@ export default function VerifyPage() {
         {/* Enhanced Tabbed Interface */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <div className="flex justify-center">
-            <TabsList className="snarbles-glass-subtle snarbles-border-glow p-2">
+            <TabsList className="glass-card snarbles-border-glow p-2">
               <TabsTrigger value="search" className="snarbles-tab-trigger">
                 <Search className="w-4 h-4 mr-2" />
                 Search & Verify
@@ -686,7 +686,7 @@ export default function VerifyPage() {
 
           {/* Search & Verify Tab */}
           <TabsContent value="search">
-            <Card className="snarbles-card-premium snarbles-border-glow shadow-2xl">
+            <Card className="glass-card-premium snarbles-border-glow shadow-2xl">
               <CardHeader className="snarbles-gradient-red text-white rounded-t-2xl p-8">
                 <CardTitle className="flex items-center space-x-3 text-2xl">
                   <Search className="w-7 h-7" />
@@ -702,7 +702,7 @@ export default function VerifyPage() {
                   <div className="space-y-3">
                     <Label htmlFor="network" className="text-lg font-bold snarbles-gradient-text-red">Network</Label>
                     <Select value={network} onValueChange={(value) => setNetwork(value as NetworkType)}>
-                      <SelectTrigger className="h-14 snarbles-glass-subtle snarbles-border-glow text-white text-lg">
+                      <SelectTrigger className="h-14 glass-card snarbles-border-glow text-white text-lg">
                         <SelectValue placeholder="Select network" />
                       </SelectTrigger>
                       <SelectContent className="snarbles-glass border-gray-700">
@@ -740,12 +740,12 @@ export default function VerifyPage() {
                         value={tokenId}
                         onChange={(e) => setTokenId(e.target.value)}
                         disabled={isVerifying}
-                        className="flex-1 h-14 snarbles-glass-subtle snarbles-border-glow text-white placeholder-gray-400 text-lg"
+                        className="flex-1 h-14 glass-card snarbles-border-glow text-white placeholder-gray-400 text-lg"
                       />
                       <Button 
                         onClick={() => handleVerification()}
                         disabled={!tokenId || isVerifying || !validateTokenId(tokenId, network)}
-                        className="px-8 h-14 snarbles-button-primary text-lg font-bold shadow-xl"
+                        className="px-8 h-14 bg-primary hover:bg-primary/90 text-lg font-bold shadow-xl"
                       >
                         {isVerifying ? (
                           <div className="flex items-center space-x-3">
@@ -765,7 +765,7 @@ export default function VerifyPage() {
 
                 {/* Error Display */}
                 {error && (
-                  <Alert className="snarbles-card-premium snarbles-glow-red p-6">
+                  <Alert className="glass-card-premium snarbles-glow-red p-6">
                     <AlertCircle className="h-7 w-7 text-red-400" />
                     <AlertDescription className="text-red-400 text-lg ml-4">
                       {error}
@@ -779,7 +779,7 @@ export default function VerifyPage() {
           {/* My Tokens Tab */}
           {isAuthenticated && (
             <TabsContent value="my-tokens">
-              <Card className="snarbles-card-premium snarbles-border-glow">
+              <Card className="glass-card-premium snarbles-border-glow">
                 <CardHeader className="snarbles-gradient-blue text-white rounded-t-2xl p-8">
                   <div className="flex items-center justify-between">
                     <div>
@@ -799,7 +799,7 @@ export default function VerifyPage() {
                         <Button
                           onClick={handleBulkVerification}
                           disabled={bulkVerifying}
-                          className="snarbles-button-primary"
+                          className="bg-primary hover:bg-primary/90"
                         >
                           {bulkVerifying ? (
                             <>
@@ -825,11 +825,11 @@ export default function VerifyPage() {
                         placeholder="Search tokens by name, symbol, or address..."
                         value={searchFilter}
                         onChange={(e) => setSearchFilter(e.target.value)}
-                        className="h-12 snarbles-glass-subtle snarbles-border-glow text-white placeholder-gray-400"
+                        className="h-12 glass-card snarbles-border-glow text-white placeholder-gray-400"
                       />
                     </div>
                     <Select value={networkFilter} onValueChange={setNetworkFilter}>
-                      <SelectTrigger className="w-48 h-12 snarbles-glass-subtle snarbles-border-glow text-white">
+                      <SelectTrigger className="w-48 h-12 glass-card snarbles-border-glow text-white">
                         <SelectValue placeholder="Filter by network" />
                       </SelectTrigger>
                       <SelectContent className="snarbles-glass border-gray-700">
@@ -856,7 +856,7 @@ export default function VerifyPage() {
                           className={`p-6 rounded-xl border transition-all duration-200 cursor-pointer ${
                             selectedTokens.includes(token.contractAddress)
                               ? 'border-red-500 bg-red-500/10 snarbles-glow-red'
-                              : 'border-gray-700 hover:border-gray-600 snarbles-glass-subtle'
+                              : 'border-gray-700 hover:border-gray-600 glass-card'
                           }`}
                           onClick={() => {
                             if (selectedTokens.includes(token.contractAddress)) {
@@ -921,7 +921,7 @@ export default function VerifyPage() {
                       {!searchFilter && networkFilter === 'all' && (
                         <Button 
                           onClick={() => window.location.href = '/create'} 
-                          className="snarbles-button-primary"
+                          className="bg-primary hover:bg-primary/90"
                         >
                           <Plus className="w-4 h-4 mr-2" />
                           Create Your First Token
@@ -936,7 +936,7 @@ export default function VerifyPage() {
 
           {/* Recent Verifications Tab */}
           <TabsContent value="recent">
-            <Card className="snarbles-card-premium snarbles-border-glow">
+            <Card className="glass-card-premium snarbles-border-glow">
               <CardHeader className="snarbles-gradient-purple text-white rounded-t-2xl p-8">
                 <CardTitle className="flex items-center space-x-3 text-2xl">
                   <History className="w-7 h-7" />
@@ -952,7 +952,7 @@ export default function VerifyPage() {
                     {recentVerifications.map((verification, index) => (
                       <div
                         key={`${verification.tokenId}-${verification.network}-${index}`}
-                        className="p-6 rounded-xl border border-gray-700 hover:border-gray-600 snarbles-glass-subtle transition-all duration-200 cursor-pointer"
+                        className="p-6 rounded-xl border border-gray-700 hover:border-gray-600 glass-card transition-all duration-200 cursor-pointer"
                         onClick={() => {
                           setTokenId(verification.tokenId);
                           setNetwork(verification.network);
@@ -1012,19 +1012,19 @@ export default function VerifyPage() {
 
         {/* Enhanced Verification Progress */}
         {isVerifying && (
-          <Card className="snarbles-card-premium snarbles-border-glow">
+          <Card className="glass-card-premium snarbles-border-glow">
             <CardContent className="pt-8 p-8">
               <div className="space-y-8">
                 <div className="flex justify-between items-center text-xl">
                   <div className="flex items-center space-x-3">
                     <RefreshCw className="w-7 h-7 animate-spin text-red-400" />
-                    <span className="snarbles-body">Advanced Verification in Progress</span>
+                    <span className="text-muted-foreground">Advanced Verification in Progress</span>
                   </div>
                   <span className="font-bold snarbles-gradient-text-red text-2xl">{Math.round(progress)}%</span>
                 </div>
                 <Progress value={progress} className="h-6 bg-gray-800" />
                 <div className="text-center">
-                  <p className="snarbles-body text-lg">{currentStep}</p>
+                  <p className="text-muted-foreground text-lg">{currentStep}</p>
                   <p className="text-gray-400 text-sm mt-2">Analyzing security, metadata, and market data...</p>
                 </div>
               </div>
@@ -1038,7 +1038,7 @@ export default function VerifyPage() {
             {/* Main Results */}
             <div className="lg:col-span-8 space-y-8">
               {/* Status Overview */}
-              <Card className={`snarbles-card-premium ${verificationResult.verified ? 'snarbles-glow-green' : 'snarbles-glow-red'}`}>
+              <Card className={`glass-card-premium ${verificationResult.verified ? 'snarbles-glow-green' : 'snarbles-glow-red'}`}>
                 <CardContent className="p-8">
                   <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center space-x-6">
@@ -1047,7 +1047,7 @@ export default function VerifyPage() {
                         <h2 className="snarbles-subheading text-3xl mb-2">
                           {verificationResult.verified ? 'Token Verified ✓' : 'Verification Issues Found'}
                         </h2>
-                        <p className="snarbles-body text-lg">
+                        <p className="text-muted-foreground text-lg">
                           Security Score: <span className={`font-bold text-2xl ${getScoreColor(verificationResult.score)}`}>
                             {verificationResult.score}/100
                           </span>
@@ -1075,7 +1075,7 @@ export default function VerifyPage() {
                   {/* Enhanced Progress Bar */}
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                      <span className="snarbles-body font-medium">Comprehensive Security Assessment</span>
+                      <span className="text-muted-foreground font-medium">Comprehensive Security Assessment</span>
                       <Badge variant={getScoreBadgeVariant(verificationResult.score)} className="text-lg px-4 py-2">
                         {verificationResult.score >= 80 ? 'SAFE' : 
                          verificationResult.score >= 60 ? 'CAUTION' : 
@@ -1099,7 +1099,7 @@ export default function VerifyPage() {
               </Card>
 
               {/* Enhanced Security Checks */}
-              <Card className="snarbles-card-premium snarbles-border-glow">
+              <Card className="glass-card-premium snarbles-border-glow">
                 <CardHeader>
                   <CardTitle className="snarbles-subheading text-2xl flex items-center space-x-3">
                     <Shield className="w-6 h-6 text-red-400" />
@@ -1129,7 +1129,7 @@ export default function VerifyPage() {
                             <CheckCircle className="w-6 h-6 text-green-400" /> : 
                             <AlertTriangle className="w-6 h-6 text-red-400" />
                           }
-                          <span className="snarbles-body font-medium text-lg">
+                          <span className="text-muted-foreground font-medium text-lg">
                             {checkLabels[key as keyof typeof checkLabels] || key}
                           </span>
                         </div>
@@ -1144,7 +1144,7 @@ export default function VerifyPage() {
 
               {/* Enhanced Warnings */}
               {verificationResult.warnings.length > 0 && (
-                <Card className="snarbles-card-premium snarbles-glow-red">
+                <Card className="glass-card-premium snarbles-glow-red">
                   <CardHeader>
                     <CardTitle className="snarbles-subheading text-2xl flex items-center space-x-3 text-red-400">
                       <AlertTriangle className="w-6 h-6" />
@@ -1155,7 +1155,7 @@ export default function VerifyPage() {
                     {verificationResult.warnings.map((warning, index) => (
                       <div key={index} className="flex items-start space-x-4 p-4 bg-red-500/10 border border-red-500/30 rounded-xl hover:bg-red-500/15 transition-colors">
                         <AlertTriangle className="w-5 h-5 text-red-400 mt-1 flex-shrink-0" />
-                        <p className="snarbles-body text-red-400">{warning}</p>
+                        <p className="text-muted-foreground text-red-400">{warning}</p>
                       </div>
                     ))}
                   </CardContent>
@@ -1166,7 +1166,7 @@ export default function VerifyPage() {
             {/* Enhanced Sidebar Info */}
             <div className="lg:col-span-4 space-y-8">
               {/* Token Information */}
-              <Card className="snarbles-card-premium snarbles-border-glow">
+              <Card className="glass-card-premium snarbles-border-glow">
                 <CardHeader>
                   <CardTitle className="snarbles-subheading text-xl flex items-center space-x-2">
                     <Hash className="w-5 h-5 text-blue-400" />
@@ -1177,28 +1177,28 @@ export default function VerifyPage() {
                   {verificationResult.metadata && (
                     <div className="space-y-4">
                       <div>
-                        <Label className="snarbles-body font-medium text-gray-400">Name</Label>
-                        <p className="snarbles-body text-lg font-bold mt-1 text-white">{verificationResult.metadata.name}</p>
+                        <Label className="text-muted-foreground font-medium text-gray-400">Name</Label>
+                        <p className="text-muted-foreground text-lg font-bold mt-1 text-white">{verificationResult.metadata.name}</p>
                       </div>
                       <div>
-                        <Label className="snarbles-body font-medium text-gray-400">Symbol</Label>
-                        <p className="snarbles-body text-lg font-bold mt-1 text-white">{verificationResult.metadata.symbol}</p>
+                        <Label className="text-muted-foreground font-medium text-gray-400">Symbol</Label>
+                        <p className="text-muted-foreground text-lg font-bold mt-1 text-white">{verificationResult.metadata.symbol}</p>
                       </div>
                       <div>
-                        <Label className="snarbles-body font-medium text-gray-400">Network</Label>
-                        <p className="snarbles-body text-lg font-bold mt-1 text-white capitalize">
+                        <Label className="text-muted-foreground font-medium text-gray-400">Network</Label>
+                        <p className="text-muted-foreground text-lg font-bold mt-1 text-white capitalize">
                           {verificationResult.network.replace('-', ' ')}
                         </p>
                       </div>
                       <div>
-                        <Label className="snarbles-body font-medium text-gray-400">Total Supply</Label>
-                        <p className="snarbles-body text-lg font-bold mt-1 text-white">
+                        <Label className="text-muted-foreground font-medium text-gray-400">Total Supply</Label>
+                        <p className="text-muted-foreground text-lg font-bold mt-1 text-white">
                           {verificationResult.metadata.totalSupply?.toLocaleString() || 'Unknown'}
                         </p>
                       </div>
                       <div>
-                        <Label className="snarbles-body font-medium text-gray-400">Decimals</Label>
-                        <p className="snarbles-body text-lg font-bold mt-1 text-white">{verificationResult.metadata.decimals}</p>
+                        <Label className="text-muted-foreground font-medium text-gray-400">Decimals</Label>
+                        <p className="text-muted-foreground text-lg font-bold mt-1 text-white">{verificationResult.metadata.decimals}</p>
                       </div>
                     </div>
                   )}
@@ -1226,7 +1226,7 @@ export default function VerifyPage() {
 
               {/* Market Metrics */}
               {verificationResult.metrics && (
-                <Card className="snarbles-card-premium snarbles-border-glow">
+                <Card className="glass-card-premium snarbles-border-glow">
                   <CardHeader>
                     <CardTitle className="snarbles-subheading text-xl flex items-center space-x-2">
                       <BarChart3 className="w-5 h-5 text-green-400" />
@@ -1235,26 +1235,26 @@ export default function VerifyPage() {
                   </CardHeader>
                   <CardContent className="p-6 space-y-4">
                     <div className="grid grid-cols-1 gap-4">
-                      <div className="text-center p-4 snarbles-glass-subtle rounded-xl">
-                        <p className="snarbles-body text-sm text-gray-400">Holders</p>
+                      <div className="text-center p-4 glass-card rounded-xl">
+                        <p className="text-muted-foreground text-sm text-gray-400">Holders</p>
                         <p className="snarbles-gradient-text-green font-bold text-lg">
                           {verificationResult.metrics.holders?.toLocaleString() || 'N/A'}
                         </p>
                       </div>
-                      <div className="text-center p-4 snarbles-glass-subtle rounded-xl">
-                        <p className="snarbles-body text-sm text-gray-400">Liquidity</p>
+                      <div className="text-center p-4 glass-card rounded-xl">
+                        <p className="text-muted-foreground text-sm text-gray-400">Liquidity</p>
                         <p className="snarbles-gradient-text-blue font-bold text-lg">
                           {verificationResult.metrics.liquidity || 'N/A'}
                         </p>
                       </div>
-                      <div className="text-center p-4 snarbles-glass-subtle rounded-xl">
-                        <p className="snarbles-body text-sm text-gray-400">Market Cap</p>
+                      <div className="text-center p-4 glass-card rounded-xl">
+                        <p className="text-muted-foreground text-sm text-gray-400">Market Cap</p>
                         <p className="snarbles-gradient-text-purple font-bold text-lg">
                           {verificationResult.metrics.marketCap || 'N/A'}
                         </p>
                       </div>
-                      <div className="text-center p-4 snarbles-glass-subtle rounded-xl">
-                        <p className="snarbles-body text-sm text-gray-400">24h Volume</p>
+                      <div className="text-center p-4 glass-card rounded-xl">
+                        <p className="text-muted-foreground text-sm text-gray-400">24h Volume</p>
                         <p className="snarbles-gradient-text-yellow font-bold text-lg">
                           {verificationResult.metrics.volume24h || 'N/A'}
                         </p>
@@ -1265,7 +1265,7 @@ export default function VerifyPage() {
               )}
 
               {/* External Resources */}
-              <Card className="snarbles-card-premium snarbles-border-glow">
+              <Card className="glass-card-premium snarbles-border-glow">
                 <CardHeader>
                   <CardTitle className="snarbles-subheading text-xl flex items-center space-x-2">
                     <Link className="w-5 h-5 text-purple-400" />
@@ -1276,7 +1276,7 @@ export default function VerifyPage() {
                   {verificationResult.explorerUrl && (
                     <Button
                       onClick={() => window.open(verificationResult.explorerUrl, '_blank')}
-                      className="w-full snarbles-button-primary"
+                      className="w-full bg-primary hover:bg-primary/90"
                     >
                       <ExternalLink className="w-4 h-4 mr-2" />
                       View on Explorer
@@ -1308,7 +1308,7 @@ export default function VerifyPage() {
               </Card>
 
               {/* Verification Timestamp */}
-              <Card className="snarbles-card-premium snarbles-border-glow">
+              <Card className="glass-card-premium snarbles-border-glow">
                 <CardContent className="p-6 text-center">
                   <div className="flex items-center justify-center space-x-2 mb-2">
                     <Clock className="w-4 h-4 text-gray-400" />

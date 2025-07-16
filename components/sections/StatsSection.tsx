@@ -7,7 +7,6 @@ import {
   Users, 
   Zap, 
   DollarSign,
-  ArrowUpRight,
   CheckCircle,
   Sparkles,
   Globe
@@ -20,9 +19,7 @@ const mainStats = [
     label: 'Tokens Created',
     subtitle: 'Across all networks',
     icon: Zap,
-    color: 'text-red-400',
-    bgColor: 'bg-red-500/10',
-    borderColor: 'border-red-500/20'
+    color: 'text-primary'
   },
   {
     id: 'users',
@@ -30,9 +27,7 @@ const mainStats = [
     label: 'Happy Creators',
     subtitle: 'Worldwide',
     icon: Users,
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/10',
-    borderColor: 'border-blue-500/20'
+    color: 'text-blue-500'
   },
   {
     id: 'value',
@@ -40,9 +35,7 @@ const mainStats = [
     label: 'Total Value',
     subtitle: 'USD equivalent',
     icon: DollarSign,
-    color: 'text-green-400',
-    bgColor: 'bg-green-500/10',
-    borderColor: 'border-green-500/20',
+    color: 'text-green-500',
     prefix: '$',
     format: 'currency'
   },
@@ -52,9 +45,7 @@ const mainStats = [
     label: 'Success Rate',
     subtitle: 'Deployment success',
     icon: CheckCircle,
-    color: 'text-emerald-400',
-    bgColor: 'bg-emerald-500/10',
-    borderColor: 'border-emerald-500/20',
+    color: 'text-emerald-500',
     suffix: '%'
   }
 ];
@@ -102,8 +93,8 @@ function AnimatedCounter({
   const [current, setCurrent] = useState(0);
 
   useEffect(() => {
-    let start = 0;
     const increment = value / (duration / 16);
+    let start = 0;
     
     const timer = setInterval(() => {
       start += increment;
@@ -149,20 +140,17 @@ export default function StatsSection() {
   }, []);
 
   return (
-    <section id="stats-section" className="py-24 relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-gray-900/50 to-black/30" />
-      
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="stats-section" className="py-16 relative">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
             Platform{' '}
-            <span className="bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary/90 to-primary bg-clip-text text-transparent">
               Performance
             </span>
           </h2>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Real-time metrics showcasing the trust and success of our token creation platform
           </p>
         </div>
@@ -174,24 +162,16 @@ export default function StatsSection() {
             return (
               <Card 
                 key={stat.id}
-                className={`
-                  p-6 bg-black/40 backdrop-blur-xl border ${stat.borderColor} 
-                  hover:bg-black/60 transition-all duration-500 group
-                  hover:scale-105 hover:shadow-2xl
-                `}
-                style={{
-                  animationDelay: `${index * 150}ms`
-                }}
+                className="p-6 bg-card/50 backdrop-blur-sm border-border hover:bg-card/70 transition-all duration-300 group"
               >
                 <div className="flex items-start justify-between mb-4">
-                  <div className={`p-3 rounded-2xl ${stat.bgColor} group-hover:scale-110 transition-transform duration-300`}>
+                  <div className="p-3 rounded-lg bg-muted/50 group-hover:bg-muted/70 transition-colors duration-300">
                     <Icon className={`w-6 h-6 ${stat.color}`} />
                   </div>
-                  <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors" />
                 </div>
                 
                 <div className="space-y-2">
-                  <div className={`text-3xl font-bold text-white ${stat.color}`}>
+                  <div className="text-2xl font-bold text-foreground">
                     {isVisible ? (
                       <AnimatedCounter 
                         value={stat.value}
@@ -203,10 +183,10 @@ export default function StatsSection() {
                       '0'
                     )}
                   </div>
-                  <div className="text-white font-semibold">
+                  <div className="text-foreground font-medium">
                     {stat.label}
                   </div>
-                  <div className="text-sm text-gray-400">
+                  <div className="text-sm text-muted-foreground">
                     {stat.subtitle}
                   </div>
                 </div>
@@ -216,7 +196,7 @@ export default function StatsSection() {
         </div>
 
         {/* Additional Stats */}
-        <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-3xl p-8">
+        <div className="bg-card/30 backdrop-blur-sm border border-border rounded-lg p-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {additionalStats.map((stat, index) => {
               const Icon = stat.icon;
@@ -226,14 +206,14 @@ export default function StatsSection() {
                   className="text-center space-y-3 group"
                 >
                   <div className="flex justify-center mb-2">
-                    <div className="p-2 bg-gray-800/50 rounded-xl group-hover:bg-red-500/20 transition-colors duration-300">
-                      <Icon className="w-5 h-5 text-gray-400 group-hover:text-red-400 transition-colors duration-300" />
+                    <div className="p-2 bg-muted/50 rounded-lg group-hover:bg-primary/20 transition-colors duration-300">
+                      <Icon className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors duration-300" />
                     </div>
                   </div>
-                  <div className="text-2xl font-bold text-white">
+                  <div className="text-xl font-bold text-foreground">
                     {stat.value}
                   </div>
-                  <div className="text-sm text-gray-400">
+                  <div className="text-sm text-muted-foreground">
                     {stat.label}
                   </div>
                 </div>
@@ -243,16 +223,16 @@ export default function StatsSection() {
         </div>
 
         {/* Trust Badges */}
-        <div className="mt-16 text-center">
-          <p className="text-gray-400 mb-8">Powered by industry-leading technology</p>
-          <div className="flex justify-center items-center space-x-12 opacity-60">
-            <div className="text-gray-400 font-semibold">Algorand</div>
-            <div className="text-gray-400 font-semibold">Solana</div>
-            <div className="text-gray-400 font-semibold">Supabase</div>
-            <div className="text-gray-400 font-semibold">Vercel</div>
+        <div className="mt-12 text-center">
+          <p className="text-muted-foreground mb-6">Powered by industry-leading technology</p>
+          <div className="flex justify-center items-center space-x-8 opacity-60">
+            <div className="text-muted-foreground font-medium">Algorand</div>
+            <div className="text-muted-foreground font-medium">Solana</div>
+            <div className="text-muted-foreground font-medium">Supabase</div>
+            <div className="text-muted-foreground font-medium">Vercel</div>
           </div>
         </div>
       </div>
     </section>
   );
-} 
+}

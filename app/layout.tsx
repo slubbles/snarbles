@@ -1,7 +1,8 @@
-    import './globals.css';
+import './globals.css';
 import type { Metadata } from 'next';
 import Footer from '@/components/layout/Footer';
 import Navbar from '@/components/layout/Navbar';
+import BoltBadge from '@/components/BoltBadge';
 import { Toaster } from '@/components/ui/toaster';
 import { WalletAuthProvider } from '@/components/providers/WalletAuthProvider';
 import ClientWalletProvider from '@/components/providers/ClientWalletProvider';
@@ -92,13 +93,14 @@ function ServiceWorkerRegistration() {
             <link rel="dns-prefetch" href="https://testnet-idx.algonode.cloud" />
             <link rel="dns-prefetch" href="https://mainnet-idx.algonode.cloud" />
           </head>
-          <body className="font-inter antialiased snarbles-background">
+          <body className="font-inter antialiased bg-background">
             <ServiceWorkerRegistration />
             <SkipToMain />
             <ClientWalletProvider>
               <WalletAuthProvider>
                 <div className="relative min-h-screen">
                   <Navbar />
+                  <BoltBadge />
                   <main id="main-content" className="pt-16" role="main">
                     {children}
                   </main>
