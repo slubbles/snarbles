@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
-import { getCreditsBalance, purchaseCreditsWithAlgo } from '@/lib/enhanced-credit-system';
+import { getCreditsBalance, purchaseCreditsWithAlgo, PRICING } from '@/lib/enhanced-payment-system';
 
 export default function CreditTopUp() {
   const [userBalance, setUserBalance] = useState<number>(0);
@@ -48,6 +48,78 @@ export default function CreditTopUp() {
 
   const handlePurchaseCredits = async (algoAmount: number) => {
     if (!walletAddress || walletType !== 'algorand') {
+      toast({
+        title: "Algorand Wallet Required",
+        description: "Please connect an Algorand wallet to purchase credits with ALGO",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsPurchasing(true);
+    try {
+      // Mock signing function - replace with actual wallet signing
+      const mockSignTransaction = async (txn: any) => {
+        console.log('Signing transaction:', txn);
+        // This would use actual wallet signing in production
+        return new Uint8Array([1, 2, 3, 4, 5]);
+      };
+
+      const result = await purchaseCreditsWithAlgo(
+        walletAddress,
+        algoAmount,
+        mockSignTransaction
+      );
+
+      if (result.success) {
+        toast({
+          title: "Credits Purchased Successfully!",
+          description: `You received ${result.details?.creditsReceived} credits for ${algoAmount} ALGO`,
+        });
+        
+        // Reload balance
+        await loadUserBalance();
+      } else {
+        throw new Error(result.error || 'Purchase failed');
+      }
+    } catch (error) {
+      console.error('Error purchasing credits:', error);
+      toast({
+        title: "Purchase Failed",
+        description: error instanceof Error ? error.message : 'Failed to purchase credits',
+        variant: "destructive",
+      });
+    } finally {
+      setIsPurchasing(false);
+    }
+  };
+
+  const purchaseOptions = [
+    {
+      algo: 5,
+      credits: 10,
+      bonus: 0,
+      popular: false
+    },
+    {
+      algo: 10,
+      credits: 20,
+      bonus: 0,
+      popular: true
+    },
+    {
+      algo: 25,
+      credits: 50,
+      bonus: 5,
+      popular: false
+    },
+    {
+      algo: 50,
+      credits: 100,
+      bonus: 15,
+      popular: false
+    }
+  ];
       toast({
         title: 'Error',
         description: 'Algorand wallet required for ALGO payments',

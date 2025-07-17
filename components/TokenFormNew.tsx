@@ -13,9 +13,8 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { hasEnoughCredits, spendCreditsForTokenCreation } from '@/lib/credit-system';
-import { validatePaymentForTokenCreation, type PaymentMethod } from '@/lib/enhanced-credit-system';
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
-import PaymentSelector from '@/components/PaymentSelector';
+import PaymentSelectorNew, { type PaymentMethod } from '@/components/PaymentSelectorNew';
 // Import token creation functions - will be implemented via existing components
 // import { createAlgorandToken } from '@/lib/algorand';
 // import { createTokenOnChain } from '@/lib/solana';
@@ -305,11 +304,24 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
   const getNetworkCost = (network: string): number => {
     switch (network) {
       case 'algorand-mainnet':
-        return 5;
+        return 5; // 5 credits for mainnet
       case 'algorand-testnet':
       case 'solana-devnet':
       case 'solana-testnet':
+        return 0; // Free for testnets
+      default:
         return 0;
+    }
+  };
+
+  const getAlgoCost = (network: string): number => {
+    switch (network) {
+      case 'algorand-mainnet':
+        return 10; // 10 ALGO for direct payment
+      case 'algorand-testnet':
+      case 'solana-devnet':
+      case 'solana-testnet':
+        return 0; // Free for testnets
       default:
         return 0;
     }
