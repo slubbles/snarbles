@@ -15,6 +15,11 @@ import { useToast } from '@/hooks/use-toast';
 import { hasEnoughCredits, spendCreditsForTokenCreation } from '@/lib/credit-system';
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
 import PaymentSelectorNew, { type PaymentMethod } from '@/components/PaymentSelectorNew';
+import { 
+  validatePaymentForTokenCreation, 
+  executeTokenCreationPayment,
+  getCreditsBalance
+} from '@/lib/enhanced-payment-system';
 // Import token creation functions - will be implemented via existing components
 // import { createAlgorandToken } from '@/lib/algorand';
 // import { createTokenOnChain } from '@/lib/solana';
@@ -48,6 +53,7 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
   const [previewLogoUrl, setPreviewLogoUrl] = useState('');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>('credits');
   const [paymentInfo, setPaymentInfo] = useState<any>(null);
+  const [userCredits, setUserCredits] = useState<number>(0);
   
   // Logo upload states
   const [isUploading, setIsUploading] = useState(false);
@@ -65,6 +71,26 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
       setPreviewLogoUrl(tokenData.logoUrl);
     }
   }, [tokenData.logoUrl]);
+
+  // Load user credits
+  useEffect(() => {
+    const loadUserCredits = async () => {
+      if (!walletAddress) {
+        setUserCredits(0);
+        return;
+      }
+      
+      try {
+        const result = await getCreditsBalance(walletAddress);
+        setUserCredits(result.success ? (result.balance || 0) : 0);
+      } catch (error) {
+        console.error('Error loading user credits:', error);
+        setUserCredits(0);
+      }
+    };
+
+    loadUserCredits();
+  }, [walletAddress]);
 
   // File upload validation
   const validateFile = (file: File): string | null => {
@@ -344,11 +370,11 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
       // Validate payment method
       const paymentValidation = await validatePaymentForTokenCreation(
         walletAddress!,
-        selectedPaymentMethod,
-        tokenData.network
+        tokenData.network,
+        selectedPaymentMethod
       );
 
-      if (!paymentValidation.success || !paymentValidation.can_proceed) {
+      if (!paymentValidation.success) {
         toast({
           title: "Payment Error",
           description: paymentValidation.error || "Payment validation failed",
@@ -386,7 +412,7 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
               `Token creation: ${tokenData.name} (${tokenData.symbol}) on ${tokenData.network}`
             );
           }
-        } else if (selectedPaymentMethod === 'direct_algo') {
+        } else if (selectedPaymentMethod === 'algo_direct') {
           // Direct ALGO payment would be processed here
           console.log('Direct ALGO payment processed:', paymentInfo);
         }
@@ -1078,20 +1104,10 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <PaymentSelector
+          <PaymentSelectorNew
+            creditsRequired={5}
+            algoRequired={10}
             network={tokenData.network}
-            onPaymentMethodSelected={(method, info) => {
-              setSelectedPaymentMethod(method);
-              setPaymentInfo(info);
-            }}
-            onPaymentCompleted={(success, details) => {
-              if (success) {
-                toast({
-                  title: "Payment Successful",
-                  description: "Payment processed successfully",
-                });
-              }
-            }}
           />
         </CardContent>
       </Card>

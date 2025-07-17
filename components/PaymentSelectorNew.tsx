@@ -7,41 +7,58 @@ import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { CreditCard, Wallet, AlertCircle, CheckCircle, Info, Zap, Shield } from 'lucide-react';
+import { CreditCard, Wallet, AlertCircle, Info } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { usePaymentState, usePaymentSelectors } from '@/hooks/usePaymentState';
 
 export type PaymentMethod = 'credits' | 'algo_direct';
 
-interface PaymentSelectorProps {
-  selectedMethod: PaymentMethod;
-  onMethodChange: (method: PaymentMethod) => void;
-  userCredits: number;
+interface PaymentSelectorNewProps {
   creditsRequired: number;
   algoRequired: number;
   network: string;
   className?: string;
 }
 
-export default function PaymentSelector({
-  selectedMethod,
-  onMethodChange,
-  userCredits,
+export default function PaymentSelectorNew({
   creditsRequired,
   algoRequired,
   network,
   className = ''
-}: PaymentSelectorProps) {
-  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+}: PaymentSelectorNewProps) {
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
-  const { walletAddress, walletType } = useWalletAuth();
+  const { walletAddress } = useWalletAuth();
   const { toast } = useToast();
+  
+  // Use centralized payment state
+  const {
+    selectedMethod,
+    userCredits,
+    walletBalance,
+    setSelectedMethod,
+    setWalletBalance,
+    setIsConnected,
+    setNetwork
+  } = usePaymentState();
+  
+  // Use payment selectors
+  const {
+    hasEnoughCredits,
+    hasEnoughAlgo,
+    isAlgorandNetwork
+  } = usePaymentSelectors();
 
-  // Check if methods are available
-  const hasEnoughCredits = userCredits >= creditsRequired;
-  const hasEnoughAlgo = walletBalance !== null && walletBalance >= algoRequired;
-  const isAlgorandNetwork = network.includes('algorand');
+  // Update network when prop changes
+  useEffect(() => {
+    setNetwork(network.includes('algorand') ? 'algorand' : 'solana');
+  }, [network, setNetwork]);
+
+  // Update connection state
+  useEffect(() => {
+    setIsConnected(!!walletAddress);
+  }, [walletAddress, setIsConnected]);
 
   // Load wallet balance
   useEffect(() => {
@@ -50,11 +67,11 @@ export default function PaymentSelector({
       
       setIsLoadingBalance(true);
       try {
-        // Mock balance check - replace with actual implementation
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setWalletBalance(25.5); // Mock balance
+        // Mock balance loading - replace with actual implementation
+        const balance = Math.random() * 100; // Mock balance
+        setWalletBalance(balance);
       } catch (error) {
-        console.error('Error loading wallet balance:', error);
+        console.error('Failed to load wallet balance:', error);
         setWalletBalance(null);
       } finally {
         setIsLoadingBalance(false);
@@ -62,24 +79,30 @@ export default function PaymentSelector({
     };
 
     loadWalletBalance();
-  }, [walletAddress, isAlgorandNetwork]);
+  }, [walletAddress, isAlgorandNetwork, setWalletBalance]);
 
+  // Handle method change
+  const handleMethodChange = (method: PaymentMethod) => {
+    setSelectedMethod(method);
+  };
+
+  // Payment method configurations
   const paymentMethods = [
     {
-      id: 'credits' as PaymentMethod,
+      id: 'credits' as const,
       name: 'Credits',
-      description: 'Use your Snarbles credits',
+      description: 'Fast and convenient payment using your credit balance',
       icon: CreditCard,
       available: hasEnoughCredits,
       cost: `${creditsRequired} credits`,
-      balance: `${userCredits} available`,
+      balance: `${userCredits} credits`,
       recommended: true,
       disabled: !hasEnoughCredits
     },
     {
-      id: 'algo_direct' as PaymentMethod,
+      id: 'algo_direct' as const,
       name: 'Direct ALGO Payment',
-      description: 'Pay directly from your wallet',
+      description: 'Pay directly from your Algorand wallet',
       icon: Wallet,
       available: hasEnoughAlgo,
       cost: `${algoRequired} ALGO`,
@@ -90,87 +113,95 @@ export default function PaymentSelector({
   ];
 
   return (
-    <Card className={`border-2 border-muted transition-all duration-200 ${className}`}>
+    <Card className={`glass-card snarbles-card border-2 border-[rgb(38,38,38)] transition-all duration-200 ${className}`}>
       <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold flex items-center gap-2">
-          <CreditCard className="w-5 h-5 text-primary" />
+        <CardTitle className="snarbles-heading text-lg font-semibold flex items-center gap-2">
+          <CreditCard className="w-5 h-5 text-[rgb(239,68,68)]" />
           Payment Method
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="space-y-6">
-        <RadioGroup
-          value={selectedMethod}
-          onValueChange={(value) => onMethodChange(value as PaymentMethod)}
-          className="space-y-4"
-        >
-          {paymentMethods.map((method) => {
-            const Icon = method.icon;
-            
-            return (
-              <div key={method.id} className="relative">
-                <div className={`
-                  border-2 rounded-lg p-4 transition-all duration-200 cursor-pointer
-                  ${selectedMethod === method.id 
-                    ? 'ring-2 ring-primary border-primary bg-primary/5' 
-                    : 'border-muted hover:border-primary/50'
-                  }
-                  ${method.disabled ? 'opacity-50 cursor-not-allowed' : ''}
-                `}>
-                  <div className="flex items-start gap-3">
-                    <RadioGroupItem 
-                      value={method.id} 
-                      id={method.id}
-                      disabled={method.disabled}
-                      className="mt-1"
-                    />
+      <CardContent className="space-y-4">
+        <RadioGroup value={selectedMethod || ''} onValueChange={handleMethodChange}>
+          {paymentMethods.map((method) => (
+            <div key={method.id} className="space-y-2">
+              <div className={`
+                glass-card p-4 rounded-lg border-2 cursor-pointer transition-all duration-200
+                ${selectedMethod === method.id 
+                  ? 'border-[rgb(239,68,68)] bg-[rgb(239,68,68)]/10' 
+                  : 'border-[rgb(38,38,38)] hover:border-[rgb(163,163,163)]'
+                }
+                ${method.disabled ? 'opacity-50 cursor-not-allowed' : ''}
+              `}>
+                <Label 
+                  htmlFor={method.id}
+                  className={`
+                    flex items-center gap-3 cursor-pointer
+                    ${method.disabled ? 'cursor-not-allowed' : ''}
+                  `}
+                >
+                  <RadioGroupItem 
+                    id={method.id}
+                    value={method.id}
+                    disabled={method.disabled}
+                    className="text-[rgb(239,68,68)] border-[rgb(163,163,163)]"
+                  />
+                  
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className={`
+                      p-2 rounded-lg 
+                      ${method.id === 'credits' ? 'bg-[rgb(239,68,68)]/20' : 'bg-[rgb(38,38,38)]'}
+                    `}>
+                      <method.icon className={`
+                        w-5 h-5 
+                        ${method.id === 'credits' ? 'text-[rgb(239,68,68)]' : 'text-[rgb(163,163,163)]'}
+                      `} />
+                    </div>
                     
-                    <div className="flex-1 min-w-0">
-                      <Label 
-                        htmlFor={method.id} 
-                        className={`
-                          flex items-center gap-2 font-medium mb-1 cursor-pointer
-                          ${method.disabled ? 'text-muted-foreground' : 'text-foreground'}
-                        `}
-                      >
-                        <Icon className="w-4 h-4" />
-                        {method.name}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`
+                          text-base font-semibold
+                          ${method.disabled ? 'text-[rgb(163,163,163)]' : 'text-[rgb(254,254,235)]'}
+                        `}>
+                          {method.name}
+                        </span>
+                        
                         {method.recommended && (
-                          <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-400 border-green-500/20">
+                          <Badge className="bg-[rgb(239,68,68)] text-[rgb(254,254,235)] text-xs">
                             Recommended
                           </Badge>
                         )}
-                      </Label>
+                      </div>
                       
-                      <p className="text-sm text-muted-foreground mb-2">
+                      <p className="snarbles-body text-sm text-[rgb(163,163,163)] mt-1">
                         {method.description}
                       </p>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-base font-semibold text-foreground">
-                            {method.cost}
-                          </span>
-                          {method.available && (
-                            <CheckCircle className="w-4 h-4 text-green-400" />
-                          )}
-                        </div>
-                        
-                        <span className="text-sm text-muted-foreground">
-                          {method.balance}
-                        </span>
-                      </div>
                     </div>
                   </div>
-                </div>
+                  
+                  {/* Payment Details */}
+                  <div className="mt-3 pt-3 border-t border-[rgb(38,38,38)] grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="snarbles-body text-[rgb(163,163,163)]">Cost:</span>
+                      <span className="snarbles-heading ml-2 text-[rgb(254,254,235)]">{method.cost}</span>
+                    </div>
+                    <div>
+                      <span className="snarbles-body text-[rgb(163,163,163)]">Balance:</span>
+                      <span className={`ml-2 font-medium ${method.available ? 'text-green-400' : 'text-red-400'}`}>
+                        {method.balance}
+                      </span>
+                    </div>
+                  </div>
+                </Label>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </RadioGroup>
 
-        <Separator className="bg-muted" />
+        <Separator className="bg-[rgb(38,38,38)]" />
 
-        {/* Payment Method Info */}
+        {/* Method Information */}
         <div className="space-y-3">
           {selectedMethod === 'credits' && (
             <Alert className="border-blue-500/20 bg-blue-500/10">
@@ -197,18 +228,6 @@ export default function PaymentSelector({
             <AlertCircle className="w-4 h-4 text-red-400" />
             <AlertDescription className="text-red-300">
               <strong>Insufficient Credits:</strong> You need {creditsRequired} credits but only have {userCredits}.
-              <Button 
-                variant="link" 
-                className="p-0 h-auto text-red-300 hover:text-red-200 ml-2"
-                onClick={() => {
-                  toast({
-                    title: "Top Up Credits",
-                    description: "Redirecting to credit top-up...",
-                  });
-                }}
-              >
-                Top up credits →
-              </Button>
             </AlertDescription>
           </Alert>
         )}
@@ -232,21 +251,21 @@ export default function PaymentSelector({
         )}
 
         {/* Pricing Comparison */}
-        <div className="border-2 border-muted rounded-lg p-4 bg-muted/5">
-          <h4 className="text-base font-semibold mb-3">💰 Pricing Comparison</h4>
+        <div className="glass-card border-2 border-[rgb(38,38,38)] rounded-lg p-4 bg-[rgb(38,38,38)]/5">
+          <h4 className="snarbles-heading text-base font-semibold mb-3">💰 Pricing Comparison</h4>
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Credits</span>
-              <span className="text-base font-semibold">{creditsRequired} credits</span>
+              <span className="snarbles-body text-sm text-[rgb(163,163,163)]">Credits</span>
+              <span className="snarbles-heading text-base font-semibold">{creditsRequired} credits</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Direct ALGO</span>
-              <span className="text-base font-semibold">{algoRequired} ALGO</span>
+              <span className="snarbles-body text-sm text-[rgb(163,163,163)]">Direct ALGO</span>
+              <span className="snarbles-heading text-base font-semibold">{algoRequired} ALGO</span>
             </div>
-            <Separator className="bg-muted" />
+            <Separator className="bg-[rgb(38,38,38)]" />
             <div className="flex justify-between items-center">
-              <span className="text-sm text-green-400">Savings with Credits</span>
-              <span className="text-base font-semibold text-green-400">
+              <span className="snarbles-body text-sm text-green-400">Savings with Credits</span>
+              <span className="snarbles-heading text-base font-semibold text-green-400">
                 {((algoRequired - (creditsRequired * 2)) / algoRequired * 100).toFixed(0)}% off
               </span>
             </div>

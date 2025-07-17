@@ -1,7 +1,12 @@
 import { supabase, isSupabaseAvailable } from './supabase-client';
 import { getCreditsBalance, spendCreditsForTokenCreation } from './credit-system';
+import { getAlgorandClient } from './algorand';
+import algosdk from 'algosdk';
 
 export type PaymentMethod = 'credits' | 'algo_direct';
+
+// Re-export functions from credit-system for convenience
+export { getCreditsBalance } from './credit-system';
 
 export interface PaymentResult {
   success: boolean;
@@ -23,6 +28,26 @@ export const PRICING = {
 };
 
 /**
+ * Get real ALGO balance for a wallet
+ */
+async function getAlgoBalance(walletAddress: string, network: string): Promise<number> {
+  try {
+    if (!network.includes('algorand')) {
+      return 0;
+    }
+    
+    const algodClient = getAlgorandClient(network);
+    const accountInfo = await algodClient.accountInformation(walletAddress).do();
+    
+    // Convert from microALGOs to ALGOs
+    return Number(accountInfo.amount) / 1000000;
+  } catch (error) {
+    console.error('Error getting ALGO balance:', error);
+    return 0;
+  }
+}
+
+/**
  * Get payment options available for a user
  */
 export async function getPaymentOptions(walletAddress: string, network: string) {
@@ -32,6 +57,12 @@ export async function getPaymentOptions(walletAddress: string, network: string) 
     
     const isMainnet = network.includes('mainnet');
     const isAlgorand = network.includes('algorand');
+    
+    // Get real ALGO balance if on Algorand
+    let userAlgoBalance = 0;
+    if (isAlgorand) {
+      userAlgoBalance = await getAlgoBalance(walletAddress, network);
+    }
     
     return {
       success: true,
@@ -43,8 +74,9 @@ export async function getPaymentOptions(walletAddress: string, network: string) 
           enabled: isMainnet
         },
         algo_direct: {
-          available: true, // Will be validated during payment
+          available: userAlgoBalance >= PRICING.ALGO_REQUIRED,
           required: PRICING.ALGO_REQUIRED,
+          balance: userAlgoBalance,
           enabled: isMainnet && isAlgorand
         },
         testnet_free: {
@@ -73,20 +105,33 @@ export async function purchaseCreditsWithAlgo(
     // Calculate credits to receive
     const creditsToReceive = Math.floor(algoAmount * PRICING.ALGO_TO_CREDIT_RATE);
     
-    // Create payment transaction (mock implementation)
-    const paymentTxn = {
-      from: walletAddress,
-      to: 'SNARBLES_PAYMENT_ADDRESS', // Replace with actual address
+    // Get Algorand client
+    const algodClient = getAlgorandClient('algorand-testnet'); // Default to testnet for now
+    
+    // Get suggested transaction parameters
+    const suggestedParams = await algodClient.getTransactionParams().do();
+    
+    // Platform payment address - replace with actual address
+    const SNARBLES_PAYMENT_ADDRESS = 'SNARBLES_PAYMENT_ADDRESS_HERE';
+    
+    // Create payment transaction
+    const paymentTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+      sender: walletAddress,
+      receiver: SNARBLES_PAYMENT_ADDRESS,
       amount: algoAmount * 1000000, // Convert to microALGOs
-      type: 'credit_purchase',
-      note: `Purchase ${creditsToReceive} credits`
-    };
+      note: new TextEncoder().encode(`Purchase ${creditsToReceive} credits`),
+      suggestedParams
+    });
     
     // Sign transaction
     const signedTxn = await signTransaction(paymentTxn);
     
-    // Simulate transaction broadcast
-    const txHash = `mock_tx_${Date.now()}`;
+    // Broadcast transaction
+    const txnResponse = await algodClient.sendRawTransaction(signedTxn).do();
+    const txHash = txnResponse.txid;
+    
+    // Wait for confirmation
+    await algosdk.waitForConfirmation(algodClient, txHash, 4);
     
     // Add credits to user account
     if (isSupabaseAvailable()) {
@@ -107,11 +152,17 @@ export async function purchaseCreditsWithAlgo(
         throw new Error(`Failed to record credit purchase: ${error.message}`);
       }
       
+      // Get current balance and update
+      const balanceResult = await getCreditsBalance(walletAddress);
+      const currentBalance = balanceResult.success ? (balanceResult.balance || 0) : 0;
+      const newBalance = currentBalance + creditsToReceive;
+      
       // Update user balance
       const { error: balanceError } = await supabase
         .from('user_profiles')
-        .update({
-          credits_balance: creditsToReceive, // This would need to be calculated properly with current balance
+        .upsert({
+          wallet_address: walletAddress,
+          credits_balance: newBalance,
           updated_at: new Date().toISOString()
         })
         .eq('wallet_address', walletAddress);
@@ -151,20 +202,33 @@ export async function processAlgoPayment(
       throw new Error('Direct ALGO payment only available on Algorand networks');
     }
     
+    // Get Algorand client
+    const algodClient = getAlgorandClient(network);
+    
+    // Get suggested transaction parameters
+    const suggestedParams = await algodClient.getTransactionParams().do();
+    
+    // Platform payment address - replace with actual address
+    const SNARBLES_PAYMENT_ADDRESS = 'SNARBLES_PAYMENT_ADDRESS_HERE';
+    
     // Create payment transaction
-    const paymentTxn = {
-      from: walletAddress,
-      to: 'SNARBLES_PAYMENT_ADDRESS', // Replace with actual address
+    const paymentTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+      sender: walletAddress,
+      receiver: SNARBLES_PAYMENT_ADDRESS,
       amount: PRICING.ALGO_REQUIRED * 1000000, // Convert to microALGOs
-      type: 'token_creation_payment',
-      note: `Direct payment for token creation on ${network}`
-    };
+      note: new TextEncoder().encode(`Direct payment for token creation on ${network}`),
+      suggestedParams
+    });
     
     // Sign transaction
     const signedTxn = await signTransaction(paymentTxn);
     
-    // Simulate transaction broadcast
-    const txHash = `mock_payment_tx_${Date.now()}`;
+    // Broadcast transaction
+    const txnResponse = await algodClient.sendRawTransaction(signedTxn).do();
+    const txHash = txnResponse.txid;
+    
+    // Wait for confirmation
+    await algosdk.waitForConfirmation(algodClient, txHash, 4);
     
     // Record payment
     if (isSupabaseAvailable()) {

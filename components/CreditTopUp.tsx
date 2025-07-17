@@ -120,6 +120,9 @@ export default function CreditTopUp() {
       popular: false
     }
   ];
+
+  const handlePurchase = async (algoAmount: number) => {
+    if (walletType !== 'algorand') {
       toast({
         title: 'Error',
         description: 'Algorand wallet required for ALGO payments',
