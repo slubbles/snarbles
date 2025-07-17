@@ -81,6 +81,29 @@ export default function TokenCreationSuccess({
     onClose();
   };
 
+  const handleViewConfirmationPage = () => {
+    // Store token data for the confirmation page
+    localStorage.setItem(`token_${tokenData.assetId}`, JSON.stringify({
+      name: tokenData.name,
+      symbol: tokenData.symbol,
+      createdAt: new Date().toISOString(),
+      totalSupply: tokenData.totalSupply,
+      decimals: tokenData.decimals
+    }));
+
+    // Navigate to dedicated confirmation page
+    const params = new URLSearchParams({
+      assetId: tokenData.assetId.toString(),
+      txId: tokenData.transactionId,
+      network: tokenData.network,
+      name: tokenData.name,
+      symbol: tokenData.symbol
+    });
+    
+    router.push(`/token-confirmation?${params.toString()}`);
+    onClose();
+  };
+
   const formatSupply = (supply?: number, decimals?: number) => {
     if (!supply || !decimals) return 'N/A';
     return (supply / Math.pow(10, decimals)).toLocaleString();
@@ -208,6 +231,15 @@ export default function TokenCreationSuccess({
               >
                 <ExternalLink className="w-4 h-4" />
                 View on Explorer
+              </Button>
+
+              <Button
+                onClick={handleViewConfirmationPage}
+                variant="outline"
+                className="w-full border-[rgb(239,68,68)] text-[rgb(239,68,68)] hover:bg-[rgb(239,68,68)]/10 flex items-center gap-2"
+              >
+                <CheckCircle className="w-4 h-4" />
+                View Full Details
               </Button>
 
               <div className="grid grid-cols-2 gap-3">
