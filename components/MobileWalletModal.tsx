@@ -179,45 +179,32 @@ export function MobileWalletModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto snarbles-card border-gray-700">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <DialogTitle className="text-xl font-bold">
-                Connect Your Wallet
-              </DialogTitle>
-              <DialogDescription>
-                Choose your preferred wallet to get started
-              </DialogDescription>
-            </div>
-            <div className="flex items-center space-x-2">
-              {isMobileDevice && (
-                <Badge variant="outline" className="text-xs">
-                  <Smartphone className="w-3 h-3 mr-1" />
-                  Mobile
-                </Badge>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClose}
-                className="h-8 w-8 p-0"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
+          <DialogTitle className="snarbles-heading-4 flex items-center gap-2">
+            <Smartphone className="w-5 h-5 text-red-400" />
+            Mobile Wallet Connection
+          </DialogTitle>
+          <DialogDescription className="snarbles-body-small text-gray-400">
+            Connect your mobile wallet to create tokens on the go
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-6">
           {/* Wallet Selection Tabs */}
           <Tabs value={selectedTab} onValueChange={(value) => setSelectedTab(value as 'phantom' | 'pera')}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="phantom" className="flex items-center space-x-2">
+            <TabsList className="grid w-full grid-cols-2 bg-gray-800 border-gray-700">
+              <TabsTrigger 
+                value="phantom" 
+                className="data-[state=active]:bg-purple-600 data-[state=active]:text-white flex items-center space-x-2"
+              >
                 <span>👻</span>
                 <span>Phantom</span>
               </TabsTrigger>
-              <TabsTrigger value="pera" className="flex items-center space-x-2">
+              <TabsTrigger 
+                value="pera" 
+                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white flex items-center space-x-2"
+              >
                 <span>🔷</span>
                 <span>Pera</span>
               </TabsTrigger>

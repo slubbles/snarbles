@@ -13,7 +13,9 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { hasEnoughCredits, spendCreditsForTokenCreation } from '@/lib/credit-system';
+import { validatePaymentForTokenCreation, type PaymentMethod } from '@/lib/enhanced-credit-system';
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
+import PaymentSelector from '@/components/PaymentSelector';
 // Import token creation functions - will be implemented via existing components
 // import { createAlgorandToken } from '@/lib/algorand';
 // import { createTokenOnChain } from '@/lib/solana';
@@ -45,6 +47,8 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
   const [deploymentResult, setDeploymentResult] = useState<any>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [previewLogoUrl, setPreviewLogoUrl] = useState('');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>('credits');
+  const [paymentInfo, setPaymentInfo] = useState<any>(null);
   
   // Logo upload states
   const [isUploading, setIsUploading] = useState(false);
@@ -325,20 +329,22 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
     setDeploymentStatus('checking');
 
     try {
-      // Check credits if needed
-      const cost = getNetworkCost(tokenData.network);
-      if (cost > 0 && walletAddress) {
-        const creditCheck = await hasEnoughCredits(walletAddress, cost);
-        if (!creditCheck.success || !creditCheck.hasEnough) {
-          toast({
-            title: "Insufficient Credits",
-            description: `You need ${cost} credits to deploy to ${tokenData.network}. Please top up your account.`,
-            variant: "destructive",
-          });
-          setDeploymentStatus('error');
-          setIsDeploying(false);
-          return;
-        }
+      // Validate payment method
+      const paymentValidation = await validatePaymentForTokenCreation(
+        walletAddress!,
+        selectedPaymentMethod,
+        tokenData.network
+      );
+
+      if (!paymentValidation.success || !paymentValidation.can_proceed) {
+        toast({
+          title: "Payment Error",
+          description: paymentValidation.error || "Payment validation failed",
+          variant: "destructive",
+        });
+        setDeploymentStatus('error');
+        setIsDeploying(false);
+        return;
       }
 
       setDeploymentStatus('deploying');
@@ -358,13 +364,19 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
       };
 
       if (result.success) {
-        // Spend credits if successful
-        if (cost > 0 && walletAddress) {
-          await spendCreditsForTokenCreation(
-            walletAddress,
-            cost,
-            `Token creation: ${tokenData.name} (${tokenData.symbol}) on ${tokenData.network}`
-          );
+        // Process payment based on selected method
+        if (selectedPaymentMethod === 'credits') {
+          const cost = paymentInfo?.amount || 0;
+          if (cost > 0 && walletAddress) {
+            await spendCreditsForTokenCreation(
+              walletAddress,
+              cost,
+              `Token creation: ${tokenData.name} (${tokenData.symbol}) on ${tokenData.network}`
+            );
+          }
+        } else if (selectedPaymentMethod === 'direct_algo') {
+          // Direct ALGO payment would be processed here
+          console.log('Direct ALGO payment processed:', paymentInfo);
         }
 
         setDeploymentResult(result.data);
@@ -1045,6 +1057,33 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
         </CardContent>
       </Card>
 
+      {/* Payment Method Selection */}
+      <Card className="snarbles-card">
+        <CardHeader>
+          <CardTitle className="snarbles-heading-4">Payment Method</CardTitle>
+          <CardDescription className="snarbles-body-small text-gray-400">
+            Choose how you want to pay for token creation
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PaymentSelector
+            network={tokenData.network}
+            onPaymentMethodSelected={(method, info) => {
+              setSelectedPaymentMethod(method);
+              setPaymentInfo(info);
+            }}
+            onPaymentCompleted={(success, details) => {
+              if (success) {
+                toast({
+                  title: "Payment Successful",
+                  description: "Payment processed successfully",
+                });
+              }
+            }}
+          />
+        </CardContent>
+      </Card>
+
       {/* Deploy Button */}
       <Card className="snarbles-card">
         <CardContent className="p-6">
@@ -1056,7 +1095,7 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
             {isDeploying ? (
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                {deploymentStatus === 'checking' ? 'Checking Credits...' : 'Deploying Token...'}
+                {deploymentStatus === 'checking' ? 'Checking Payment...' : 'Deploying Token...'}
               </>
             ) : deploymentStatus === 'success' ? (
               <>
