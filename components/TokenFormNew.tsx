@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { hasEnoughCredits, spendCreditsForTokenCreation } from '@/lib/credit-system';
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
+import { useAlgorandWallet } from '@/components/providers/AlgorandWalletProvider';
 import PaymentSelectorNew, { type PaymentMethod } from '@/components/PaymentSelectorNew';
 import TokenCreationProgress from '@/components/TokenCreationProgress';
 import TokenCreationSuccess from '@/components/TokenCreationSuccess';
@@ -74,7 +75,8 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
   
   const { toast } = useToast();
   const router = useRouter();
-  const { walletAddress, isAuthenticated, peraWallet } = useWalletAuth();
+  const { walletAddress, isAuthenticated } = useWalletAuth();
+  const { peraWallet } = useAlgorandWallet();
 
   useEffect(() => {
     if (tokenData.logoUrl) {
@@ -579,23 +581,23 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
     <div className="space-y-4 md:space-y-6">
       {renderDeploymentStatus()}
       
-      <Card className="snarbles-card">
+      <Card className="glass-card">
         <CardHeader className="p-4 md:p-6">
-          <CardTitle className="snarbles-heading-4 flex items-center gap-2 text-base md:text-lg">
-            <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-red-400" />
+          <CardTitle className="text-base md:text-lg font-semibold text-foreground flex items-center gap-2">
+            <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-primary" />
             Basic Information
           </CardTitle>
-          <CardDescription className="snarbles-body text-sm md:text-base">
+          <CardDescription className="text-muted-foreground text-sm md:text-base">
             Define the core properties of your token
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 md:space-y-6 p-4 md:p-6">
           {/* Token Name */}
           <div>
-            <Label htmlFor="name" className="snarbles-body font-semibold text-sm md:text-base">Token Name *</Label>
+            <Label htmlFor="name" className="text-foreground font-semibold text-sm md:text-base">Token Name *</Label>
             <Input
               id="name"
-              className="snarbles-input mt-2 h-11 md:h-10 text-base md:text-sm"
+              className="bg-background border-border text-foreground focus:border-primary mt-2 h-11 md:h-10 text-base md:text-sm"
               placeholder="e.g., My Awesome Token"
               value={tokenData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
@@ -607,10 +609,10 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
 
           {/* Token Symbol */}
           <div>
-            <Label htmlFor="symbol" className="snarbles-body font-semibold text-sm md:text-base">Token Symbol *</Label>
+            <Label htmlFor="symbol" className="text-foreground font-semibold text-sm md:text-base">Token Symbol *</Label>
             <Input
               id="symbol"
-              className="snarbles-input mt-2 h-11 md:h-10 text-base md:text-sm"
+              className="bg-background border-border text-foreground focus:border-primary mt-2 h-11 md:h-10 text-base md:text-sm"
               placeholder="e.g., MAT"
               value={tokenData.symbol}
               onChange={(e) => handleInputChange('symbol', e.target.value.toUpperCase())}
@@ -623,10 +625,10 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
 
           {/* Description */}
           <div>
-            <Label htmlFor="description" className="snarbles-body font-semibold text-sm md:text-base">Description *</Label>
+            <Label htmlFor="description" className="text-foreground font-semibold text-sm md:text-base">Description *</Label>
             <Textarea
               id="description"
-              className="snarbles-input mt-2 min-h-[100px] md:min-h-[100px] text-base md:text-sm"
+              className="bg-background border-border text-foreground focus:border-primary mt-2 min-h-[100px] md:min-h-[100px] text-base md:text-sm"
               placeholder="Describe your token's purpose, utility, and vision..."
               value={tokenData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
@@ -638,17 +640,17 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
               ) : (
                 <span />
               )}
-              <span className="text-gray-400 text-sm">{tokenData.description.length}/500</span>
+              <span className="text-muted-foreground text-sm">{tokenData.description.length}/500</span>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Token Properties */}
-      <Card className="snarbles-card">
+      <Card className="glass-card">
         <CardHeader className="p-4 md:p-6">
-          <CardTitle className="snarbles-heading-4 text-base md:text-lg">Token Properties</CardTitle>
-          <CardDescription className="snarbles-body text-sm md:text-base">
+          <CardTitle className="text-base md:text-lg font-semibold text-foreground">Token Properties</CardTitle>
+          <CardDescription className="text-muted-foreground text-sm md:text-base">
             Configure the technical aspects of your token
           </CardDescription>
         </CardHeader>
@@ -656,11 +658,11 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             {/* Total Supply */}
             <div>
-              <Label htmlFor="totalSupply" className="snarbles-body font-semibold text-sm md:text-base">Total Supply *</Label>
+              <Label htmlFor="totalSupply" className="text-foreground font-semibold text-sm md:text-base">Total Supply *</Label>
               <Input
                 id="totalSupply"
                 type="number"
-                className="snarbles-input mt-2 h-11 md:h-10 text-base md:text-sm"
+                className="bg-background border-border text-foreground focus:border-primary mt-2 h-11 md:h-10 text-base md:text-sm"
                 placeholder="1000000"
                 value={tokenData.totalSupply}
                 onChange={(e) => handleInputChange('totalSupply', e.target.value)}
@@ -672,12 +674,12 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
 
             {/* Decimals */}
             <div>
-              <Label htmlFor="decimals" className="snarbles-body font-semibold text-sm md:text-base">Decimals</Label>
+              <Label htmlFor="decimals" className="text-foreground font-semibold text-sm md:text-base">Decimals</Label>
               <Select
                 value={tokenData.decimals}
                 onValueChange={(value) => handleInputChange('decimals', value)}
               >
-                <SelectTrigger className="snarbles-input mt-2 h-11 md:h-10 text-base md:text-sm">
+                <SelectTrigger className="bg-background border-border text-foreground focus:border-primary mt-2 h-11 md:h-10 text-base md:text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -692,8 +694,8 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
 
           {/* Network Selection */}
           <div>
-            <Label className="snarbles-body font-semibold text-sm md:text-base">Blockchain Network *</Label>
-            <p className="text-sm text-gray-400 mt-1 mb-4">Choose the blockchain where your token will be deployed</p>
+            <Label className="text-foreground font-semibold text-sm md:text-base">Blockchain Network *</Label>
+            <p className="text-muted-foreground text-sm mt-1 mb-4">Choose the blockchain where your token will be deployed</p>
             
             <div className="grid grid-cols-1 gap-3 md:gap-4">
               {/* Algorand Testnet */}
@@ -916,13 +918,13 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
 
           {/* Advanced Features */}
           <div className="space-y-4">
-            <h4 className="snarbles-heading-5">Advanced Features</h4>
+            <h4 className="text-base font-semibold text-foreground">Advanced Features</h4>
             
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 border border-gray-700 rounded-lg">
+              <div className="flex items-center justify-between p-3 border border-border rounded-lg">
                 <div>
-                  <Label htmlFor="mintable" className="snarbles-body font-semibold">Mintable</Label>
-                  <p className="text-sm text-gray-400">Allow creating more tokens after deployment</p>
+                  <Label htmlFor="mintable" className="text-foreground font-semibold">Mintable</Label>
+                  <p className="text-sm text-muted-foreground">Allow creating more tokens after deployment</p>
                 </div>
                 <Switch
                   id="mintable"
@@ -931,10 +933,10 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
                 />
               </div>
 
-              <div className="flex items-center justify-between p-3 border border-gray-700 rounded-lg">
+              <div className="flex items-center justify-between p-3 border border-border rounded-lg">
                 <div>
-                  <Label htmlFor="burnable" className="snarbles-body font-semibold">Burnable</Label>
-                  <p className="text-sm text-gray-400">Allow permanent destruction of tokens</p>
+                  <Label htmlFor="burnable" className="text-foreground font-semibold">Burnable</Label>
+                  <p className="text-sm text-muted-foreground">Allow permanent destruction of tokens</p>
                 </div>
                 <Switch
                   id="burnable"
@@ -943,10 +945,10 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
                 />
               </div>
 
-              <div className="flex items-center justify-between p-3 border border-gray-700 rounded-lg">
+              <div className="flex items-center justify-between p-3 border border-border rounded-lg">
                 <div>
-                  <Label htmlFor="pausable" className="snarbles-body font-semibold">Pausable</Label>
-                  <p className="text-sm text-gray-400">Allow pausing all token transfers</p>
+                  <Label htmlFor="pausable" className="text-foreground font-semibold">Pausable</Label>
+                  <p className="text-sm text-muted-foreground">Allow pausing all token transfers</p>
                 </div>
                 <Switch
                   id="pausable"
@@ -960,17 +962,17 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
       </Card>
 
       {/* Optional Information */}
-      <Card className="snarbles-card">
+      <Card className="glass-card">
         <CardHeader>
-          <CardTitle className="snarbles-heading-4">Optional Information</CardTitle>
-          <CardDescription className="snarbles-body">
+          <CardTitle className="text-base md:text-lg font-semibold text-foreground">Optional Information</CardTitle>
+          <CardDescription className="text-muted-foreground">
             Add social links and branding to enhance your token's credibility
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Logo Upload */}
           <div>
-            <Label className="snarbles-body font-semibold">Token Logo</Label>
+            <Label className="text-foreground font-semibold">Token Logo</Label>
             <p className="text-sm text-gray-400 mt-1 mb-4">Upload an image or provide a URL for your token logo</p>
             
             {/* Upload Area */}
@@ -1089,9 +1091,9 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
             
             {/* Alternative URL Input */}
             <div className="mt-4">
-              <Label className="text-sm text-gray-400">Or provide a logo URL</Label>
+              <Label className="text-sm text-muted-foreground">Or provide a logo URL</Label>
               <Input
-                className="snarbles-input mt-2"
+                className="bg-background border-border text-foreground focus:border-primary mt-2"
                 placeholder="https://example.com/logo.png"
                 value={tokenData.logoUrl}
                 onChange={(e) => handleInputChange('logoUrl', e.target.value)}
@@ -1102,13 +1104,13 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
           {/* Social Links */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <Label htmlFor="website" className="snarbles-body font-semibold flex items-center gap-2">
+              <Label htmlFor="website" className="text-foreground font-semibold flex items-center gap-2">
                 <Globe className="w-4 h-4" />
                 Website
               </Label>
               <Input
                 id="website"
-                className="snarbles-input mt-2"
+                className="bg-background border-border text-foreground focus:border-primary mt-2"
                 placeholder="https://yourproject.com"
                 value={tokenData.website}
                 onChange={(e) => handleInputChange('website', e.target.value)}
@@ -1119,13 +1121,13 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
             </div>
 
             <div>
-              <Label htmlFor="twitter" className="snarbles-body font-semibold flex items-center gap-2">
+              <Label htmlFor="twitter" className="text-foreground font-semibold flex items-center gap-2">
                 <Twitter className="w-4 h-4" />
                 Twitter
               </Label>
               <Input
                 id="twitter"
-                className="snarbles-input mt-2"
+                className="bg-background border-border text-foreground focus:border-primary mt-2"
                 placeholder="@username"
                 value={tokenData.twitter}
                 onChange={(e) => handleInputChange('twitter', e.target.value)}
@@ -1136,13 +1138,13 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
             </div>
 
             <div>
-              <Label htmlFor="github" className="snarbles-body font-semibold flex items-center gap-2">
+              <Label htmlFor="github" className="text-foreground font-semibold flex items-center gap-2">
                 <Github className="w-4 h-4" />
                 GitHub
               </Label>
               <Input
                 id="github"
-                className="snarbles-input mt-2"
+                className="bg-background border-border text-foreground focus:border-primary mt-2"
                 placeholder="username/repository"
                 value={tokenData.github}
                 onChange={(e) => handleInputChange('github', e.target.value)}
@@ -1156,7 +1158,7 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
       </Card>
 
       {/* Payment Method Selection */}
-      <Card className="snarbles-card">
+      <Card className="glass-card">
         <CardHeader>
           <CardTitle className="snarbles-heading-4">Payment Method</CardTitle>
           <CardDescription className="snarbles-body-small text-gray-400">

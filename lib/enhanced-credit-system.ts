@@ -8,7 +8,7 @@
 
 import { supabase, isSupabaseAvailable } from './supabase-client';
 import { getAlgorandClient } from './algorand';
-import { getCreditsBalance } from './credit-system';
+import { getCreditsBalance, updateCreditsBalance, addCreditTransaction } from './credit-system';
 import algosdk from 'algosdk';
 
 // Enhanced pricing configuration
@@ -148,7 +148,7 @@ async function getAlgorandBalance(walletAddress: string, network: string): Promi
   
   try {
     const accountInfo = await algodClient.accountInformation(walletAddress).do();
-    return accountInfo.amount / 1000000; // Convert microALGOs to ALGOs
+    return Number(accountInfo.amount) / 1000000; // Convert microALGOs to ALGOs
   } catch (error) {
     console.error('Error fetching ALGO balance:', error);
     throw error;
@@ -182,8 +182,8 @@ export async function processAlgoPayment(
     
     // Create payment transaction
     const paymentTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-      from: walletAddress,
-      to: PLATFORM_WALLET,
+      sender: walletAddress,
+      receiver: PLATFORM_WALLET,
       amount: amount * 1000000, // Convert ALGO to microALGOs
       suggestedParams,
       note: new TextEncoder().encode(`Snarbles: ${purpose}`)
@@ -194,7 +194,7 @@ export async function processAlgoPayment(
     
     // Submit to network
     const txnResponse = await algodClient.sendRawTransaction(signedTxn).do();
-    const transactionHash = txnResponse.txId;
+    const transactionHash = txnResponse.txid;
     
     // Wait for confirmation
     const confirmedTxn = await algosdk.waitForConfirmation(
@@ -213,7 +213,7 @@ export async function processAlgoPayment(
       purpose,
       status: 'confirmed',
       confirmed_at: new Date().toISOString(),
-      block_number: confirmedTxn['confirmed-round']
+      block_number: confirmedTxn.confirmedRound ? Number(confirmedTxn.confirmedRound) : undefined
     };
     
     // Save payment record to database

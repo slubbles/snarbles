@@ -213,8 +213,8 @@ export default function CreateTokenPage() {
           {/* Sidebar - Optimized for mobile */}
           <div className="space-y-4 lg:space-y-6 order-1 lg:order-2">
             {/* Safety Features */}
-            <div className="snarbles-card p-4 md:p-6">
-              <h3 className="snarbles-heading-4 mb-4 md:mb-6 flex items-center gap-2">
+            <div className="glass-card p-4 md:p-6">
+              <h3 className="text-base md:text-lg font-semibold text-foreground mb-4 md:mb-6 flex items-center gap-2">
                 <Shield className="w-5 h-5 md:w-6 md:h-6 text-green-400" />
                 Why Choose Snarbles?
               </h3>
@@ -228,8 +228,8 @@ export default function CreateTokenPage() {
                         <Icon className="w-4 h-4 text-green-400" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h4 className="snarbles-body font-semibold mb-1 text-sm md:text-base">{feature.title}</h4>
-                        <p className="snarbles-body-small text-gray-400 text-xs md:text-sm">{feature.description}</p>
+                        <h4 className="text-foreground font-semibold mb-1 text-sm md:text-base">{feature.title}</h4>
+                        <p className="text-muted-foreground text-xs md:text-sm">{feature.description}</p>
                       </div>
                     </div>
                   );
@@ -238,23 +238,23 @@ export default function CreateTokenPage() {
             </div>
 
             {/* Pricing Info */}
-            <div className="snarbles-card p-4 md:p-6">
-              <h3 className="snarbles-heading-4 mb-4 flex items-center gap-2">
+            <div className="glass-card p-4 md:p-6">
+              <h3 className="text-base md:text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                 <CreditCard className="w-5 h-5 md:w-6 md:h-6 text-blue-400" />
                 Pricing
               </h3>
               
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="snarbles-body text-gray-300 text-sm md:text-base">Testnet (Free)</span>
-                  <span className="snarbles-status-live text-sm md:text-base">Free</span>
+                  <span className="text-muted-foreground text-sm md:text-base">Testnet (Free)</span>
+                  <span className="text-green-400 font-medium text-sm md:text-base">Free</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="snarbles-body text-gray-300 text-sm md:text-base">Algorand Mainnet</span>
-                  <span className="snarbles-body font-semibold text-sm md:text-base">5 credits</span>
+                  <span className="text-muted-foreground text-sm md:text-base">Algorand Mainnet</span>
+                  <span className="text-foreground font-semibold text-sm md:text-base">5 credits</span>
                 </div>
-                <div className="pt-3 border-t border-gray-700">
-                  <p className="snarbles-body-small text-gray-400 text-xs md:text-sm">
+                <div className="pt-3 border-t border-border">
+                  <p className="text-muted-foreground text-xs md:text-sm">
                     Start with testnet to experiment, then deploy to mainnet when ready.
                   </p>
                 </div>
@@ -262,19 +262,19 @@ export default function CreateTokenPage() {
             </div>
 
             {/* Need Help */}
-            <div className="snarbles-card p-4 md:p-6 bg-blue-500/5 border-blue-500/20">
+            <div className="glass-card p-4 md:p-6 bg-blue-500/5 border-blue-500/20">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 md:w-6 md:h-6 text-blue-400 flex-shrink-0 mt-1" />
                 <div className="min-w-0 flex-1">
-                  <h4 className="snarbles-heading-5 mb-2 text-blue-400 text-sm md:text-base">Need Help?</h4>
-                  <p className="snarbles-body-small text-gray-300 mb-3 text-xs md:text-sm">
+                  <h4 className="text-blue-400 font-semibold mb-2 text-sm md:text-base">Need Help?</h4>
+                  <p className="text-muted-foreground mb-3 text-xs md:text-sm">
                     First time creating a token? Check out our guide or join our community.
                   </p>
                   <div className="flex flex-col gap-2">
-                    <Link href="/support" className="snarbles-btn-secondary text-sm py-2 px-4 text-center min-h-[44px] flex items-center justify-center">
+                    <Link href="/support" className="bg-muted hover:bg-muted/80 text-foreground border border-border text-sm py-2 px-4 text-center min-h-[44px] flex items-center justify-center rounded-lg transition-all">
                       View Guide
                     </Link>
-                    <Link href="/support" className="text-blue-400 hover:text-blue-300 text-sm text-center py-2">
+                    <Link href="/support" className="text-blue-400 hover:text-blue-300 text-sm text-center py-2 transition-colors">
                       Join Discord →
                     </Link>
                   </div>
