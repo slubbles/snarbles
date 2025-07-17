@@ -13,8 +13,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
 import MainnetConnectionModal from '@/components/MainnetConnectionModal';
+import MobileWalletModal from '@/components/MobileWalletModal';
 import SolanaWalletManager from '@/components/SolanaWalletManager';
 import EnhancedSolanaWalletButton from '@/components/EnhancedSolanaWalletButton';
+import { isMobile } from '@/lib/mobile-wallet-utils';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -25,6 +27,8 @@ export default function Navbar() {
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
 
   const [showMainnetModal, setShowMainnetModal] = useState<boolean>(false);
+  const [showMobileWalletModal, setShowMobileWalletModal] = useState<boolean>(false);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
@@ -57,6 +61,7 @@ export default function Navbar() {
 
   useEffect(() => {
     setMounted(true);
+    setIsMobileDevice(isMobile());
     // Initialize theme from localStorage or default to dark
     const savedTheme = localStorage.getItem('theme') || 'dark';
     setTheme(savedTheme);
@@ -300,7 +305,13 @@ export default function Navbar() {
                 </div>
               ) : (
                 <Button
-                  onClick={() => setShowWalletOptions(!showWalletOptions)}
+                  onClick={() => {
+                    if (isMobileDevice) {
+                      setShowMobileWalletModal(true);
+                    } else {
+                      setShowWalletOptions(!showWalletOptions);
+                    }
+                  }}
                   className="wallet-connect-button bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-xl px-4 py-2 h-9 shadow-lg hover:shadow-xl transition-all duration-200"
                 >
                   <Wallet className="w-4 h-4 mr-2" />
@@ -679,7 +690,11 @@ export default function Navbar() {
                 {!isAnyWalletConnected ? (
                   <Button
                     onClick={() => {
-                      setShowWalletOptions(!showWalletOptions);
+                      if (isMobileDevice) {
+                        setShowMobileWalletModal(true);
+                      } else {
+                        setShowWalletOptions(!showWalletOptions);
+                      }
                       setIsMenuOpen(false);
                     }}
                     className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-xl px-4 py-2 shadow-lg hover:shadow-xl transition-all duration-200"
@@ -724,6 +739,21 @@ export default function Navbar() {
       <MainnetConnectionModal 
         isOpen={showMainnetModal} 
         onClose={() => setShowMainnetModal(false)} 
+      />
+      
+      {/* Mobile Wallet Modal */}
+      <MobileWalletModal
+        isOpen={showMobileWalletModal}
+        onClose={() => setShowMobileWalletModal(false)}
+        onWalletConnect={(walletType, connected) => {
+          if (connected) {
+            toast({
+              title: "Wallet Connected",
+              description: `Successfully connected to ${walletType === 'phantom' ? 'Phantom' : 'Pera'} wallet`,
+              duration: 3000,
+            });
+          }
+        }}
       />
     </nav>
   );

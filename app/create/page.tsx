@@ -7,6 +7,8 @@ import TokenFormNew from '@/components/TokenFormNew';
 import { getCreditsBalance } from '@/lib/credit-system';
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
 import { useToast } from '@/hooks/use-toast';
+import { isMobile } from '@/lib/mobile-wallet-utils';
+import MobileWalletModal from '@/components/MobileWalletModal';
 
 export default function CreateTokenPage() {
   const [tokenData, setTokenData] = useState({
@@ -27,10 +29,13 @@ export default function CreateTokenPage() {
 
   const [userCredits, setUserCredits] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showMobileWalletModal, setShowMobileWalletModal] = useState(false);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
   const { toast } = useToast();
   const { user, isAuthenticated, walletAddress } = useWalletAuth();
 
   useEffect(() => {
+    setIsMobileDevice(isMobile());
     loadUserCredits();
   }, [walletAddress]);
 
@@ -155,6 +160,32 @@ export default function CreateTokenPage() {
           </div>
         </div>
 
+        {/* Mobile Wallet Connection Alert */}
+        {!isAuthenticated && isMobileDevice && (
+          <div className="mb-8">
+            <div className="glass-card p-6 border-blue-500/20 bg-blue-500/5">
+              <div className="flex items-start gap-3">
+                <CreditCard className="w-6 h-6 text-blue-400 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-blue-400 mb-2">
+                    Connect Your Mobile Wallet
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    To create tokens on mobile, you'll need to connect your wallet first. 
+                    We support Phantom (Solana) and Pera (Algorand) mobile apps.
+                  </p>
+                  <button
+                    onClick={() => setShowMobileWalletModal(true)}
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium px-6 py-3 rounded-lg transition-all duration-200"
+                  >
+                    Connect Mobile Wallet
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Form */}
           <div className="lg:col-span-2">
@@ -238,6 +269,21 @@ export default function CreateTokenPage() {
           </div>
         </div>
       </div>
+      
+      {/* Mobile Wallet Modal */}
+      <MobileWalletModal
+        isOpen={showMobileWalletModal}
+        onClose={() => setShowMobileWalletModal(false)}
+        onWalletConnect={(walletType, connected) => {
+          if (connected) {
+            toast({
+              title: "Wallet Connected",
+              description: `Successfully connected to ${walletType === 'phantom' ? 'Phantom' : 'Pera'} wallet`,
+              duration: 3000,
+            });
+          }
+        }}
+      />
     </div>
   );
 }
