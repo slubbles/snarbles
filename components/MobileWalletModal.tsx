@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { isMobile, isIOS, isAndroid } from '@/lib/mobile-wallet-utils';
+import { useModalPosition } from '@/hooks/useModalPosition';
 import PhantomMobileConnector from '@/components/PhantomMobileConnector';
 import PeraMobileConnector from '@/components/PeraMobileConnector';
 
@@ -39,6 +40,9 @@ export function MobileWalletModal({
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const { toast } = useToast();
+
+  // Prevent background scroll and maintain position
+  useModalPosition(isOpen);
 
   useEffect(() => {
     setIsMobileDevice(isMobile());
@@ -179,7 +183,7 @@ export function MobileWalletModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto snarbles-card border-gray-700">
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto snarbles-card border-gray-700 fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
         <DialogHeader>
           <DialogTitle className="snarbles-heading-4 flex items-center gap-2">
             <Smartphone className="w-5 h-5 text-red-400" />

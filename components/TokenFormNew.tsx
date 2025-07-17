@@ -1157,19 +1157,20 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
         </CardContent>
       </Card>
 
-      {/* Payment Method Selection */}
+      {/* Payment Method Selection - Mobile Optimized */}
       <Card className="glass-card">
         <CardHeader>
-          <CardTitle className="snarbles-heading-4">Payment Method</CardTitle>
-          <CardDescription className="snarbles-body-small text-gray-400">
+          <CardTitle className="text-lg md:text-xl font-semibold text-foreground">Payment Method</CardTitle>
+          <CardDescription className="text-sm md:text-base text-muted-foreground">
             Choose how you want to pay for token creation
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 md:p-6">
           <PaymentSelectorNew
             creditsRequired={5}
             algoRequired={10}
             network={tokenData.network}
+            className="mobile-payment-selector"
           />
         </CardContent>
       </Card>

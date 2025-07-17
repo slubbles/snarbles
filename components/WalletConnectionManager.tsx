@@ -67,57 +67,60 @@ export default function WalletConnectionManager({
   }
 
   return (
-    <div className={`wallet-connection-status mobile-optimized ${className}`}>
-      <div className="connected-wallet-info">
-        <div className="flex items-center gap-2">
-          <Wallet className="w-4 h-4 text-[rgb(239,68,68)]" />
-          <Badge variant="outline" className="text-green-400 border-green-400">
-            Connected
-          </Badge>
-        </div>
-        
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <span className="snarbles-body text-sm text-[rgb(254,254,235)] font-medium">
-              {truncateAddress(walletAddress)}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={openInExplorer}
-              className="p-1 h-auto text-[rgb(163,163,163)] hover:text-[rgb(254,254,235)]"
-            >
-              <ExternalLink className="w-3 h-3" />
-            </Button>
+    <div className={`wallet-connection-status mobile-optimized glass-card p-4 ${className}`}>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <Wallet className="w-5 h-5 text-primary flex-shrink-0" />
+          <div className="flex flex-col gap-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-foreground font-medium truncate">
+                {truncateAddress(walletAddress)}
+              </span>
+              <Badge variant="outline" className="text-green-400 border-green-400 flex-shrink-0">
+                Connected
+              </Badge>
+            </div>
+            
+            {showBalance && walletBalance !== null && (
+              <span className="text-xs text-muted-foreground">
+                Balance: {walletBalance.toFixed(2)} ALGO
+              </span>
+            )}
           </div>
+        </div>
+
+        {/* Mobile-friendly disconnect and explorer buttons */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm" 
+            onClick={openInExplorer}
+            className="p-2 h-auto text-muted-foreground hover:text-foreground touch-friendly"
+          >
+            <ExternalLink className="w-4 h-4" />
+          </Button>
           
-          {showBalance && walletBalance !== null && (
-            <span className="snarbles-body text-xs text-[rgb(163,163,163)]">
-              Balance: {walletBalance.toFixed(2)} ALGO
-            </span>
-          )}
+          <Button
+            onClick={handleDisconnect}
+            disabled={isDisconnecting}
+            variant="outline"
+            size="sm"
+            className="disconnect-btn touch-friendly border-primary text-primary hover:bg-primary/10 min-h-[44px] px-4"
+          >
+            {isDisconnecting ? (
+              <>
+                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />
+                Disconnecting...
+              </>
+            ) : (
+              <>
+                <LogOut className="w-4 h-4 mr-2" />
+                Disconnect
+              </>
+            )}
+          </Button>
         </div>
       </div>
-
-      <Button
-        onClick={handleDisconnect}
-        disabled={isDisconnecting}
-        variant="outline"
-        size="sm"
-        className="disconnect-btn touch-friendly border-[rgb(239,68,68)] text-[rgb(239,68,68)] hover:bg-[rgb(239,68,68)]/10"
-      >
-        {isDisconnecting ? (
-          <>
-            <div className="w-4 h-4 border-2 border-[rgb(239,68,68)] border-t-transparent rounded-full animate-spin mr-2" />
-            Disconnecting...
-          </>
-        ) : (
-          <>
-            <LogOut className="w-4 h-4 mr-2" />
-            Disconnect
-          </>
-        )}
-      </Button>
     </div>
   );
 }
