@@ -576,26 +576,26 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {renderDeploymentStatus()}
       
       <Card className="snarbles-card">
-        <CardHeader>
-          <CardTitle className="snarbles-heading-4 flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-red-400" />
+        <CardHeader className="p-4 md:p-6">
+          <CardTitle className="snarbles-heading-4 flex items-center gap-2 text-base md:text-lg">
+            <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-red-400" />
             Basic Information
           </CardTitle>
-          <CardDescription className="snarbles-body">
+          <CardDescription className="snarbles-body text-sm md:text-base">
             Define the core properties of your token
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4 md:space-y-6 p-4 md:p-6">
           {/* Token Name */}
           <div>
-            <Label htmlFor="name" className="snarbles-body font-semibold">Token Name *</Label>
+            <Label htmlFor="name" className="snarbles-body font-semibold text-sm md:text-base">Token Name *</Label>
             <Input
               id="name"
-              className="snarbles-input mt-2"
+              className="snarbles-input mt-2 h-11 md:h-10 text-base md:text-sm"
               placeholder="e.g., My Awesome Token"
               value={tokenData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
@@ -607,10 +607,10 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
 
           {/* Token Symbol */}
           <div>
-            <Label htmlFor="symbol" className="snarbles-body font-semibold">Token Symbol *</Label>
+            <Label htmlFor="symbol" className="snarbles-body font-semibold text-sm md:text-base">Token Symbol *</Label>
             <Input
               id="symbol"
-              className="snarbles-input mt-2"
+              className="snarbles-input mt-2 h-11 md:h-10 text-base md:text-sm"
               placeholder="e.g., MAT"
               value={tokenData.symbol}
               onChange={(e) => handleInputChange('symbol', e.target.value.toUpperCase())}
@@ -623,10 +623,10 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
 
           {/* Description */}
           <div>
-            <Label htmlFor="description" className="snarbles-body font-semibold">Description *</Label>
+            <Label htmlFor="description" className="snarbles-body font-semibold text-sm md:text-base">Description *</Label>
             <Textarea
               id="description"
-              className="snarbles-input mt-2 min-h-[100px]"
+              className="snarbles-input mt-2 min-h-[100px] md:min-h-[100px] text-base md:text-sm"
               placeholder="Describe your token's purpose, utility, and vision..."
               value={tokenData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
@@ -646,21 +646,21 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
 
       {/* Token Properties */}
       <Card className="snarbles-card">
-        <CardHeader>
-          <CardTitle className="snarbles-heading-4">Token Properties</CardTitle>
-          <CardDescription className="snarbles-body">
+        <CardHeader className="p-4 md:p-6">
+          <CardTitle className="snarbles-heading-4 text-base md:text-lg">Token Properties</CardTitle>
+          <CardDescription className="snarbles-body text-sm md:text-base">
             Configure the technical aspects of your token
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <CardContent className="space-y-4 md:space-y-6 p-4 md:p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             {/* Total Supply */}
             <div>
-              <Label htmlFor="totalSupply" className="snarbles-body font-semibold">Total Supply *</Label>
+              <Label htmlFor="totalSupply" className="snarbles-body font-semibold text-sm md:text-base">Total Supply *</Label>
               <Input
                 id="totalSupply"
                 type="number"
-                className="snarbles-input mt-2"
+                className="snarbles-input mt-2 h-11 md:h-10 text-base md:text-sm"
                 placeholder="1000000"
                 value={tokenData.totalSupply}
                 onChange={(e) => handleInputChange('totalSupply', e.target.value)}
@@ -672,12 +672,12 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
 
             {/* Decimals */}
             <div>
-              <Label htmlFor="decimals" className="snarbles-body font-semibold">Decimals</Label>
+              <Label htmlFor="decimals" className="snarbles-body font-semibold text-sm md:text-base">Decimals</Label>
               <Select
                 value={tokenData.decimals}
                 onValueChange={(value) => handleInputChange('decimals', value)}
               >
-                <SelectTrigger className="snarbles-input mt-2">
+                <SelectTrigger className="snarbles-input mt-2 h-11 md:h-10 text-base md:text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -692,10 +692,10 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
 
           {/* Network Selection */}
           <div>
-            <Label className="snarbles-body font-semibold">Blockchain Network *</Label>
+            <Label className="snarbles-body font-semibold text-sm md:text-base">Blockchain Network *</Label>
             <p className="text-sm text-gray-400 mt-1 mb-4">Choose the blockchain where your token will be deployed</p>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-3 md:gap-4">
               {/* Algorand Testnet */}
               <button
                 type="button"
