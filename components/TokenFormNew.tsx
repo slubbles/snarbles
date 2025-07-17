@@ -15,11 +15,15 @@ import { useToast } from '@/hooks/use-toast';
 import { hasEnoughCredits, spendCreditsForTokenCreation } from '@/lib/credit-system';
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
 import PaymentSelectorNew, { type PaymentMethod } from '@/components/PaymentSelectorNew';
+import TokenCreationProgress from '@/components/TokenCreationProgress';
+import TokenCreationSuccess from '@/components/TokenCreationSuccess';
+import { useTokenCreationProgress } from '@/hooks/useTokenCreationProgress';
 import { 
   validatePaymentForTokenCreation, 
   executeTokenCreationPayment,
   getCreditsBalance
 } from '@/lib/enhanced-payment-system';
+import { createTokenWithRealTransaction } from '@/lib/real-algorand-token-creation';
 // Import token creation functions - will be implemented via existing components
 // import { createAlgorandToken } from '@/lib/algorand';
 // import { createTokenOnChain } from '@/lib/solana';
@@ -55,6 +59,12 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
   const [paymentInfo, setPaymentInfo] = useState<any>(null);
   const [userCredits, setUserCredits] = useState<number>(0);
   
+  // Progress and success modal states
+  const [showProgress, setShowProgress] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [createdTokenData, setCreatedTokenData] = useState<any>(null);
+  const { progress, steps, updateProgress, resetProgress, setError, setSuccess } = useTokenCreationProgress();
+  
   // Logo upload states
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -64,7 +74,7 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
   
   const { toast } = useToast();
   const router = useRouter();
-  const { walletAddress, isAuthenticated } = useWalletAuth();
+  const { walletAddress, isAuthenticated, peraWallet } = useWalletAuth();
 
   useEffect(() => {
     if (tokenData.logoUrl) {
@@ -363,82 +373,132 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
       return;
     }
 
+    if (!walletAddress || !peraWallet) {
+      toast({
+        title: "Wallet Not Connected",
+        description: "Please connect your Pera wallet to deploy tokens.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Reset progress and show modal
+    resetProgress();
+    setShowProgress(true);
     setIsDeploying(true);
-    setDeploymentStatus('checking');
 
     try {
+      // Step 1: Preparing transaction
+      updateProgress(0, 'preparing');
+      
       // Validate payment method
       const paymentValidation = await validatePaymentForTokenCreation(
-        walletAddress!,
+        walletAddress,
         tokenData.network,
         selectedPaymentMethod
       );
 
       if (!paymentValidation.success) {
-        toast({
-          title: "Payment Error",
-          description: paymentValidation.error || "Payment validation failed",
-          variant: "destructive",
-        });
-        setDeploymentStatus('error');
-        setIsDeploying(false);
-        return;
+        throw new Error(paymentValidation.error || "Payment validation failed");
       }
 
-      setDeploymentStatus('deploying');
+      // Prepare token parameters for real creation
+      const tokenParams = {
+        name: tokenData.name,
+        symbol: tokenData.symbol,
+        description: tokenData.description,
+        totalSupply: parseInt(tokenData.totalSupply),
+        decimals: parseInt(tokenData.decimals),
+        logoUrl: tokenData.logoUrl,
+        website: tokenData.website,
+        network: tokenData.network
+      };
 
-      // For now, simulate token creation since the full implementation
-      // requires wallet integration and complex parameter handling
-      // This will be replaced with actual token creation in the next phase
-      await new Promise(resolve => setTimeout(resolve, 3000)); // Simulate deployment time
-      
-      const result = {
-        success: true,
-        data: {
-          assetId: Math.floor(Math.random() * 1000000) + 100000,
-          transactionId: 'sim_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-          explorerUrl: `https://testnet.algoexplorer.io/tx/sim_${Date.now()}`
+      // Simulate preparation time
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Step 2: Request wallet signature
+      updateProgress(1, 'signing');
+
+      // Create signing function for Pera wallet
+      const signTransaction = async (txn: any) => {
+        try {
+          const signedTxns = await peraWallet.signTransaction([txn]);
+          return signedTxns[0];
+        } catch (error) {
+          throw new Error('User cancelled transaction or signing failed');
         }
       };
 
-      if (result.success) {
-        // Process payment based on selected method
-        if (selectedPaymentMethod === 'credits') {
-          const cost = paymentInfo?.amount || 0;
-          if (cost > 0 && walletAddress) {
-            await spendCreditsForTokenCreation(
-              walletAddress,
-              cost,
-              `Token creation: ${tokenData.name} (${tokenData.symbol}) on ${tokenData.network}`
-            );
-          }
-        } else if (selectedPaymentMethod === 'algo_direct') {
-          // Direct ALGO payment would be processed here
-          console.log('Direct ALGO payment processed:', paymentInfo);
-        }
+      // Step 3: Create token with real transaction
+      updateProgress(2, 'broadcasting');
+      
+      const result = await createTokenWithRealTransaction(
+        tokenParams,
+        walletAddress,
+        signTransaction
+      );
 
-        setDeploymentResult(result.data);
-        setDeploymentStatus('success');
-        
-        toast({
-          title: "Token Deployed Successfully!",
-          description: `Your token "${tokenData.name}" has been deployed to ${tokenData.network}.`,
-        });
-
-        // Redirect to dashboard after a delay
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 3000);
-      } else {
-        throw new Error('Deployment failed');
+      if (!result.success) {
+        throw new Error(result.error || 'Token creation failed');
       }
+
+      // Step 4: Confirming
+      updateProgress(3, 'confirming');
+      
+      // Wait a bit more for network confirmation
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // Step 5: Success
+      setSuccess({
+        txId: result.transactionId!,
+        assetId: result.assetId!
+      });
+
+      // Process payment after successful creation
+      if (selectedPaymentMethod === 'credits') {
+        const cost = paymentInfo?.amount || 5; // Default to 5 credits
+        if (cost > 0) {
+          await spendCreditsForTokenCreation(
+            walletAddress,
+            cost,
+            `Token creation: ${tokenData.name} (${tokenData.symbol}) on ${tokenData.network}`
+          );
+        }
+      }
+
+      // Prepare success modal data
+      setCreatedTokenData({
+        name: tokenData.name,
+        symbol: tokenData.symbol,
+        assetId: result.assetId,
+        transactionId: result.transactionId,
+        explorerUrl: result.explorerUrl,
+        network: tokenData.network,
+        decimals: parseInt(tokenData.decimals),
+        totalSupply: parseInt(tokenData.totalSupply)
+      });
+
+      // Hide progress modal and show success
+      setTimeout(() => {
+        setShowProgress(false);
+        setShowSuccess(true);
+      }, 2000);
+
+      toast({
+        title: "Token Created Successfully!",
+        description: `Your token "${tokenData.name}" has been deployed to ${tokenData.network}.`,
+      });
+
     } catch (error) {
       console.error('Deployment error:', error);
-      setDeploymentStatus('error');
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred during deployment.";
+      
+      setError(errorMessage);
       
       toast({
-        title: "Deployment Failed",
-        description: error instanceof Error ? error.message : "An unexpected error occurred during deployment.",
+        title: "Deployment Failed", 
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -1145,6 +1205,58 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
           )}
         </CardContent>
       </Card>
+
+      {/* Progress Modal */}
+      {showProgress && (
+        <TokenCreationProgress
+          progress={progress}
+          steps={steps}
+          onClose={() => setShowProgress(false)}
+          onCancel={() => {
+            setShowProgress(false);
+            setIsDeploying(false);
+            resetProgress();
+          }}
+          canClose={progress.status === 'error' || progress.status === 'success'}
+        />
+      )}
+
+      {/* Success Modal */}
+      {showSuccess && createdTokenData && (
+        <TokenCreationSuccess
+          tokenData={createdTokenData}
+          onClose={() => {
+            setShowSuccess(false);
+            setCreatedTokenData(null);
+          }}
+          onCreateAnother={() => {
+            setShowSuccess(false);
+            setCreatedTokenData(null);
+            // Reset form
+            setTokenData({
+              name: '',
+              symbol: '',
+              description: '',
+              totalSupply: '',
+              decimals: '6',
+              logoUrl: '',
+              website: '',
+              twitter: '',
+              github: '',
+              mintable: false,
+              burnable: false,
+              pausable: false,
+              network: tokenData.network
+            });
+            setPreviewLogoUrl('');
+            resetProgress();
+          }}
+          onGoToDashboard={() => {
+            setShowSuccess(false);
+            router.push('/dashboard');
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Sparkles, Shield, CheckCircle, AlertTriangle, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import TokenFormNew from '@/components/TokenFormNew';
+import WalletConnectionManager from '@/components/WalletConnectionManager';
 import { getCreditsBalance } from '@/lib/credit-system';
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -108,6 +109,9 @@ export default function CreateTokenPage() {
                 Turn your idea into a real token in minutes. Simple, secure, and professional.
               </p>
             </div>
+            
+            {/* Wallet Connection Manager */}
+            <WalletConnectionManager className="mb-4" />
             
             {/* Credits Display */}
             {!isLoading && (
