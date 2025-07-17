@@ -183,7 +183,7 @@ export function MobileWalletModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto snarbles-card border-gray-700 fixed left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto snarbles-card border-gray-700 mobile-wallet-modal">
         <DialogHeader>
           <DialogTitle className="snarbles-heading-4 flex items-center gap-2">
             <Smartphone className="w-5 h-5 text-red-400" />
