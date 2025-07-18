@@ -422,13 +422,42 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
       // Step 2: Request wallet signature
       updateProgress(1, 'signing');
 
-      // Create signing function for Pera wallet
+      // Create signing function for Pera wallet with enhanced error handling
       const signTransaction = async (txn: any) => {
         try {
+          // Check internet connectivity before attempting transaction
+          if (!navigator.onLine) {
+            throw new Error('No internet connection. Please check your connection and try again.');
+          }
+          
+          console.log('📱 Requesting transaction signature from Pera wallet...');
+          
+          // Add a small delay to ensure wallet is ready
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
           const signedTxns = await peraWallet.signTransaction([txn]);
+          
+          if (!signedTxns || signedTxns.length === 0) {
+            throw new Error('Transaction signing failed - no signed transaction returned');
+          }
+          
+          console.log('✅ Transaction signed successfully');
           return signedTxns[0];
-        } catch (error) {
-          throw new Error('User cancelled transaction or signing failed');
+        } catch (error: any) {
+          console.error('❌ Transaction signing error:', error);
+          
+          // Enhanced error handling for common Pera wallet app issues
+          if (error.message.includes('internet') || error.message.includes('network')) {
+            throw new Error('Network connection error. Please ensure you have a stable internet connection and try again.');
+          } else if (error.message.includes('cancelled') || error.message.includes('rejected')) {
+            throw new Error('Transaction cancelled by user.');
+          } else if (error.message.includes('timeout')) {
+            throw new Error('Transaction timed out. Please try again.');
+          } else if (error.message.includes('insufficient')) {
+            throw new Error('Insufficient balance for transaction fees.');
+          } else {
+            throw new Error(error.message || 'Transaction signing failed');
+          }
         }
       };
 
@@ -494,21 +523,36 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
 
     } catch (error) {
       console.error('Deployment error:', error);
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred during deployment.";
+      let errorMessage = "An unexpected error occurred during deployment.";
+      
+      if (error instanceof Error) {
+        if (error.message.includes('internet') || error.message.includes('network')) {
+          errorMessage = "Network connection error. Please check your internet connection and try again.";
+        } else if (error.message.includes('cancelled') || error.message.includes('rejected')) {
+          errorMessage = "Transaction was cancelled by user.";
+        } else if (error.message.includes('insufficient')) {
+          errorMessage = "Insufficient balance for transaction fees.";
+        } else if (error.message.includes('timeout')) {
+          errorMessage = "Transaction timed out. Please try again.";
+        } else if (error.message.includes('Payment validation failed')) {
+          errorMessage = "Payment validation failed. Please check your balance and try again.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
       
       setError(errorMessage);
       
       toast({
-        title: "Deployment Failed", 
+        title: "Deployment Failed",
         description: errorMessage,
         variant: "destructive",
+        duration: 8000,
       });
     } finally {
       setIsDeploying(false);
     }
-  };
-
-  const renderDeploymentStatus = () => {
+  };  const renderDeploymentStatus = () => {
     if (deploymentStatus === 'idle') return null;
 
     return (

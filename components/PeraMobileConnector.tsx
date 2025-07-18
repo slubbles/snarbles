@@ -143,7 +143,24 @@ export function PeraMobileConnector({
       } else if (connectionMethod === 'in-app') {
         // Direct connection in Pera's in-app browser
         console.log('🔗 Connecting directly in Pera in-app browser');
-        await connect();
+        
+        // Special handling for Pera wallet app browser to prevent "no internet" errors
+        try {
+          // Add a small delay to ensure the app browser is ready
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Check if we have internet connectivity in the app browser
+          if (!navigator.onLine) {
+            throw new Error('No internet connection detected. Please check your connection and try again.');
+          }
+          
+          await connect();
+        } catch (connectError: any) {
+          if (connectError.message.includes('internet') || connectError.message.includes('network')) {
+            throw new Error('Connection failed due to network issues. Please ensure you have a stable internet connection and try again.');
+          }
+          throw connectError;
+        }
       } else {
         // Standard extension/web flow
         console.log('🔗 Using standard Pera wallet connection');
@@ -152,7 +169,16 @@ export function PeraMobileConnector({
     } catch (error: any) {
       console.error('❌ Pera connection failed:', error);
       
-      const errorMessage = error.message || 'Failed to connect to Pera Wallet';
+      let errorMessage = error.message || 'Failed to connect to Pera Wallet';
+      
+      // Enhanced error messages for common issues
+      if (errorMessage.includes('internet') || errorMessage.includes('network')) {
+        errorMessage = 'Network connection error. Please check your internet connection and try again.';
+      } else if (errorMessage.includes('cancelled') || errorMessage.includes('rejected')) {
+        errorMessage = 'Connection cancelled by user.';
+      } else if (errorMessage.includes('timeout')) {
+        errorMessage = 'Connection timed out. Please try again.';
+      }
       
       toast({
         title: "Connection Failed",
@@ -251,10 +277,6 @@ export function PeraMobileConnector({
           
           <div className="text-sm text-muted-foreground">
             {address?.slice(0, 8)}...{address?.slice(-6)}
-          </div>
-          
-          <div className="text-xs text-muted-foreground">
-            Network: {networkConfig?.name || selectedNetwork}
           </div>
           
           <Button
