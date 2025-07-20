@@ -167,19 +167,22 @@ export function MobileWalletModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto snarbles-card-premium border-0 shadow-2xl">
-        <DialogHeader className="relative">
+      <DialogContent 
+        className="snarbles-card-premium max-w-[700px] w-full mx-4 max-h-[90vh] overflow-y-auto border-0 shadow-2xl"
+        data-testid="mobile-wallet-modal"
+      >
+        <DialogHeader className="relative pb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-xl snarbles-gradient-purple flex items-center justify-center shadow-lg">
-                <Smartphone className="w-7 h-7 text-white" />
+              <div className="w-14 h-14 rounded-full snarbles-gradient-purple flex items-center justify-center text-white text-2xl shadow-lg">
+                📱
               </div>
               <div>
                 <DialogTitle className="text-2xl font-bold snarbles-gradient-text-multi">
                   Mobile Wallet Connection
                 </DialogTitle>
-                <DialogDescription className="snarbles-body text-gray-300 mt-1">
-                  Connect your mobile wallet to create tokens on the go
+                <DialogDescription className="text-lg text-muted-foreground mt-1">
+                  Connect your mobile wallet to create tokens
                 </DialogDescription>
               </div>
             </div>
@@ -187,10 +190,10 @@ export function MobileWalletModal({
               variant="ghost"
               size="sm"
               onClick={onClose}
-              className="h-10 w-10 p-0 snarbles-glass-subtle hover:bg-red-500/20 hover:text-red-400 transition-all duration-300 rounded-xl"
+              className="h-10 w-10 rounded-full snarbles-glass-subtle hover:bg-red-500/20 transition-all duration-300"
+              data-testid="close-mobile-modal"
             >
-              <X className="h-5 w-5" />
-              <span className="sr-only">Close</span>
+              <X className="h-5 w-5 text-red-400" />
             </Button>
           </div>
         </DialogHeader>
@@ -198,11 +201,16 @@ export function MobileWalletModal({
         <div className="space-y-8 pt-4">
           {/* Wallet Selection Tabs */}
           <div className="space-y-6">
-            <Tabs value={selectedTab} onValueChange={(value) => setSelectedTab(value as 'phantom' | 'pera')}>
+            <Tabs 
+              value={selectedTab} 
+              onValueChange={(value) => setSelectedTab(value as 'phantom' | 'pera')}
+              data-testid="wallet-selection-tabs"
+            >
               <TabsList className="grid w-full grid-cols-2 snarbles-glass-subtle border-0 p-1.5 rounded-xl h-auto">
                 <TabsTrigger 
                   value="phantom" 
                   className="data-[state=active]:snarbles-gradient-purple data-[state=active]:text-white data-[state=active]:shadow-lg flex items-center space-x-3 py-4 px-6 rounded-lg font-semibold transition-all duration-300 hover:bg-purple-500/10"
+                  data-testid="phantom-tab"
                 >
                   <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center text-lg">
                     👻
@@ -212,6 +220,7 @@ export function MobileWalletModal({
                 <TabsTrigger 
                   value="pera" 
                   className="data-[state=active]:snarbles-gradient-blue data-[state=active]:text-white data-[state=active]:shadow-lg flex items-center space-x-3 py-4 px-6 rounded-lg font-semibold transition-all duration-300 hover:bg-blue-500/10"
+                  data-testid="pera-tab"
                 >
                   <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-lg">
                     🔷
@@ -220,18 +229,20 @@ export function MobileWalletModal({
                 </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="phantom" className="space-y-6 mt-8">
+              <TabsContent value="phantom" className="space-y-6 mt-8" data-testid="phantom-content">
                 <div className="snarbles-glass-subtle p-6 rounded-xl snarbles-border-glow">
                   <PhantomMobileConnector
                     onConnectionChange={(connected) => handleWalletConnectionChange('phantom', connected)}
+                    data-testid="phantom-mobile-connector"
                   />
                 </div>
               </TabsContent>
               
-              <TabsContent value="pera" className="space-y-6 mt-8">
+              <TabsContent value="pera" className="space-y-6 mt-8" data-testid="pera-content">
                 <div className="snarbles-glass-subtle p-6 rounded-xl snarbles-border-glow">
                   <PeraMobileConnector
                     onConnectionChange={(connected) => handleWalletConnectionChange('pera', connected)}
+                    data-testid="pera-mobile-connector"
                   />
                 </div>
               </TabsContent>

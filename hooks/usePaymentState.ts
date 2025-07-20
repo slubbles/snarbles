@@ -129,8 +129,8 @@ export const usePaymentSelectors = () => {
   
   return {
     canPay: state.selectedMethod !== null && state.isConnected && !state.isProcessing,
-    hasEnoughCredits: state.selectedMethod === 'credits' && state.userCredits >= 5,
-    hasEnoughAlgo: state.selectedMethod === 'algo_direct' && state.walletBalance !== null && state.walletBalance >= 10,
+    hasEnoughCredits: state.userCredits >= 5, // Check credits regardless of selection
+    hasEnoughAlgo: state.walletBalance !== null && state.walletBalance >= 10, // Check ALGO regardless of selection
     currentStep: state.steps[state.tokenCreationStep] || 'Preparing',
     progressPercentage: (state.tokenCreationStep / (state.steps.length - 1)) * 100,
     isAlgorandNetwork: state.network === 'algorand',

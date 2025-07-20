@@ -262,6 +262,7 @@ export function PeraMobileConnector({
             variant="outline"
             size="sm"
             className="w-full"
+            data-testid="pera-disconnect"
           >
             Disconnect
           </Button>
@@ -299,6 +300,7 @@ export function PeraMobileConnector({
                 size="sm"
                 onClick={handleInstallPera}
                 className="h-8 px-3"
+                data-testid="install-pera"
               >
                 <ExternalLink className="w-3 h-3 mr-1" />
                 Install Pera Wallet
@@ -365,6 +367,7 @@ export function PeraMobileConnector({
             onClick={handlePeraConnect}
             disabled={isMobileConnecting || isConnecting || !isPeraWalletReady}
             className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:opacity-90 text-white font-medium"
+            data-testid="pera-connect-mobile"
           >
             {isMobileConnecting || isConnecting ? (
               <>

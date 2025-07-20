@@ -268,6 +268,7 @@ export function PhantomMobileConnector({
             variant="outline"
             size="sm"
             className="w-full"
+            data-testid="phantom-disconnect"
           >
             Disconnect
           </Button>
@@ -302,6 +303,7 @@ export function PhantomMobileConnector({
                 size="sm"
                 onClick={handleInstallPhantom}
                 className="h-8 px-3"
+                data-testid="install-phantom"
               >
                 <ExternalLink className="w-3 h-3 mr-1" />
                 Install Phantom
@@ -346,6 +348,7 @@ export function PhantomMobileConnector({
             onClick={handlePhantomConnect}
             disabled={isConnecting || connecting}
             className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:opacity-90 text-white font-medium"
+            data-testid="phantom-connect-mobile"
           >
             {isConnecting || connecting ? (
               <>
