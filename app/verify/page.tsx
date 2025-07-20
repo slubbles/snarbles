@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, memo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -100,6 +100,212 @@ interface VerificationResult {
   shareUrl?: string;
   timestamp: number;
 }
+
+// Memoized VerificationResult component for performance
+const VerificationResultDisplay = memo(({ 
+  result, 
+  onShare, 
+  onCopy 
+}: { 
+  result: VerificationResult; 
+  onShare: () => void; 
+  onCopy: (text: string, label: string) => void; 
+}) => {
+  const getStatusIcon = (status: 'success' | 'warning' | 'error') => {
+    switch (status) {
+      case 'success':
+        return <CheckCircle className="w-12 h-12 text-green-400" />;
+      case 'warning':
+        return <AlertTriangle className="w-12 h-12 text-yellow-400" />;
+      case 'error':
+        return <AlertCircle className="w-12 h-12 text-red-400" />;
+      default:
+        return <Shield className="w-12 h-12 text-gray-400" />;
+    }
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-green-400';
+    if (score >= 60) return 'text-blue-400';
+    if (score >= 40) return 'text-yellow-400';
+    return 'text-red-400';
+  };
+
+  const getScoreBadgeVariant = (score: number): "default" | "secondary" | "destructive" | "outline" => {
+    if (score >= 80) return 'default';
+    if (score >= 60) return 'secondary';
+    if (score >= 40) return 'outline';
+    return 'destructive';
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      {/* Main Results */}
+      <div className="lg:col-span-8 space-y-8">
+        {/* Status Overview */}
+        <Card className={`snarbles-card ${result.verified ? 'snarbles-glow-green' : 'snarbles-glow-red'}`}>
+          <CardContent className="p-8">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center space-x-6">
+                {getStatusIcon(result.status)}
+                <div>
+                  <h2 className="snarbles-heading-4 mb-2">
+                    {result.verified ? 'Token Verified ✓' : 'Verification Issues Found'}
+                  </h2>
+                  <p className="snarbles-body text-muted-foreground">
+                    Security Score: <span className={`font-bold snarbles-heading-5 ${getScoreColor(result.score)}`}>
+                      {result.score}/100
+                    </span>
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <Button onClick={onShare} className="snarbles-button-ghost">
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Share
+                </Button>
+                <Button onClick={() => onCopy(result.tokenId, 'Token ID')} className="snarbles-button-ghost">
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy ID
+                </Button>
+              </div>
+            </div>
+
+            {/* Enhanced Progress Bar */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="snarbles-body text-muted-foreground font-medium">Comprehensive Security Assessment</span>
+                <Badge variant={getScoreBadgeVariant(result.score)} className="snarbles-body px-4 py-2">
+                  {result.score >= 80 ? 'SAFE' : 
+                   result.score >= 60 ? 'CAUTION' : 
+                   result.score >= 40 ? 'RISKY' : 'DANGER'}
+                </Badge>
+              </div>
+              <Progress value={result.score} className="h-6" />
+              <div className="flex justify-between text-sm text-gray-400">
+                <span>0</span>
+                <span>Danger</span>
+                <span>Risky</span>
+                <span>Caution</span>
+                <span>Safe</span>
+                <span>100</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Security Checks */}
+        <Card className="snarbles-card snarbles-border-glow">
+          <CardHeader>
+            <CardTitle className="snarbles-heading-4 flex items-center space-x-3">
+              <Shield className="w-6 h-6 text-red-400" />
+              <span>Comprehensive Security Analysis</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-8 space-y-6">
+            {Object.entries(result.checks).map(([key, passed]) => {
+              const checkLabels = {
+                tokenExists: 'Token Exists',
+                metadataValid: 'Valid Metadata',
+                liquidityAvailable: 'Liquidity Available', 
+                contractVerified: 'Contract Verified',
+                communityTrust: 'Community Trust',
+                holderDistribution: 'Healthy Distribution',
+                socialPresence: 'Social Media Presence'
+              };
+              
+              return (
+                <div key={key} className={`flex items-center justify-between p-6 rounded-xl transition-all duration-200 ${
+                  passed 
+                    ? 'bg-green-500/10 border border-green-500/30 hover:bg-green-500/15' 
+                    : 'bg-red-500/10 border border-red-500/30 hover:bg-red-500/15'
+                }`}>
+                  <div className="flex items-center space-x-4">
+                    {passed ? 
+                      <CheckCircle className="w-6 h-6 text-green-400" /> : 
+                      <AlertTriangle className="w-6 h-6 text-red-400" />
+                    }
+                    <span className="snarbles-body text-muted-foreground font-medium">
+                      {checkLabels[key as keyof typeof checkLabels] || key}
+                    </span>
+                  </div>
+                  <Badge variant={passed ? 'default' : 'destructive'} className="snarbles-body-small px-4 py-2">
+                    {passed ? 'PASSED' : 'FAILED'}
+                  </Badge>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+
+        {/* Warnings */}
+        {result.warnings.length > 0 && (
+          <Card className="snarbles-card snarbles-glow-red">
+            <CardHeader>
+              <CardTitle className="snarbles-heading-4 flex items-center space-x-3 text-red-400">
+                <AlertTriangle className="w-6 h-6" />
+                <span>Security Warnings & Recommendations</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-8 space-y-4">
+              {result.warnings.map((warning, index) => (
+                <div key={index} className="flex items-start space-x-4 p-4 bg-red-500/10 border border-red-500/30 rounded-xl hover:bg-red-500/15 transition-colors">
+                  <AlertTriangle className="w-5 h-5 text-red-400 mt-1 flex-shrink-0" />
+                  <p className="snarbles-body text-red-400">{warning}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Sidebar Info */}
+      <div className="lg:col-span-4 space-y-8">
+        {/* Token Information */}
+        <Card className="snarbles-card snarbles-border-glow">
+          <CardHeader>
+            <CardTitle className="snarbles-heading-5 flex items-center space-x-2">
+              <Hash className="w-5 h-5 text-blue-400" />
+              <span>Token Information</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-6">
+            {result.metadata && (
+              <div className="space-y-4">
+                <div>
+                  <Label className="snarbles-body-small font-medium text-gray-400">Name</Label>
+                  <p className="snarbles-body font-bold mt-1 text-foreground">{result.metadata.name}</p>
+                </div>
+                <div>
+                  <Label className="snarbles-body-small font-medium text-gray-400">Symbol</Label>
+                  <p className="snarbles-body font-bold mt-1 text-foreground">{result.metadata.symbol}</p>
+                </div>
+                <div>
+                  <Label className="snarbles-body-small font-medium text-gray-400">Network</Label>
+                  <p className="snarbles-body font-bold mt-1 text-foreground capitalize">
+                    {result.network.replace('-', ' ')}
+                  </p>
+                </div>
+                <div>
+                  <Label className="snarbles-body-small font-medium text-gray-400">Total Supply</Label>
+                  <p className="snarbles-body font-bold mt-1 text-foreground">
+                    {result.metadata.totalSupply?.toLocaleString() || 'Unknown'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="snarbles-body-small font-medium text-gray-400">Decimals</Label>
+                  <p className="snarbles-body font-bold mt-1 text-foreground">{result.metadata.decimals}</p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+});
+
+VerificationResultDisplay.displayName = 'VerificationResultDisplay';
 
 interface UserToken {
   id: string;
@@ -632,16 +838,16 @@ export default function VerifyPage() {
         <div className="text-center mb-20 space-y-8">
           <div className="inline-flex items-center space-x-3 glass-card px-6 py-3 rounded-full">
             <Shield className="w-5 h-5 text-primary animate-pulse" />
-            <span className="uppercase tracking-wider text-primary font-bold text-sm">Professional Token Verification</span>
+            <span className="snarbles-body-small uppercase tracking-wider text-primary font-bold">Professional Token Verification</span>
             <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
           </div>
           
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-foreground leading-tight">
+          <h1 className="snarbles-heading-1 text-foreground leading-tight">
             Verify Token 
             <span className="bg-gradient-to-r from-primary via-blue-500 to-green-500 bg-clip-text text-transparent"> Safety & Authenticity</span>
           </h1>
           
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
+          <p className="snarbles-body-large text-muted-foreground max-w-4xl mx-auto leading-relaxed">
             Advanced blockchain verification with 
             <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent font-semibold"> real-time security analysis</span>, 
             cross-network detection, and comprehensive scoring for Solana and Algorand tokens.
@@ -654,10 +860,10 @@ export default function VerifyPage() {
             <div className="flex items-center space-x-4">
               <div className={`w-6 h-6 rounded-full ${networkStatus.color} shadow-lg snarbles-animate-pulse`}></div>
               <networkStatus.icon className="w-7 h-7 text-green-400" />
-              <span className="text-xl font-bold snarbles-gradient-text-green">{networkStatus.label}</span>
+              <span className="snarbles-heading-4 font-bold snarbles-gradient-text-green">{networkStatus.label}</span>
               <div className="flex items-center space-x-2 text-green-400">
                 <div className="w-2 h-2 bg-green-400 rounded-full snarbles-animate-pulse"></div>
-                <span className="text-sm font-medium">Live Network</span>
+                <span className="snarbles-body-small font-medium">Live Network</span>
               </div>
             </div>
           </div>
@@ -700,28 +906,28 @@ export default function VerifyPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Network Selection */}
                   <div className="space-y-3">
-                    <Label htmlFor="network" className="text-lg font-bold snarbles-gradient-text-red">Network</Label>
+                    <Label htmlFor="network" className="snarbles-heading-5 font-bold snarbles-gradient-text-red">Network</Label>
                     <Select value={network} onValueChange={(value) => setNetwork(value as NetworkType)}>
-                      <SelectTrigger className="h-14 glass-card snarbles-border-glow text-white text-lg">
+                      <SelectTrigger className="h-14 snarbles-card snarbles-border-glow text-foreground snarbles-body">
                         <SelectValue placeholder="Select network" />
                       </SelectTrigger>
                       <SelectContent className="snarbles-glass border-gray-700">
-                        <SelectItem value="solana-devnet" className="text-white hover:bg-gray-700 py-4">
+                        <SelectItem value="solana-devnet" className="text-foreground hover:bg-gray-700 py-4">
                           <div className="flex items-center space-x-3">
                             <div className="w-4 h-4 bg-purple-500 rounded-full snarbles-animate-pulse"></div>
-                            <span className="text-lg">Solana Devnet</span>
+                            <span className="snarbles-body">Solana Devnet</span>
                           </div>
                         </SelectItem>
-                        <SelectItem value="algorand-mainnet" className="text-white hover:bg-gray-700 py-4">
+                        <SelectItem value="algorand-mainnet" className="text-foreground hover:bg-gray-700 py-4">
                           <div className="flex items-center space-x-3">
                             <div className="w-4 h-4 bg-green-500 rounded-full snarbles-animate-pulse"></div>
-                            <span className="text-lg">Algorand Mainnet</span>
+                            <span className="snarbles-body">Algorand Mainnet</span>
                           </div>
                         </SelectItem>
-                        <SelectItem value="algorand-testnet" className="text-white hover:bg-gray-700 py-4">
+                        <SelectItem value="algorand-testnet" className="text-foreground hover:bg-gray-700 py-4">
                           <div className="flex items-center space-x-3">
                             <div className="w-4 h-4 bg-orange-500 rounded-full"></div>
-                            <span className="text-lg">Algorand Testnet</span>
+                            <span className="snarbles-body">Algorand Testnet</span>
                           </div>
                         </SelectItem>
                       </SelectContent>
@@ -730,7 +936,7 @@ export default function VerifyPage() {
 
                   {/* Token ID Input */}
                   <div className="lg:col-span-2 space-y-3">
-                    <Label htmlFor="token-id" className="text-lg font-bold snarbles-gradient-text-red">
+                    <Label htmlFor="token-id" className="snarbles-heading-5 font-bold snarbles-gradient-text-red">
                       {network.includes('solana') ? 'Token Address' : 'Asset ID'}
                     </Label>
                     <div className="flex gap-4">
@@ -740,12 +946,12 @@ export default function VerifyPage() {
                         value={tokenId}
                         onChange={(e) => setTokenId(e.target.value)}
                         disabled={isVerifying}
-                        className="flex-1 h-14 glass-card snarbles-border-glow text-white placeholder-gray-400 text-lg"
+                        className="flex-1 h-14 snarbles-card snarbles-border-glow text-foreground placeholder-gray-400 snarbles-body"
                       />
                       <Button 
                         onClick={() => handleVerification()}
                         disabled={!tokenId || isVerifying || !validateTokenId(tokenId, network)}
-                        className="px-8 h-14 bg-primary hover:bg-primary/90 text-lg font-bold shadow-xl"
+                        className="px-8 h-14 snarbles-btn-primary snarbles-body font-bold shadow-xl"
                       >
                         {isVerifying ? (
                           <div className="flex items-center space-x-3">
@@ -765,9 +971,9 @@ export default function VerifyPage() {
 
                 {/* Error Display */}
                 {error && (
-                  <Alert className="glass-card-premium snarbles-glow-red p-6">
+                  <Alert className="snarbles-card snarbles-glow-red p-6">
                     <AlertCircle className="h-7 w-7 text-red-400" />
-                    <AlertDescription className="text-red-400 text-lg ml-4">
+                    <AlertDescription className="text-red-400 snarbles-body ml-4">
                       {error}
                     </AlertDescription>
                   </Alert>
@@ -856,7 +1062,7 @@ export default function VerifyPage() {
                           className={`p-6 rounded-xl border transition-all duration-200 cursor-pointer ${
                             selectedTokens.includes(token.contractAddress)
                               ? 'border-red-500 bg-red-500/10 snarbles-glow-red'
-                              : 'border-gray-700 hover:border-gray-600 glass-card'
+                              : 'border-gray-600/50 hover:border-gray-500/50 snarbles-glass-subtle'
                           }`}
                           onClick={() => {
                             if (selectedTokens.includes(token.contractAddress)) {
@@ -952,7 +1158,7 @@ export default function VerifyPage() {
                     {recentVerifications.map((verification, index) => (
                       <div
                         key={`${verification.tokenId}-${verification.network}-${index}`}
-                        className="p-6 rounded-xl border border-gray-700 hover:border-gray-600 glass-card transition-all duration-200 cursor-pointer"
+                        className="p-6 rounded-xl snarbles-glass-subtle hover:border-gray-500/50 transition-all duration-200 cursor-pointer"
                         onClick={() => {
                           setTokenId(verification.tokenId);
                           setNetwork(verification.network);
@@ -1022,10 +1228,10 @@ export default function VerifyPage() {
                   </div>
                   <span className="font-bold snarbles-gradient-text-red text-2xl">{Math.round(progress)}%</span>
                 </div>
-                <Progress value={progress} className="h-6 bg-gray-800" />
+                <Progress value={progress} className="h-6 snarbles-glass-subtle" />
                 <div className="text-center">
-                  <p className="text-muted-foreground text-lg">{currentStep}</p>
-                  <p className="text-gray-400 text-sm mt-2">Analyzing security, metadata, and market data...</p>
+                  <p className="snarbles-body text-muted-foreground text-lg">{currentStep}</p>
+                  <p className="snarbles-body-small text-gray-300 mt-2">Analyzing security, metadata, and market data...</p>
                 </div>
               </div>
             </CardContent>
@@ -1034,293 +1240,11 @@ export default function VerifyPage() {
 
         {/* Enhanced Verification Results */}
         {verificationResult && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Main Results */}
-            <div className="lg:col-span-8 space-y-8">
-              {/* Status Overview */}
-              <Card className={`glass-card-premium ${verificationResult.verified ? 'snarbles-glow-green' : 'snarbles-glow-red'}`}>
-                <CardContent className="p-8">
-                  <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center space-x-6">
-                      {getStatusIcon(verificationResult.status)}
-                      <div>
-                        <h2 className="snarbles-subheading text-3xl mb-2">
-                          {verificationResult.verified ? 'Token Verified ✓' : 'Verification Issues Found'}
-                        </h2>
-                        <p className="text-muted-foreground text-lg">
-                          Security Score: <span className={`font-bold text-2xl ${getScoreColor(verificationResult.score)}`}>
-                            {verificationResult.score}/100
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <Button
-                        onClick={shareVerification}
-                        className="snarbles-button-ghost"
-                      >
-                        <Share2 className="w-4 h-4 mr-2" />
-                        Share
-                      </Button>
-                      <Button
-                        onClick={() => copyToClipboard(verificationResult.tokenId, 'Token ID')}
-                        className="snarbles-button-ghost"
-                      >
-                        <Copy className="w-4 h-4 mr-2" />
-                        Copy ID
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Enhanced Progress Bar */}
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground font-medium">Comprehensive Security Assessment</span>
-                      <Badge variant={getScoreBadgeVariant(verificationResult.score)} className="text-lg px-4 py-2">
-                        {verificationResult.score >= 80 ? 'SAFE' : 
-                         verificationResult.score >= 60 ? 'CAUTION' : 
-                         verificationResult.score >= 40 ? 'RISKY' : 'DANGER'}
-                      </Badge>
-                    </div>
-                    <Progress 
-                      value={verificationResult.score} 
-                      className="h-6"
-                    />
-                    <div className="flex justify-between text-sm text-gray-400">
-                      <span>0</span>
-                      <span>Danger</span>
-                      <span>Risky</span>
-                      <span>Caution</span>
-                      <span>Safe</span>
-                      <span>100</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Enhanced Security Checks */}
-              <Card className="glass-card-premium snarbles-border-glow">
-                <CardHeader>
-                  <CardTitle className="snarbles-subheading text-2xl flex items-center space-x-3">
-                    <Shield className="w-6 h-6 text-red-400" />
-                    <span>Comprehensive Security Analysis</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-8 space-y-6">
-                  {Object.entries(verificationResult.checks).map(([key, passed]) => {
-                    const checkLabels = {
-                      tokenExists: 'Token Exists',
-                      metadataValid: 'Valid Metadata',
-                      liquidityAvailable: 'Liquidity Available', 
-                      contractVerified: 'Contract Verified',
-                      communityTrust: 'Community Trust',
-                      holderDistribution: 'Healthy Distribution',
-                      socialPresence: 'Social Media Presence'
-                    };
-                    
-                    return (
-                      <div key={key} className={`flex items-center justify-between p-6 rounded-xl transition-all duration-200 ${
-                        passed 
-                          ? 'bg-green-500/10 border border-green-500/30 hover:bg-green-500/15' 
-                          : 'bg-red-500/10 border border-red-500/30 hover:bg-red-500/15'
-                      }`}>
-                        <div className="flex items-center space-x-4">
-                          {passed ? 
-                            <CheckCircle className="w-6 h-6 text-green-400" /> : 
-                            <AlertTriangle className="w-6 h-6 text-red-400" />
-                          }
-                          <span className="text-muted-foreground font-medium text-lg">
-                            {checkLabels[key as keyof typeof checkLabels] || key}
-                          </span>
-                        </div>
-                        <Badge variant={passed ? 'default' : 'destructive'} className="text-sm px-4 py-2">
-                          {passed ? 'PASSED' : 'FAILED'}
-                        </Badge>
-                      </div>
-                    );
-                  })}
-                </CardContent>
-              </Card>
-
-              {/* Enhanced Warnings */}
-              {verificationResult.warnings.length > 0 && (
-                <Card className="glass-card-premium snarbles-glow-red">
-                  <CardHeader>
-                    <CardTitle className="snarbles-subheading text-2xl flex items-center space-x-3 text-red-400">
-                      <AlertTriangle className="w-6 h-6" />
-                      <span>Security Warnings & Recommendations</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-8 space-y-4">
-                    {verificationResult.warnings.map((warning, index) => (
-                      <div key={index} className="flex items-start space-x-4 p-4 bg-red-500/10 border border-red-500/30 rounded-xl hover:bg-red-500/15 transition-colors">
-                        <AlertTriangle className="w-5 h-5 text-red-400 mt-1 flex-shrink-0" />
-                        <p className="text-muted-foreground text-red-400">{warning}</p>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-
-            {/* Enhanced Sidebar Info */}
-            <div className="lg:col-span-4 space-y-8">
-              {/* Token Information */}
-              <Card className="glass-card-premium snarbles-border-glow">
-                <CardHeader>
-                  <CardTitle className="snarbles-subheading text-xl flex items-center space-x-2">
-                    <Hash className="w-5 h-5 text-blue-400" />
-                    <span>Token Information</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6 space-y-6">
-                  {verificationResult.metadata && (
-                    <div className="space-y-4">
-                      <div>
-                        <Label className="text-muted-foreground font-medium text-gray-400">Name</Label>
-                        <p className="text-muted-foreground text-lg font-bold mt-1 text-white">{verificationResult.metadata.name}</p>
-                      </div>
-                      <div>
-                        <Label className="text-muted-foreground font-medium text-gray-400">Symbol</Label>
-                        <p className="text-muted-foreground text-lg font-bold mt-1 text-white">{verificationResult.metadata.symbol}</p>
-                      </div>
-                      <div>
-                        <Label className="text-muted-foreground font-medium text-gray-400">Network</Label>
-                        <p className="text-muted-foreground text-lg font-bold mt-1 text-white capitalize">
-                          {verificationResult.network.replace('-', ' ')}
-                        </p>
-                      </div>
-                      <div>
-                        <Label className="text-muted-foreground font-medium text-gray-400">Total Supply</Label>
-                        <p className="text-muted-foreground text-lg font-bold mt-1 text-white">
-                          {verificationResult.metadata.totalSupply?.toLocaleString() || 'Unknown'}
-                        </p>
-                      </div>
-                      <div>
-                        <Label className="text-muted-foreground font-medium text-gray-400">Decimals</Label>
-                        <p className="text-muted-foreground text-lg font-bold mt-1 text-white">{verificationResult.metadata.decimals}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="pt-6 border-t border-gray-700 space-y-3">
-                    <Button
-                      onClick={() => copyToClipboard(verificationResult.tokenId, 'Token ID')}
-                      variant="outline"
-                      className="w-full snarbles-button-ghost"
-                    >
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copy Token ID
-                    </Button>
-                    <Button
-                      onClick={shareVerification}
-                      variant="outline"
-                      className="w-full snarbles-button-ghost"
-                    >
-                      <Share2 className="w-4 h-4 mr-2" />
-                      Share Results
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Market Metrics */}
-              {verificationResult.metrics && (
-                <Card className="glass-card-premium snarbles-border-glow">
-                  <CardHeader>
-                    <CardTitle className="snarbles-subheading text-xl flex items-center space-x-2">
-                      <BarChart3 className="w-5 h-5 text-green-400" />
-                      <span>Market Analytics</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-6 space-y-4">
-                    <div className="grid grid-cols-1 gap-4">
-                      <div className="text-center p-4 glass-card rounded-xl">
-                        <p className="text-muted-foreground text-sm text-gray-400">Holders</p>
-                        <p className="snarbles-gradient-text-green font-bold text-lg">
-                          {verificationResult.metrics.holders?.toLocaleString() || 'N/A'}
-                        </p>
-                      </div>
-                      <div className="text-center p-4 glass-card rounded-xl">
-                        <p className="text-muted-foreground text-sm text-gray-400">Liquidity</p>
-                        <p className="snarbles-gradient-text-blue font-bold text-lg">
-                          {verificationResult.metrics.liquidity || 'N/A'}
-                        </p>
-                      </div>
-                      <div className="text-center p-4 glass-card rounded-xl">
-                        <p className="text-muted-foreground text-sm text-gray-400">Market Cap</p>
-                        <p className="snarbles-gradient-text-purple font-bold text-lg">
-                          {verificationResult.metrics.marketCap || 'N/A'}
-                        </p>
-                      </div>
-                      <div className="text-center p-4 glass-card rounded-xl">
-                        <p className="text-muted-foreground text-sm text-gray-400">24h Volume</p>
-                        <p className="snarbles-gradient-text-yellow font-bold text-lg">
-                          {verificationResult.metrics.volume24h || 'N/A'}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* External Resources */}
-              <Card className="glass-card-premium snarbles-border-glow">
-                <CardHeader>
-                  <CardTitle className="snarbles-subheading text-xl flex items-center space-x-2">
-                    <Link className="w-5 h-5 text-purple-400" />
-                    <span>External Resources</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6 space-y-4">
-                  {verificationResult.explorerUrl && (
-                    <Button
-                      onClick={() => window.open(verificationResult.explorerUrl, '_blank')}
-                      className="w-full bg-primary hover:bg-primary/90"
-                    >
-                      <ExternalLink className="w-4 h-4 mr-2" />
-                      View on Explorer
-                    </Button>
-                  )}
-                  
-                  {verificationResult.metadata?.website && (
-                    <Button
-                      onClick={() => window.open(verificationResult.metadata!.website, '_blank')}
-                      variant="outline"
-                      className="w-full snarbles-button-ghost"
-                    >
-                      <Globe className="w-4 h-4 mr-2" />
-                      Official Website
-                    </Button>
-                  )}
-                  
-                  {verificationResult.metadata?.twitter && (
-                    <Button
-                      onClick={() => window.open(verificationResult.metadata!.twitter, '_blank')}
-                      variant="outline"
-                      className="w-full snarbles-button-ghost"
-                    >
-                      <Activity className="w-4 h-4 mr-2" />
-                      Twitter Profile
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Verification Timestamp */}
-              <Card className="glass-card-premium snarbles-border-glow">
-                <CardContent className="p-6 text-center">
-                  <div className="flex items-center justify-center space-x-2 mb-2">
-                    <Clock className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-400">Verified on</span>
-                  </div>
-                  <p className="text-white font-medium">
-                    {new Date(verificationResult.timestamp).toLocaleString()}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+          <VerificationResultDisplay 
+            result={verificationResult}
+            onShare={shareVerification}
+            onCopy={copyToClipboard}
+          />
         )}
       </div>
     </div>

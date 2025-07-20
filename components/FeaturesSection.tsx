@@ -74,10 +74,10 @@ export default function FeaturesSection() {
           {features.map((feature, index) => (
             <div 
               key={index}
-              className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow duration-300"
+              className="snarbles-card-premium p-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
               <div className="space-y-4">
-                <div className={`${feature.color} p-3 rounded-lg bg-gray-50 dark:bg-gray-700 w-fit`}>
+                <div className={`${feature.color} p-3 rounded-lg snarbles-glass-subtle w-fit`}>
                   <feature.icon className="w-6 h-6" />
                 </div>
                 

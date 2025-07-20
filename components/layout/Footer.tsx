@@ -55,7 +55,7 @@ export default function Footer() {
                 href="https://github.com/snarbles" 
                 target="_blank"
                 rel="noopener noreferrer" 
-                className="text-muted-foreground hover:text-foreground transition-all hover:scale-110"
+                className="text-muted-foreground hover:text-foreground transition-all hover:opacity-80"
               >
                 <div className="w-8 h-8 bg-muted/50 rounded-full flex items-center justify-center hover:bg-muted/70 transition-colors">
                   <Github className="w-4 h-4" />
@@ -65,7 +65,7 @@ export default function Footer() {
                 href="https://twitter.com/StackBlitz" 
                 target="_blank"
                 rel="noopener noreferrer" 
-                className="text-muted-foreground hover:text-foreground transition-all hover:scale-110"
+                className="text-muted-foreground hover:text-foreground transition-all hover:opacity-80"
               >
                 <div className="w-8 h-8 bg-muted/50 rounded-full flex items-center justify-center hover:bg-muted/70 transition-colors">
                   <Twitter className="w-4 h-4" />
@@ -75,7 +75,7 @@ export default function Footer() {
                 href="https://bolt.new" 
                 target="_blank"
                 rel="noopener noreferrer" 
-                className="text-muted-foreground hover:text-foreground transition-all hover:scale-110"
+                className="text-muted-foreground hover:text-foreground transition-all hover:opacity-80"
               >
                 <div className="w-8 h-8 bg-muted/50 rounded-full flex items-center justify-center hover:bg-muted/70 transition-colors">
                   <Globe className="w-4 h-4" />
@@ -126,7 +126,7 @@ export default function Footer() {
                 href="https://bolt.new/" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="transition-transform hover:scale-110"
+                className="transition-transform hover:opacity-80"
               >
                 <img 
                   src="/white_circle_360x360 copy.png" 

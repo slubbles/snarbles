@@ -42,6 +42,40 @@ export function AlgorandWalletProvider({ children }: AlgorandWalletProviderProps
   const [balance, setBalance] = useState<number | null>(null);
   const [networkConfig, setNetworkConfig] = useState(getAlgorandNetwork('algorand-mainnet'));
 
+  // Check network connectivity specifically for mobile wallet apps
+  const checkNetworkConnectivity = async () => {
+    try {
+      // Multiple connectivity checks for mobile wallet apps
+      if (!navigator.onLine) {
+        throw new Error('Device appears to be offline');
+      }
+
+      // For Pera wallet app browsers, try a simple network request
+      const testUrl = 'https://mainnet-api.algonode.cloud/health';
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+      try {
+        const response = await fetch(testUrl, {
+          signal: controller.signal,
+          mode: 'no-cors' // Important for CORS in mobile apps
+        });
+        clearTimeout(timeoutId);
+        
+        console.log('✅ Network connectivity confirmed');
+        return true;
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        console.warn('⚠️ Network test failed, but continuing anyway:', fetchError);
+        // Don't throw here - mobile apps often block external requests
+        return true;
+      }
+    } catch (error) {
+      console.error('❌ Network connectivity check failed:', error);
+      throw new Error('No internet connection available. Please check your connection and try again.');
+    }
+  };
+
   // Update network configuration when selected network changes
   useEffect(() => {
     console.log(`🔄 Algorand network changed to: ${selectedNetwork}`);
@@ -174,6 +208,14 @@ export function AlgorandWalletProvider({ children }: AlgorandWalletProviderProps
       throw new Error(errorMsg);
     }
 
+    // Check network connectivity for mobile wallet apps
+    try {
+      await checkNetworkConnectivity();
+    } catch (connectivityError: any) {
+      setError(connectivityError.message);
+      throw connectivityError;
+    }
+
     setIsConnecting(true);
     setNetworkSwitching(false);
     setError(null);
@@ -185,6 +227,9 @@ export function AlgorandWalletProvider({ children }: AlgorandWalletProviderProps
       if (selectedNetwork === 'algorand-mainnet') {
         console.log('🚨 Connecting to Algorand Mainnet - please ensure your Pera Wallet is set to Mainnet');
       }
+      
+      // Add a small delay for mobile wallet app readiness
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       const accounts = await peraWallet.connect();
       
@@ -208,8 +253,8 @@ export function AlgorandWalletProvider({ children }: AlgorandWalletProviderProps
       if (error instanceof Error) {
         if (error.message.includes('cancelled') || error.message.includes('rejected')) {
           errorMessage = 'Connection cancelled by user';
-        } else if (error.message.includes('network')) {
-          errorMessage = `Network error connecting to ${networkConfig.name}. Please check your connection and ensure Pera Wallet is set to the correct network.`;
+        } else if (error.message.includes('network') || error.message.includes('internet')) {
+          errorMessage = `Network error connecting to ${networkConfig.name}. Please check your internet connection and ensure Pera Wallet is properly connected.`;
         } else if (error.message.includes('mismatch')) {
           errorMessage = `Network mismatch error. Please ensure your Pera Wallet is set to ${networkConfig.name}.`;
         } else if (selectedNetwork === 'algorand-mainnet' && error.message.includes('chain')) {
@@ -259,6 +304,9 @@ export function AlgorandWalletProvider({ children }: AlgorandWalletProviderProps
     setError(null);
 
     try {
+      // Check network connectivity before signing
+      await checkNetworkConnectivity();
+      
       console.log(`📝 Signing transaction on ${selectedNetwork}...`);
       console.log('Transaction details:', {
         type: typeof txn,
@@ -283,6 +331,9 @@ export function AlgorandWalletProvider({ children }: AlgorandWalletProviderProps
       };
 
       console.log('Formatted SignerTransaction for', selectedNetwork);
+
+      // Add a small delay to ensure wallet app is ready
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       // CRITICAL: Pera Wallet expects SignerTransaction[][]
       const signedTxns = await peraWallet.signTransaction([[signerTransaction]]);
@@ -322,6 +373,10 @@ export function AlgorandWalletProvider({ children }: AlgorandWalletProviderProps
           errorMessage = 'Transaction cancelled by user';
         } else if (error.message.includes('insufficient')) {
           errorMessage = `Insufficient balance for transaction on ${networkConfig.name}`;
+        } else if (error.message.includes('network') || error.message.includes('internet') || error.message.includes('connectivity')) {
+          errorMessage = 'Network connection error. Please check your internet connection and try again.';
+        } else if (error.message.includes('timeout')) {
+          errorMessage = 'Transaction timed out. Please try again.';
         } else {
           errorMessage = `${networkConfig.name}: ${error.message}`;
         }
@@ -361,7 +416,7 @@ export function AlgorandWalletProvider({ children }: AlgorandWalletProviderProps
 
       console.log('Formatted atomic group for', selectedNetwork);
 
-      // Sign the atomic group - pass as a single array to maintain atomicity
+      // Sign the atomic group - Pera Wallet expects SignerTransaction[][]
       const signedTxns = await peraWallet.signTransaction([signerTransactions]);
       
       if (!signedTxns || signedTxns.length === 0) {
@@ -370,10 +425,18 @@ export function AlgorandWalletProvider({ children }: AlgorandWalletProviderProps
       
       console.log(`✅ Atomic group signed successfully on ${selectedNetwork}`);
       
+      // Since we passed [signerTransactions], the result is an array where the first element
+      // contains our group of signed transactions
+      const signedGroup = signedTxns[0];
+      
+      if (!signedGroup || !Array.isArray(signedGroup)) {
+        throw new Error('Atomic group signing failed - invalid response format');
+      }
+      
       // Convert all signed transactions to Uint8Array format
       const signedTransactions: Uint8Array[] = [];
       
-      for (const signedTxn of signedTxns) {
+      for (const signedTxn of signedGroup) {
         let signedTxnBytes: Uint8Array;
         
         if (signedTxn instanceof Uint8Array) {

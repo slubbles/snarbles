@@ -66,7 +66,7 @@ export default function TechnologyCarousel() {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="glass-card p-8 sm:p-10 border border-red-500/20 shadow-lg">
+        <div className="snarbles-card-premium p-8 sm:p-10 border border-red-500/20 shadow-lg snarbles-glow-red">
           {/* Section Header */}
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-foreground">
@@ -87,7 +87,7 @@ export default function TechnologyCarousel() {
                   href={partner.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-shrink-0 mx-8 sm:mx-12 flex items-center justify-center h-16 sm:h-24 transition-all duration-300 filter grayscale hover:filter-none hover:scale-110"
+                  className="flex-shrink-0 mx-8 sm:mx-12 flex items-center justify-center h-16 sm:h-24 transition-all duration-300 filter grayscale hover:filter-none hover:opacity-90"
                   style={{ minWidth: '140px' }}
                 >
                   <Image 
@@ -107,7 +107,7 @@ export default function TechnologyCarousel() {
                   href={partner.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-shrink-0 mx-8 sm:mx-12 flex items-center justify-center h-16 sm:h-24 transition-all duration-300 filter grayscale hover:filter-none hover:scale-110"
+                  className="flex-shrink-0 mx-8 sm:mx-12 flex items-center justify-center h-16 sm:h-24 transition-all duration-300 filter grayscale hover:filter-none hover:opacity-90"
                   style={{ minWidth: '140px' }}
                 >
                   <Image 
@@ -127,7 +127,7 @@ export default function TechnologyCarousel() {
                   href={partner.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-shrink-0 mx-8 sm:mx-12 flex items-center justify-center h-16 sm:h-24 transition-all duration-300 filter grayscale hover:filter-none hover:scale-110"
+                  className="flex-shrink-0 mx-8 sm:mx-12 flex items-center justify-center h-16 sm:h-24 transition-all duration-300 filter grayscale hover:filter-none hover:opacity-90"
                   style={{ minWidth: '140px' }}
                 >
                   <Image 

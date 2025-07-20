@@ -28,18 +28,7 @@ export const isPhantomMobileBrowser = () => {
 
 export const isPeraMobileBrowser = () => {
   if (typeof window === 'undefined') return false;
-  
-  const userAgent = window.navigator.userAgent.toLowerCase();
-  const isPeraApp = userAgent.includes('pera') || 
-                   userAgent.includes('algorand') ||
-                   !!(window as any).algorand ||
-                   userAgent.includes('wallet');
-  
-  // Additional check for Pera wallet app browser context
-  const isInAppBrowser = userAgent.includes('wv') || // WebView indicator
-                        userAgent.includes('version/') && userAgent.includes('mobile');
-  
-  return isMobile() && (isPeraApp || (isInAppBrowser && !!(window as any).algorand));
+  return !!(window as any).algorand && isMobile();
 };
 
 // Deep link generators
@@ -114,45 +103,11 @@ export const attemptMobileWalletConnection = async (
   
   if (walletType === 'pera') {
     try {
-      // Check network connectivity first
-      if (!navigator.onLine) {
-        return { success: false, error: 'No internet connection available' };
-      }
-      
-      // For Pera, we'll use WalletConnect protocol with enhanced error handling
+      // For Pera, we'll use WalletConnect protocol
       const deepLink = generatePeraDeepLink(currentUrl);
-      console.log('🔗 Opening Pera wallet with deep link:', deepLink);
       
-      // Use window.location.href for better compatibility in Pera app browser
+      // Try to open the wallet app
       window.location.href = deepLink;
-      
-      // Add fallback timeout for app opening
-      const openPromise = new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error('Timeout opening Pera app'));
-        }, 10000); // 10 second timeout
-        
-        // Clear timeout if page visibility changes (app opened)
-        const handleVisibilityChange = () => {
-          if (document.hidden) {
-            clearTimeout(timeout);
-            resolve(true);
-          }
-        };
-        
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-        
-        // Also resolve if focus changes
-        const handleBlur = () => {
-          clearTimeout(timeout);
-          resolve(true);
-          window.removeEventListener('blur', handleBlur);
-        };
-        
-        window.addEventListener('blur', handleBlur);
-      });
-      
-      await openPromise;
       
       // Fallback to app store if needed
       if (fallbackToAppStore) {
@@ -167,10 +122,7 @@ export const attemptMobileWalletConnection = async (
       return { success: true, method: 'deeplink' };
     } catch (error) {
       console.error('Failed to open Pera app:', error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to open Pera app' 
-      };
+      return { success: false, error: 'Failed to open Pera app' };
     }
   }
   

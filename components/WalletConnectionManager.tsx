@@ -1,126 +1,101 @@
 'use client';
 
-import { useState } from 'react';
+import React from 'react';
+import { useAlgorandWallet } from '@/components/providers/AlgorandWalletProvider';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Wallet, LogOut, ExternalLink } from 'lucide-react';
-import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
-import { usePaymentState } from '@/hooks/usePaymentState';
+import { Wallet, Wifi, WifiOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface WalletConnectionManagerProps {
+  onConnectionChange?: (connected: boolean, walletType?: string) => void;
   className?: string;
-  showBalance?: boolean;
 }
 
-export default function WalletConnectionManager({ 
-  className = '',
-  showBalance = true 
-}: WalletConnectionManagerProps) {
-  const [isDisconnecting, setIsDisconnecting] = useState(false);
-  const { walletAddress, isAuthenticated, disconnectWallet: authDisconnectWallet } = useWalletAuth();
-  const { walletBalance, setIsConnected } = usePaymentState();
+export default function WalletConnectionManager({ onConnectionChange, className }: WalletConnectionManagerProps) {
+  const { 
+    connected, 
+    isConnecting, 
+    address, 
+    connect, 
+    disconnect,
+    error
+  } = useAlgorandWallet();
+  
   const { toast } = useToast();
 
-  const handleDisconnect = async () => {
-    if (isDisconnecting) return;
-    
-    setIsDisconnecting(true);
-    
+  const handleConnect = async () => {
     try {
-      // Use the auth provider's disconnect method
-      await authDisconnectWallet();
-      
-      // Update global state
-      setIsConnected(false);
-      
+      await connect();
+      onConnectionChange?.(true, 'pera'); // Assuming Pera since this is Algorand
       toast({
-        title: "Wallet Disconnected",
-        description: "Your wallet has been disconnected successfully.",
+        title: "Wallet Connected",
+        description: "Successfully connected to Pera wallet",
+        duration: 3000,
       });
-      
     } catch (error) {
-      console.error('Failed to disconnect wallet:', error);
+      console.error('Connection failed:', error);
       toast({
-        title: "Disconnect Failed",
-        description: "Failed to disconnect wallet. Please try again.",
-        variant: "destructive"
+        title: "Connection Failed",
+        description: "Failed to connect wallet. Please try again.",
+        variant: "destructive",
+        duration: 5000,
       });
-    } finally {
-      setIsDisconnecting(false);
     }
   };
 
-  const truncateAddress = (address: string) => {
-    if (!address) return '';
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  const handleDisconnect = async () => {
+    try {
+      await disconnect();
+      onConnectionChange?.(false);
+      toast({
+        title: "Wallet Disconnected",
+        description: "Successfully disconnected from wallet",
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('Disconnect failed:', error);
+    }
   };
 
-  const openInExplorer = () => {
-    if (!walletAddress) return;
-    const explorerUrl = `https://explorer.perawallet.app/address/${walletAddress}`;
-    window.open(explorerUrl, '_blank');
-  };
-
-  if (!isAuthenticated || !walletAddress) {
-    return null;
+  if (connected && address) {
+    return (
+      <div className={`flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg ${className || ''}`}>
+        <div className="flex items-center gap-2">
+          <Wallet className="h-4 w-4 text-green-600" />
+          <span className="text-sm font-medium text-green-800">
+            Connected to Pera
+          </span>
+          <Wifi className="h-4 w-4 text-green-600" />
+        </div>
+        <div className="text-xs text-green-600 font-mono">
+          {address.slice(0, 6)}...{address.slice(-4)}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleDisconnect}
+          className="ml-auto"
+        >
+          Disconnect
+        </Button>
+      </div>
+    );
   }
 
   return (
-    <div className={`wallet-connection-status mobile-optimized glass-card p-4 ${className}`}>
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <Wallet className="w-5 h-5 text-primary flex-shrink-0" />
-          <div className="flex flex-col gap-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-foreground font-medium truncate">
-                {truncateAddress(walletAddress)}
-              </span>
-              <Badge variant="outline" className="text-green-400 border-green-400 flex-shrink-0">
-                Connected
-              </Badge>
-            </div>
-            
-            {showBalance && walletBalance !== null && (
-              <span className="text-xs text-muted-foreground">
-                Balance: {walletBalance.toFixed(2)} ALGO
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Mobile-friendly disconnect and explorer buttons */}
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm" 
-            onClick={openInExplorer}
-            className="p-2 h-auto text-muted-foreground hover:text-foreground touch-friendly"
-          >
-            <ExternalLink className="w-4 h-4" />
-          </Button>
-          
-          <Button
-            onClick={handleDisconnect}
-            disabled={isDisconnecting}
-            variant="outline"
-            size="sm"
-            className="disconnect-btn touch-friendly border-primary text-primary hover:bg-primary/10 min-h-[44px] px-4"
-          >
-            {isDisconnecting ? (
-              <>
-                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin mr-2" />
-                Disconnecting...
-              </>
-            ) : (
-              <>
-                <LogOut className="w-4 h-4 mr-2" />
-                Disconnect
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
+    <div className={`flex items-center gap-3 p-4 bg-gray-50 border border-gray-200 rounded-lg ${className || ''}`}>
+      <Wallet className="h-4 w-4 text-gray-400" />
+      <span className="text-sm text-gray-600">No wallet connected</span>
+      {error && (
+        <WifiOff className="h-4 w-4 text-red-500" />
+      )}
+      <Button
+        onClick={handleConnect}
+        disabled={isConnecting}
+        className="ml-auto"
+      >
+        {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+      </Button>
     </div>
   );
 }

@@ -17,7 +17,7 @@ export default function AboutPage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10">
         {/* Enhanced Hero Section */}
         <div className="text-center mb-20">
-          <div className="inline-flex items-center space-x-3 glass-card px-8 py-4 mb-8">
+          <div className="inline-flex items-center space-x-3 snarbles-glass-subtle px-8 py-4 mb-8 rounded-xl">
             <Crown className="w-5 h-5 text-primary animate-pulse" />
             <span className="uppercase tracking-wider text-primary font-bold text-sm">About Snarbles</span>
             <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
@@ -33,10 +33,10 @@ export default function AboutPage() {
         </div>
         
         {/* Enhanced Our Mission */}
-        <div className="glass-card p-8 mb-16 border-primary/20">
+        <div className="snarbles-card-premium p-8 mb-16 border-primary/20 snarbles-glow-blue">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
-              <div className="inline-flex items-center space-x-2 glass-card px-4 py-2 rounded-full">
+              <div className="inline-flex items-center space-x-2 snarbles-glass-subtle px-4 py-2 rounded-full">
                 <Sparkles className="w-4 h-4 text-primary" />
                 <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent font-bold text-sm">Our Mission</span>
               </div>
@@ -95,8 +95,8 @@ export default function AboutPage() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="snarbles-card-premium p-6 snarbles-glow-green hover:scale-105 transition-all duration-500 group">
-              <div className="w-12 h-12 rounded-xl snarbles-gradient-green flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <div className="snarbles-card-premium p-6 snarbles-glow-green hover:border-green-500/40 transition-all duration-500 group">
+              <div className="w-12 h-12 rounded-xl snarbles-gradient-green flex items-center justify-center mb-6 transition-transform">
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <h3 className="snarbles-subheading text-xl mb-3">Security First</h3>
@@ -119,8 +119,8 @@ export default function AboutPage() {
               </ul>
             </div>
             
-            <div className="snarbles-card-premium p-6 snarbles-glow-blue hover:scale-105 transition-all duration-500 group">
-              <div className="w-12 h-12 rounded-xl snarbles-gradient-blue flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <div className="snarbles-card-premium p-6 snarbles-glow-blue hover:border-blue-500/40 transition-all duration-500 group">
+              <div className="w-12 h-12 rounded-xl snarbles-gradient-blue flex items-center justify-center mb-6 transition-transform">
                 <Code className="w-6 h-6 text-white" />
               </div>
               <h3 className="snarbles-subheading text-xl mb-3">Radical Simplicity</h3>
@@ -143,8 +143,8 @@ export default function AboutPage() {
               </ul>
             </div>
             
-            <div className="snarbles-card-premium p-6 snarbles-glow-purple hover:scale-105 transition-all duration-500 group">
-              <div className="w-12 h-12 rounded-xl snarbles-gradient-purple flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+            <div className="snarbles-card-premium p-6 snarbles-glow-purple hover:border-purple-500/40 transition-all duration-500 group">
+              <div className="w-12 h-12 rounded-xl snarbles-gradient-purple flex items-center justify-center mb-6 transition-transform">
                 <Users className="w-6 h-6 text-white" />
               </div>
               <h3 className="snarbles-subheading text-xl mb-3">Community Focused</h3>
@@ -287,7 +287,7 @@ export default function AboutPage() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center snarbles-card p-6 hover:scale-105 transition-all duration-300">
+            <div className="text-center snarbles-card p-6 hover:border-primary/40 transition-all duration-300">
               <div className="w-28 h-28 rounded-full snarbles-gradient-red mx-auto mb-4 flex items-center justify-center shadow-lg shadow-red-500/30">
                 <span className="text-white font-bold text-xl">AJ</span>
               </div>
@@ -298,7 +298,7 @@ export default function AboutPage() {
               </p>
             </div>
             
-            <div className="text-center snarbles-card p-6 hover:scale-105 transition-all duration-300">
+            <div className="text-center snarbles-card p-6 hover:border-primary/40 transition-all duration-300">
               <div className="w-28 h-28 rounded-full snarbles-gradient-blue mx-auto mb-4 flex items-center justify-center shadow-lg shadow-blue-500/30">
                 <span className="text-white font-bold text-xl">SC</span>
               </div>
@@ -309,7 +309,7 @@ export default function AboutPage() {
               </p>
             </div>
             
-            <div className="text-center snarbles-card p-6 hover:scale-105 transition-all duration-300">
+            <div className="text-center snarbles-card p-6 hover:border-primary/40 transition-all duration-300">
               <div className="w-28 h-28 rounded-full snarbles-gradient-green mx-auto mb-4 flex items-center justify-center shadow-lg shadow-green-500/30">
                 <span className="text-white font-bold text-xl">MR</span>
               </div>

@@ -79,10 +79,10 @@ export default function ContactPage() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
           {/* Contact Information - Left Sidebar */}
           <div className="lg:col-span-2 space-y-8">
-            <Card className="glass-card">
+            <Card className="snarbles-card-premium snarbles-glow-blue">
               <CardHeader>
-                <CardTitle>Contact Information</CardTitle>
-                <CardDescription>
+                <CardTitle className="snarbles-heading">Contact Information</CardTitle>
+                <CardDescription className="snarbles-body">
                   Multiple ways to reach our team
                 </CardDescription>
               </CardHeader>

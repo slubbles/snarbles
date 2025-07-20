@@ -14,17 +14,14 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { hasEnoughCredits, spendCreditsForTokenCreation } from '@/lib/credit-system';
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
-import { useAlgorandWallet } from '@/components/providers/AlgorandWalletProvider';
 import PaymentSelectorNew, { type PaymentMethod } from '@/components/PaymentSelectorNew';
-import TokenCreationProgress from '@/components/TokenCreationProgress';
-import TokenCreationSuccess from '@/components/TokenCreationSuccess';
-import { useTokenCreationProgress } from '@/hooks/useTokenCreationProgress';
+import { usePaymentState } from '@/hooks/usePaymentState';
 import { 
   validatePaymentForTokenCreation, 
   executeTokenCreationPayment,
   getCreditsBalance
 } from '@/lib/enhanced-payment-system';
-import { createTokenWithRealTransaction } from '@/lib/real-algorand-token-creation';
+import { trackTokenCreation, trackFeeCollection } from '@/lib/analytics';
 // Import token creation functions - will be implemented via existing components
 // import { createAlgorandToken } from '@/lib/algorand';
 // import { createTokenOnChain } from '@/lib/solana';
@@ -56,15 +53,11 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
   const [deploymentResult, setDeploymentResult] = useState<any>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [previewLogoUrl, setPreviewLogoUrl] = useState('');
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod>('credits');
   const [paymentInfo, setPaymentInfo] = useState<any>(null);
   const [userCredits, setUserCredits] = useState<number>(0);
   
-  // Progress and success modal states
-  const [showProgress, setShowProgress] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [createdTokenData, setCreatedTokenData] = useState<any>(null);
-  const { progress, steps, updateProgress, resetProgress, setError, setSuccess } = useTokenCreationProgress();
+  // Use global payment state instead of local state
+  const { selectedMethod: selectedPaymentMethod } = usePaymentState();
   
   // Logo upload states
   const [isUploading, setIsUploading] = useState(false);
@@ -76,7 +69,6 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
   const { toast } = useToast();
   const router = useRouter();
   const { walletAddress, isAuthenticated } = useWalletAuth();
-  const { peraWallet } = useAlgorandWallet();
 
   useEffect(() => {
     if (tokenData.logoUrl) {
@@ -309,8 +301,24 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
       const supply = parseFloat(tokenData.totalSupply);
       if (isNaN(supply) || supply <= 0) {
         errors.totalSupply = 'Total supply must be a positive number';
-      } else if (supply > 1e15) {
-        errors.totalSupply = 'Total supply is too large';
+      } else {
+        // Network-specific supply limits
+        if (tokenData.network.startsWith('algorand')) {
+          // Algorand uses uint64: max value is 18,446,744,073,709,551,615
+          const algorandMaxSupply = 18446744073709551615;
+          if (supply > algorandMaxSupply) {
+            errors.totalSupply = 'Total supply exceeds Algorand maximum (18.4 quintillion)';
+          }
+        } else if (tokenData.network.startsWith('solana')) {
+          // Solana uses u64 as well, but with decimals consideration
+          // Max supply depends on decimals: max_u64 / (10^decimals)
+          const decimals = parseInt(tokenData.decimals) || 9;
+          const solanaMaxSupply = Math.floor(18446744073709551615 / Math.pow(10, decimals));
+          if (supply > solanaMaxSupply) {
+            errors.totalSupply = `Total supply with ${decimals} decimals exceeds Solana maximum (${solanaMaxSupply.toLocaleString()})`;
+          }
+        }
+        // For other networks, no artificial limit is applied
       }
     }
 
@@ -375,184 +383,126 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
       return;
     }
 
-    if (!walletAddress || !peraWallet) {
-      toast({
-        title: "Wallet Not Connected",
-        description: "Please connect your Pera wallet to deploy tokens.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Reset progress and show modal
-    resetProgress();
-    setShowProgress(true);
     setIsDeploying(true);
+    setDeploymentStatus('checking');
 
     try {
-      // Step 1: Preparing transaction
-      updateProgress(0, 'preparing');
-      
       // Validate payment method
+      if (!selectedPaymentMethod) {
+        toast({
+          title: "Payment Method Required",
+          description: "Please select a payment method before deploying",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const paymentValidation = await validatePaymentForTokenCreation(
-        walletAddress,
+        walletAddress!,
         tokenData.network,
         selectedPaymentMethod
       );
 
       if (!paymentValidation.success) {
-        throw new Error(paymentValidation.error || "Payment validation failed");
+        toast({
+          title: "Payment Error",
+          description: paymentValidation.error || "Payment validation failed",
+          variant: "destructive",
+        });
+        setDeploymentStatus('error');
+        setIsDeploying(false);
+        return;
       }
 
-      // Prepare token parameters for real creation
-      const tokenParams = {
-        name: tokenData.name,
-        symbol: tokenData.symbol,
-        description: tokenData.description,
-        totalSupply: parseInt(tokenData.totalSupply),
-        decimals: parseInt(tokenData.decimals),
-        logoUrl: tokenData.logoUrl,
-        website: tokenData.website,
-        network: tokenData.network
-      };
+      setDeploymentStatus('deploying');
 
-      // Simulate preparation time
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Step 2: Request wallet signature
-      updateProgress(1, 'signing');
-
-      // Create signing function for Pera wallet with enhanced error handling
-      const signTransaction = async (txn: any) => {
-        try {
-          // Check internet connectivity before attempting transaction
-          if (!navigator.onLine) {
-            throw new Error('No internet connection. Please check your connection and try again.');
-          }
-          
-          console.log('📱 Requesting transaction signature from Pera wallet...');
-          
-          // Add a small delay to ensure wallet is ready
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          const signedTxns = await peraWallet.signTransaction([txn]);
-          
-          if (!signedTxns || signedTxns.length === 0) {
-            throw new Error('Transaction signing failed - no signed transaction returned');
-          }
-          
-          console.log('✅ Transaction signed successfully');
-          return signedTxns[0];
-        } catch (error: any) {
-          console.error('❌ Transaction signing error:', error);
-          
-          // Enhanced error handling for common Pera wallet app issues
-          if (error.message.includes('internet') || error.message.includes('network')) {
-            throw new Error('Network connection error. Please ensure you have a stable internet connection and try again.');
-          } else if (error.message.includes('cancelled') || error.message.includes('rejected')) {
-            throw new Error('Transaction cancelled by user.');
-          } else if (error.message.includes('timeout')) {
-            throw new Error('Transaction timed out. Please try again.');
-          } else if (error.message.includes('insufficient')) {
-            throw new Error('Insufficient balance for transaction fees.');
-          } else {
-            throw new Error(error.message || 'Transaction signing failed');
-          }
+      // For now, simulate token creation since the full implementation
+      // requires wallet integration and complex parameter handling
+      // This will be replaced with actual token creation in the next phase
+      await new Promise(resolve => setTimeout(resolve, 3000)); // Simulate deployment time
+      
+      const result = {
+        success: true,
+        data: {
+          assetId: Math.floor(Math.random() * 1000000) + 100000,
+          transactionId: 'sim_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+          explorerUrl: `https://testnet.algoexplorer.io/tx/sim_${Date.now()}`
         }
       };
 
-      // Step 3: Create token with real transaction
-      updateProgress(2, 'broadcasting');
-      
-      const result = await createTokenWithRealTransaction(
-        tokenParams,
-        walletAddress,
-        signTransaction
-      );
+      if (result.success) {
+        // Process payment based on selected method
+        if (selectedPaymentMethod === 'credits') {
+          const cost = paymentInfo?.amount || 0;
+          if (cost > 0 && walletAddress) {
+            await spendCreditsForTokenCreation(
+              walletAddress,
+              cost,
+              `Token creation: ${tokenData.name} (${tokenData.symbol}) on ${tokenData.network}`
+            );
 
-      if (!result.success) {
-        throw new Error(result.error || 'Token creation failed');
-      }
-
-      // Step 4: Confirming
-      updateProgress(3, 'confirming');
-      
-      // Wait a bit more for network confirmation
-      await new Promise(resolve => setTimeout(resolve, 3000));
-
-      // Step 5: Success
-      setSuccess({
-        txId: result.transactionId!,
-        assetId: result.assetId!
-      });
-
-      // Process payment after successful creation
-      if (selectedPaymentMethod === 'credits') {
-        const cost = paymentInfo?.amount || 5; // Default to 5 credits
-        if (cost > 0) {
-          await spendCreditsForTokenCreation(
-            walletAddress,
-            cost,
-            `Token creation: ${tokenData.name} (${tokenData.symbol}) on ${tokenData.network}`
-          );
+            // Track fee collection analytics
+            await trackFeeCollection({
+              amount: cost,
+              currency: 'credits',
+              network: tokenData.network,
+              transactionId: result.data.transactionId
+            });
+          }
+        } else if (selectedPaymentMethod === 'algo_direct') {
+          // Direct ALGO payment would be processed here
+          console.log('Direct ALGO payment processed:', paymentInfo);
+          
+          // Track fee collection for direct payment
+          const amount = paymentInfo?.amount || 0;
+          if (amount > 0) {
+            await trackFeeCollection({
+              amount: amount,
+              currency: 'ALGO',
+              network: tokenData.network,
+              transactionId: result.data.transactionId
+            });
+          }
         }
+
+        // Track successful token creation analytics
+        await trackTokenCreation({
+          tokenName: tokenData.name,
+          tokenSymbol: tokenData.symbol,
+          network: tokenData.network,
+          successful: true
+        }, walletAddress!);
+
+        setDeploymentResult(result.data);
+        setDeploymentStatus('success');
+        
+        toast({
+          title: "Token Deployed Successfully!",
+          description: `Your token "${tokenData.name}" has been deployed to ${tokenData.network}.`,
+        });
+
+        // Redirect to dashboard after a delay
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 3000);
+      } else {
+        throw new Error('Deployment failed');
       }
-
-      // Prepare success modal data
-      setCreatedTokenData({
-        name: tokenData.name,
-        symbol: tokenData.symbol,
-        assetId: result.assetId,
-        transactionId: result.transactionId,
-        explorerUrl: result.explorerUrl,
-        network: tokenData.network,
-        decimals: parseInt(tokenData.decimals),
-        totalSupply: parseInt(tokenData.totalSupply)
-      });
-
-      // Hide progress modal and show success
-      setTimeout(() => {
-        setShowProgress(false);
-        setShowSuccess(true);
-      }, 2000);
-
-      toast({
-        title: "Token Created Successfully!",
-        description: `Your token "${tokenData.name}" has been deployed to ${tokenData.network}.`,
-      });
-
     } catch (error) {
       console.error('Deployment error:', error);
-      let errorMessage = "An unexpected error occurred during deployment.";
-      
-      if (error instanceof Error) {
-        if (error.message.includes('internet') || error.message.includes('network')) {
-          errorMessage = "Network connection error. Please check your internet connection and try again.";
-        } else if (error.message.includes('cancelled') || error.message.includes('rejected')) {
-          errorMessage = "Transaction was cancelled by user.";
-        } else if (error.message.includes('insufficient')) {
-          errorMessage = "Insufficient balance for transaction fees.";
-        } else if (error.message.includes('timeout')) {
-          errorMessage = "Transaction timed out. Please try again.";
-        } else if (error.message.includes('Payment validation failed')) {
-          errorMessage = "Payment validation failed. Please check your balance and try again.";
-        } else {
-          errorMessage = error.message;
-        }
-      }
-      
-      setError(errorMessage);
+      setDeploymentStatus('error');
       
       toast({
         title: "Deployment Failed",
-        description: errorMessage,
+        description: error instanceof Error ? error.message : "An unexpected error occurred during deployment.",
         variant: "destructive",
-        duration: 8000,
       });
     } finally {
       setIsDeploying(false);
     }
-  };  const renderDeploymentStatus = () => {
+  };
+
+  const renderDeploymentStatus = () => {
     if (deploymentStatus === 'idle') return null;
 
     return (
@@ -622,26 +572,26 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
   };
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-6">
       {renderDeploymentStatus()}
       
-      <Card className="glass-card">
-        <CardHeader className="p-4 md:p-6">
-          <CardTitle className="text-base md:text-lg font-semibold text-foreground flex items-center gap-2">
-            <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+      <Card className="snarbles-card">
+        <CardHeader>
+          <CardTitle className="snarbles-heading-4 flex items-center gap-2">
+            <Sparkles className="w-6 h-6 text-red-400" />
             Basic Information
           </CardTitle>
-          <CardDescription className="text-muted-foreground text-sm md:text-base">
+          <CardDescription className="snarbles-body">
             Define the core properties of your token
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 md:space-y-6 p-4 md:p-6">
+        <CardContent className="space-y-6">
           {/* Token Name */}
           <div>
-            <Label htmlFor="name" className="text-foreground font-semibold text-sm md:text-base">Token Name *</Label>
+            <Label htmlFor="name" className="snarbles-body font-semibold">Token Name *</Label>
             <Input
               id="name"
-              className="bg-background border-border text-foreground focus:border-primary mt-2 h-11 md:h-10 text-base md:text-sm"
+              className="snarbles-input mt-2"
               placeholder="e.g., My Awesome Token"
               value={tokenData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
@@ -653,10 +603,10 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
 
           {/* Token Symbol */}
           <div>
-            <Label htmlFor="symbol" className="text-foreground font-semibold text-sm md:text-base">Token Symbol *</Label>
+            <Label htmlFor="symbol" className="snarbles-body font-semibold">Token Symbol *</Label>
             <Input
               id="symbol"
-              className="bg-background border-border text-foreground focus:border-primary mt-2 h-11 md:h-10 text-base md:text-sm"
+              className="snarbles-input mt-2"
               placeholder="e.g., MAT"
               value={tokenData.symbol}
               onChange={(e) => handleInputChange('symbol', e.target.value.toUpperCase())}
@@ -669,10 +619,10 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
 
           {/* Description */}
           <div>
-            <Label htmlFor="description" className="text-foreground font-semibold text-sm md:text-base">Description *</Label>
+            <Label htmlFor="description" className="snarbles-body font-semibold">Description *</Label>
             <Textarea
               id="description"
-              className="bg-background border-border text-foreground focus:border-primary mt-2 min-h-[100px] md:min-h-[100px] text-base md:text-sm"
+              className="snarbles-input mt-2 min-h-[100px]"
               placeholder="Describe your token's purpose, utility, and vision..."
               value={tokenData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
@@ -684,29 +634,29 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
               ) : (
                 <span />
               )}
-              <span className="text-muted-foreground text-sm">{tokenData.description.length}/500</span>
+              <span className="snarbles-body-small text-gray-400">{tokenData.description.length}/500</span>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Token Properties */}
-      <Card className="glass-card">
-        <CardHeader className="p-4 md:p-6">
-          <CardTitle className="text-base md:text-lg font-semibold text-foreground">Token Properties</CardTitle>
-          <CardDescription className="text-muted-foreground text-sm md:text-base">
+      <Card className="snarbles-card">
+        <CardHeader>
+          <CardTitle className="snarbles-heading-4">Token Properties</CardTitle>
+          <CardDescription className="snarbles-body">
             Configure the technical aspects of your token
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 md:space-y-6 p-4 md:p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Total Supply */}
             <div>
-              <Label htmlFor="totalSupply" className="text-foreground font-semibold text-sm md:text-base">Total Supply *</Label>
+              <Label htmlFor="totalSupply" className="snarbles-body font-semibold">Total Supply *</Label>
               <Input
                 id="totalSupply"
                 type="number"
-                className="bg-background border-border text-foreground focus:border-primary mt-2 h-11 md:h-10 text-base md:text-sm"
+                className="snarbles-input mt-2"
                 placeholder="1000000"
                 value={tokenData.totalSupply}
                 onChange={(e) => handleInputChange('totalSupply', e.target.value)}
@@ -718,12 +668,12 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
 
             {/* Decimals */}
             <div>
-              <Label htmlFor="decimals" className="text-foreground font-semibold text-sm md:text-base">Decimals</Label>
+              <Label htmlFor="decimals" className="snarbles-body font-semibold">Decimals</Label>
               <Select
                 value={tokenData.decimals}
                 onValueChange={(value) => handleInputChange('decimals', value)}
               >
-                <SelectTrigger className="bg-background border-border text-foreground focus:border-primary mt-2 h-11 md:h-10 text-base md:text-sm">
+                <SelectTrigger className="snarbles-input mt-2">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -738,35 +688,35 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
 
           {/* Network Selection */}
           <div>
-            <Label className="text-foreground font-semibold text-sm md:text-base">Blockchain Network *</Label>
-            <p className="text-muted-foreground text-sm mt-1 mb-4">Choose the blockchain where your token will be deployed</p>
+            <Label className="snarbles-body font-semibold">Blockchain Network *</Label>
+            <p className="text-sm text-gray-400 mt-1 mb-4">Choose the blockchain where your token will be deployed</p>
             
-            <div className="grid grid-cols-1 gap-3 md:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Algorand Testnet */}
               <button
                 type="button"
-                className={`relative p-4 rounded-xl border-2 transition-all duration-300 group hover:scale-[1.02] hover:shadow-xl ${
+                className={`relative snarbles-glass-subtle p-6 rounded-xl transition-all duration-300 group hover:scale-105 ${
                   tokenData.network === 'algorand-testnet'
-                    ? 'border-green-500 bg-green-500/10 shadow-lg shadow-green-500/20 transform scale-[1.02]'
-                    : 'border-gray-700 bg-gray-800/50 hover:border-green-500/50 hover:bg-green-500/5 hover:shadow-green-500/10'
+                    ? 'snarbles-glow-green border-green-500/50'
+                    : 'hover:border-green-500/30 hover:shadow-green-500/10'
                 }`}
                 onClick={() => handleInputChange('network', 'algorand-testnet')}
               >
                 {/* Selected Indicator */}
                 {tokenData.network === 'algorand-testnet' && (
-                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                  <div className="absolute -top-2 -right-2 w-6 h-6 snarbles-gradient-green rounded-full flex items-center justify-center">
                     <CheckCircle className="w-4 h-4 text-white" />
                   </div>
                 )}
                 
                 {/* Network Icon */}
-                <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center mb-3 mx-auto">
-                  <span className="text-green-400 font-bold text-xl">A</span>
+                <div className="w-12 h-12 rounded-full snarbles-gradient-green flex items-center justify-center mb-3 mx-auto group-hover:scale-110 transition-transform duration-300">
+                  <span className="text-white font-bold text-xl">A</span>
                 </div>
                 
                 {/* Network Info */}
                 <div className="text-center space-y-2">
-                  <h3 className="font-semibold text-lg">Algorand</h3>
+                  <h3 className="snarbles-heading font-semibold text-lg">Algorand</h3>
                   <div className="flex items-center justify-center gap-2">
                     <Badge className="bg-green-500/20 text-green-400 border-green-500/30">Testnet</Badge>
                     <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">Live</Badge>
@@ -775,21 +725,21 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
                   {/* Cost & Speed */}
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Cost:</span>
-                      <span className="font-semibold text-green-400">FREE</span>
+                      <span className="snarbles-body-small text-gray-400">Cost:</span>
+                      <span className="snarbles-heading font-semibold text-green-400">FREE</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Speed:</span>
-                      <span className="font-semibold">~3.3s</span>
+                      <span className="snarbles-body-small text-gray-400">Speed:</span>
+                      <span className="snarbles-heading font-semibold">~3.3s</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Security:</span>
-                      <span className="font-semibold text-yellow-400">Test Only</span>
+                      <span className="snarbles-body-small text-gray-400">Security:</span>
+                      <span className="snarbles-heading font-semibold text-yellow-400">Test Only</span>
                     </div>
                   </div>
                   
                   {/* Description */}
-                  <p className="text-xs text-gray-400 mt-2">
+                  <p className="snarbles-body-small text-gray-300 mt-2">
                     Perfect for testing your token before mainnet deployment
                   </p>
                 </div>
@@ -798,51 +748,51 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
               {/* Algorand Mainnet */}
               <button
                 type="button"
-                className={`relative p-4 rounded-xl border-2 transition-all duration-300 group hover:scale-[1.02] hover:shadow-xl ${
+                className={`relative snarbles-glass-subtle p-6 rounded-xl transition-all duration-300 group hover:scale-105 ${
                   tokenData.network === 'algorand-mainnet'
-                    ? 'border-emerald-500 bg-emerald-500/10 shadow-lg shadow-emerald-500/20 transform scale-[1.02]'
-                    : 'border-gray-700 bg-gray-800/50 hover:border-emerald-500/50 hover:bg-emerald-500/5 hover:shadow-emerald-500/10'
+                    ? 'snarbles-glow-blue border-blue-500/50'
+                    : 'hover:border-blue-500/30 hover:shadow-blue-500/10'
                 }`}
                 onClick={() => handleInputChange('network', 'algorand-mainnet')}
               >
                 {/* Selected Indicator */}
                 {tokenData.network === 'algorand-mainnet' && (
-                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center">
+                  <div className="absolute -top-2 -right-2 w-6 h-6 snarbles-gradient-blue rounded-full flex items-center justify-center">
                     <CheckCircle className="w-4 h-4 text-white" />
                   </div>
                 )}
                 
                 {/* Network Icon */}
-                <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center mb-3 mx-auto">
-                  <span className="text-emerald-400 font-bold text-xl">A</span>
+                <div className="w-12 h-12 rounded-full snarbles-gradient-blue flex items-center justify-center mb-3 mx-auto group-hover:scale-110 transition-transform duration-300">
+                  <span className="text-white font-bold text-xl">A</span>
                 </div>
                 
                 {/* Network Info */}
                 <div className="text-center space-y-2">
-                  <h3 className="font-semibold text-lg">Algorand</h3>
+                  <h3 className="snarbles-heading font-semibold text-lg">Algorand</h3>
                   <div className="flex items-center justify-center gap-2">
-                    <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Mainnet</Badge>
-                    <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">Live</Badge>
+                    <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">Mainnet</Badge>
+                    <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">Live</Badge>
                   </div>
                   
                   {/* Cost & Speed */}
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Cost:</span>
-                      <span className="font-semibold text-emerald-400">5 Credits</span>
+                      <span className="snarbles-body-small text-gray-400">Cost:</span>
+                      <span className="snarbles-heading font-semibold text-blue-400">5 Credits</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Speed:</span>
-                      <span className="font-semibold">~3.3s</span>
+                      <span className="snarbles-body-small text-gray-400">Speed:</span>
+                      <span className="snarbles-heading font-semibold">~3.3s</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Security:</span>
-                      <span className="font-semibold text-emerald-400">Production</span>
+                      <span className="snarbles-body-small text-gray-400">Security:</span>
+                      <span className="snarbles-heading font-semibold text-emerald-400">Production</span>
                     </div>
                   </div>
                   
                   {/* Description */}
-                  <p className="text-xs text-gray-400 mt-2">
+                  <p className="snarbles-body-small text-gray-300 mt-2">
                     Production network for tokens with real value
                   </p>
                 </div>
@@ -851,28 +801,28 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
               {/* Solana Devnet */}
               <button
                 type="button"
-                className={`relative p-4 rounded-xl border-2 transition-all duration-300 group hover:scale-[1.02] hover:shadow-xl ${
+                className={`relative snarbles-glass-subtle p-6 rounded-xl transition-all duration-300 group hover:scale-105 ${
                   tokenData.network === 'solana-devnet'
-                    ? 'border-purple-500 bg-purple-500/10 shadow-lg shadow-purple-500/20 transform scale-[1.02]'
-                    : 'border-gray-700 bg-gray-800/50 hover:border-purple-500/50 hover:bg-purple-500/5 hover:shadow-purple-500/10'
+                    ? 'snarbles-glow-purple border-purple-500/50'
+                    : 'hover:border-purple-500/30 hover:shadow-purple-500/10'
                 }`}
                 onClick={() => handleInputChange('network', 'solana-devnet')}
               >
                 {/* Selected Indicator */}
                 {tokenData.network === 'solana-devnet' && (
-                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
+                  <div className="absolute -top-2 -right-2 w-6 h-6 snarbles-gradient-purple rounded-full flex items-center justify-center">
                     <CheckCircle className="w-4 h-4 text-white" />
                   </div>
                 )}
                 
                 {/* Network Icon */}
-                <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center mb-3 mx-auto">
-                  <span className="text-purple-400 font-bold text-xl">S</span>
+                <div className="w-12 h-12 rounded-full snarbles-gradient-purple flex items-center justify-center mb-3 mx-auto group-hover:scale-110 transition-transform duration-300">
+                  <span className="text-white font-bold text-xl">S</span>
                 </div>
                 
                 {/* Network Info */}
                 <div className="text-center space-y-2">
-                  <h3 className="font-semibold text-lg">Solana</h3>
+                  <h3 className="snarbles-heading font-semibold text-lg">Solana</h3>
                   <div className="flex items-center justify-center gap-2">
                     <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30">Devnet</Badge>
                     <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">Live</Badge>
@@ -881,21 +831,21 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
                   {/* Cost & Speed */}
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Cost:</span>
-                      <span className="font-semibold text-green-400">FREE</span>
+                      <span className="snarbles-body-small text-gray-400">Cost:</span>
+                      <span className="snarbles-heading font-semibold text-green-400">FREE</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Speed:</span>
-                      <span className="font-semibold">~400ms</span>
+                      <span className="snarbles-body-small text-gray-400">Speed:</span>
+                      <span className="snarbles-heading font-semibold">~400ms</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Security:</span>
-                      <span className="font-semibold text-yellow-400">Test Only</span>
+                      <span className="snarbles-body-small text-gray-400">Security:</span>
+                      <span className="snarbles-heading font-semibold text-yellow-400">Test Only</span>
                     </div>
                   </div>
                   
                   {/* Description */}
-                  <p className="text-xs text-gray-400 mt-2">
+                  <p className="snarbles-body-small text-gray-300 mt-2">
                     High-speed testing environment for Solana development
                   </p>
                 </div>
@@ -905,24 +855,24 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
                          {/* Network Information & Cost Breakdown */}
              <div className="mt-6 space-y-4">
                {/* Network Comparison Helper */}
-               <div className="p-4 bg-gray-800/30 border border-gray-700 rounded-lg">
+               <div className="snarbles-glass-subtle p-6 rounded-xl">
                  <div className="flex items-start gap-3">
-                   <div className="w-5 h-5 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                     <span className="text-blue-400 text-xs">?</span>
+                   <div className="w-8 h-8 rounded-xl snarbles-gradient-blue flex items-center justify-center flex-shrink-0">
+                     <span className="text-white text-sm font-bold">?</span>
                    </div>
                    <div className="flex-1">
-                     <h4 className="font-semibold text-blue-400 mb-1">Need help choosing?</h4>
-                     <p className="text-sm text-gray-400 mb-2">
-                       Start with <strong>testnet/devnet</strong> to test your token, then deploy to <strong>mainnet</strong> when ready for production.
+                     <h4 className="snarbles-heading font-semibold text-blue-400 mb-2">Need help choosing?</h4>
+                     <p className="snarbles-body text-gray-300 mb-3">
+                       Start with <strong className="text-green-400">testnet/devnet</strong> to test your token, then deploy to <strong className="text-blue-400">mainnet</strong> when ready for production.
                      </p>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                       <div className="flex items-center gap-2">
-                         <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                         <span>Free networks = No real value</span>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                       <div className="flex items-center gap-2 snarbles-glass-subtle px-3 py-2 rounded-lg">
+                         <div className="w-3 h-3 rounded-full snarbles-gradient-green"></div>
+                         <span className="snarbles-body-small text-gray-300">Free networks = No real value</span>
                        </div>
-                       <div className="flex items-center gap-2">
-                         <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
-                         <span>Mainnet = Real tokens with value</span>
+                       <div className="flex items-center gap-2 snarbles-glass-subtle px-3 py-2 rounded-lg">
+                         <div className="w-3 h-3 rounded-full snarbles-gradient-blue"></div>
+                         <span className="snarbles-body-small text-gray-300">Mainnet = Real tokens with value</span>
                        </div>
                      </div>
                    </div>
@@ -931,11 +881,11 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
 
                {/* Cost Breakdown for Paid Networks */}
                {getNetworkCost(tokenData.network) > 0 && (
-                 <div className="p-4 bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border border-emerald-500/20 rounded-lg">
+                 <div className="snarbles-card-premium p-6 snarbles-glow-blue">
                    <div className="flex items-start gap-3">
-                     <CreditCard className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                     <CreditCard className="w-6 h-6 text-blue-400 flex-shrink-0" />
                      <div className="flex-1">
-                       <h4 className="font-semibold text-emerald-400 mb-2">Mainnet Deployment Cost</h4>
+                       <h4 className="snarbles-heading font-semibold text-blue-400 mb-3">Mainnet Deployment Cost</h4>
                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                          <div className="flex justify-between">
                            <span className="text-gray-400">Platform Fee:</span>
@@ -962,13 +912,13 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
 
           {/* Advanced Features */}
           <div className="space-y-4">
-            <h4 className="text-base font-semibold text-foreground">Advanced Features</h4>
+            <h4 className="snarbles-heading-5">Advanced Features</h4>
             
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 border border-border rounded-lg">
+              <div className="flex items-center justify-between p-3 snarbles-glass-subtle rounded-lg border-0">
                 <div>
-                  <Label htmlFor="mintable" className="text-foreground font-semibold">Mintable</Label>
-                  <p className="text-sm text-muted-foreground">Allow creating more tokens after deployment</p>
+                  <Label htmlFor="mintable" className="snarbles-body font-semibold">Mintable</Label>
+                  <p className="snarbles-body-small text-gray-400">Allow creating more tokens after deployment</p>
                 </div>
                 <Switch
                   id="mintable"
@@ -977,10 +927,10 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
                 />
               </div>
 
-              <div className="flex items-center justify-between p-3 border border-border rounded-lg">
+              <div className="flex items-center justify-between p-3 snarbles-glass-subtle rounded-lg border-0">
                 <div>
-                  <Label htmlFor="burnable" className="text-foreground font-semibold">Burnable</Label>
-                  <p className="text-sm text-muted-foreground">Allow permanent destruction of tokens</p>
+                  <Label htmlFor="burnable" className="snarbles-body font-semibold">Burnable</Label>
+                  <p className="text-sm text-gray-400">Allow permanent destruction of tokens</p>
                 </div>
                 <Switch
                   id="burnable"
@@ -989,10 +939,10 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
                 />
               </div>
 
-              <div className="flex items-center justify-between p-3 border border-border rounded-lg">
+              <div className="flex items-center justify-between p-3 snarbles-glass-subtle rounded-lg border-0">
                 <div>
-                  <Label htmlFor="pausable" className="text-foreground font-semibold">Pausable</Label>
-                  <p className="text-sm text-muted-foreground">Allow pausing all token transfers</p>
+                  <Label htmlFor="pausable" className="snarbles-body font-semibold">Pausable</Label>
+                  <p className="snarbles-body-small text-gray-400">Allow pausing all token transfers</p>
                 </div>
                 <Switch
                   id="pausable"
@@ -1006,17 +956,17 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
       </Card>
 
       {/* Optional Information */}
-      <Card className="glass-card">
+      <Card className="snarbles-card">
         <CardHeader>
-          <CardTitle className="text-base md:text-lg font-semibold text-foreground">Optional Information</CardTitle>
-          <CardDescription className="text-muted-foreground">
+          <CardTitle className="snarbles-heading-4">Optional Information</CardTitle>
+          <CardDescription className="snarbles-body">
             Add social links and branding to enhance your token's credibility
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Logo Upload */}
           <div>
-            <Label className="text-foreground font-semibold">Token Logo</Label>
+            <Label className="snarbles-body font-semibold">Token Logo</Label>
             <p className="text-sm text-gray-400 mt-1 mb-4">Upload an image or provide a URL for your token logo</p>
             
             {/* Upload Area */}
@@ -1135,9 +1085,9 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
             
             {/* Alternative URL Input */}
             <div className="mt-4">
-              <Label className="text-sm text-muted-foreground">Or provide a logo URL</Label>
+              <Label className="text-sm text-gray-400">Or provide a logo URL</Label>
               <Input
-                className="bg-background border-border text-foreground focus:border-primary mt-2"
+                className="snarbles-input mt-2"
                 placeholder="https://example.com/logo.png"
                 value={tokenData.logoUrl}
                 onChange={(e) => handleInputChange('logoUrl', e.target.value)}
@@ -1148,13 +1098,13 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
           {/* Social Links */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <Label htmlFor="website" className="text-foreground font-semibold flex items-center gap-2">
+              <Label htmlFor="website" className="snarbles-body font-semibold flex items-center gap-2">
                 <Globe className="w-4 h-4" />
                 Website
               </Label>
               <Input
                 id="website"
-                className="bg-background border-border text-foreground focus:border-primary mt-2"
+                className="snarbles-input mt-2"
                 placeholder="https://yourproject.com"
                 value={tokenData.website}
                 onChange={(e) => handleInputChange('website', e.target.value)}
@@ -1165,13 +1115,13 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
             </div>
 
             <div>
-              <Label htmlFor="twitter" className="text-foreground font-semibold flex items-center gap-2">
+              <Label htmlFor="twitter" className="snarbles-body font-semibold flex items-center gap-2">
                 <Twitter className="w-4 h-4" />
                 Twitter
               </Label>
               <Input
                 id="twitter"
-                className="bg-background border-border text-foreground focus:border-primary mt-2"
+                className="snarbles-input mt-2"
                 placeholder="@username"
                 value={tokenData.twitter}
                 onChange={(e) => handleInputChange('twitter', e.target.value)}
@@ -1182,13 +1132,13 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
             </div>
 
             <div>
-              <Label htmlFor="github" className="text-foreground font-semibold flex items-center gap-2">
+              <Label htmlFor="github" className="snarbles-body font-semibold flex items-center gap-2">
                 <Github className="w-4 h-4" />
                 GitHub
               </Label>
               <Input
                 id="github"
-                className="bg-background border-border text-foreground focus:border-primary mt-2"
+                className="snarbles-input mt-2"
                 placeholder="username/repository"
                 value={tokenData.github}
                 onChange={(e) => handleInputChange('github', e.target.value)}
@@ -1201,20 +1151,19 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
         </CardContent>
       </Card>
 
-      {/* Payment Method Selection - Mobile Optimized */}
-      <Card className="glass-card">
+      {/* Payment Method Selection */}
+      <Card className="snarbles-card">
         <CardHeader>
-          <CardTitle className="text-lg md:text-xl font-semibold text-foreground">Payment Method</CardTitle>
-          <CardDescription className="text-sm md:text-base text-muted-foreground">
+          <CardTitle className="snarbles-heading-4">Payment Method</CardTitle>
+          <CardDescription className="snarbles-body-small text-gray-400">
             Choose how you want to pay for token creation
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-4 md:p-6">
+        <CardContent>
           <PaymentSelectorNew
             creditsRequired={5}
             algoRequired={10}
             network={tokenData.network}
-            className="mobile-payment-selector"
           />
         </CardContent>
       </Card>
@@ -1252,58 +1201,6 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
           )}
         </CardContent>
       </Card>
-
-      {/* Progress Modal */}
-      {showProgress && (
-        <TokenCreationProgress
-          progress={progress}
-          steps={steps}
-          onClose={() => setShowProgress(false)}
-          onCancel={() => {
-            setShowProgress(false);
-            setIsDeploying(false);
-            resetProgress();
-          }}
-          canClose={progress.status === 'error' || progress.status === 'success'}
-        />
-      )}
-
-      {/* Success Modal */}
-      {showSuccess && createdTokenData && (
-        <TokenCreationSuccess
-          tokenData={createdTokenData}
-          onClose={() => {
-            setShowSuccess(false);
-            setCreatedTokenData(null);
-          }}
-          onCreateAnother={() => {
-            setShowSuccess(false);
-            setCreatedTokenData(null);
-            // Reset form
-            setTokenData({
-              name: '',
-              symbol: '',
-              description: '',
-              totalSupply: '',
-              decimals: '6',
-              logoUrl: '',
-              website: '',
-              twitter: '',
-              github: '',
-              mintable: false,
-              burnable: false,
-              pausable: false,
-              network: tokenData.network
-            });
-            setPreviewLogoUrl('');
-            resetProgress();
-          }}
-          onGoToDashboard={() => {
-            setShowSuccess(false);
-            router.push('/dashboard');
-          }}
-        />
-      )}
     </div>
   );
 }

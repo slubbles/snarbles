@@ -10,7 +10,7 @@ export default function BoltBadge() {
         className="block relative group cursor-pointer"
         title="Powered by Bolt.new"
       >
-        <div className="absolute inset-0 bg-white/10 rounded-full blur-sm group-hover:blur-md transition-all duration-300"></div>
+        <div className="absolute inset-0 bg-white/10 rounded-full group-hover:bg-white/20 transition-all duration-300"></div>
         <Image
           src="/white_circle_360x360.png"
           alt="Powered by Bolt.new"

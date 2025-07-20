@@ -125,31 +125,26 @@ export default function PaymentSelectorNew({
         <RadioGroup value={selectedMethod || ''} onValueChange={handleMethodChange}>
           {paymentMethods.map((method) => (
             <div key={method.id} className="space-y-2">
-              <div 
-                className={`
-                  glass-card p-4 rounded-lg border-2 cursor-pointer transition-all duration-200
-                  min-h-[80px] touch-manipulation
-                  ${selectedMethod === method.id 
-                    ? 'border-[rgb(239,68,68)] bg-[rgb(239,68,68)]/10' 
-                    : 'border-[rgb(38,38,38)] hover:border-[rgb(163,163,163)]'
-                  }
-                  ${method.disabled ? 'opacity-50 cursor-not-allowed' : ''}
-                `}
-                onClick={() => !method.disabled && handleMethodChange(method.id)}
-                style={{
-                  WebkitTapHighlightColor: 'transparent',
-                  touchAction: 'manipulation'
-                }}
-              >
-                <div className={`
-                  flex items-center gap-3 pointer-events-none
-                  ${method.disabled ? 'cursor-not-allowed' : ''}
-                `}>
+              <div className={`
+                glass-card p-4 rounded-lg border-2 cursor-pointer transition-all duration-200
+                ${selectedMethod === method.id 
+                  ? 'border-[rgb(239,68,68)] bg-[rgb(239,68,68)]/10' 
+                  : 'border-[rgb(38,38,38)] hover:border-[rgb(163,163,163)]'
+                }
+                ${method.disabled ? 'opacity-50 cursor-not-allowed' : ''}
+              `}>
+                <Label 
+                  htmlFor={method.id}
+                  className={`
+                    flex items-center gap-3 cursor-pointer
+                    ${method.disabled ? 'cursor-not-allowed' : ''}
+                  `}
+                >
                   <RadioGroupItem 
                     id={method.id}
                     value={method.id}
                     disabled={method.disabled}
-                    className="text-[rgb(239,68,68)] border-[rgb(163,163,163)] pointer-events-none"
+                    className="text-[rgb(239,68,68)] border-[rgb(163,163,163)]"
                   />
                   
                   <div className="flex items-center gap-3 flex-1">
@@ -186,7 +181,7 @@ export default function PaymentSelectorNew({
                   </div>
                   
                   {/* Payment Details */}
-                  <div className="mt-3 pt-3 border-t border-[rgb(38,38,38)] grid grid-cols-2 gap-4 text-sm w-full">
+                  <div className="mt-3 pt-3 border-t border-[rgb(38,38,38)] grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="snarbles-body text-[rgb(163,163,163)]">Cost:</span>
                       <span className="snarbles-heading ml-2 text-[rgb(254,254,235)]">{method.cost}</span>
@@ -198,7 +193,7 @@ export default function PaymentSelectorNew({
                       </span>
                     </div>
                   </div>
-                </div>
+                </Label>
               </div>
             </div>
           ))}

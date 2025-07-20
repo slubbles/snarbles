@@ -73,6 +73,8 @@ import { ADMIN_WALLET } from '@/lib/solana';
 import EnhancedTokenManagement, { UniversalTokenInfo, TokenOperationData } from '@/components/dashboard/EnhancedTokenManagement';
 import AdvancedAnalytics from '@/components/dashboard/AdvancedAnalytics';
 import EnhancedTransactionManagement, { EnhancedTransaction } from '@/components/dashboard/EnhancedTransactionManagement';
+import TokenManagement from '@/components/dashboard/TokenManagement';
+import UserAnalytics from '@/components/dashboard/UserAnalytics';
 
 interface TokenData {
   address: string;
@@ -921,10 +923,27 @@ export default function SolanaDashboard() {
         {/* Enhanced Dashboard */}
         {viewMode === 'enhanced' ? (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="tokens">Token Management</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              <TabsTrigger value="transactions">Transactions</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-5 snarbles-glass-subtle h-12">
+              <TabsTrigger value="tokens" className="snarbles-tab">
+                <Coins className="w-4 h-4 mr-2" />
+                Portfolio
+              </TabsTrigger>
+              <TabsTrigger value="management" className="snarbles-tab">
+                <Settings className="w-4 h-4 mr-2" />
+                Management
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="snarbles-tab">
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Analytics
+              </TabsTrigger>
+              <TabsTrigger value="user-analytics" className="snarbles-tab">
+                <Activity className="w-4 h-4 mr-2" />
+                User Analytics
+              </TabsTrigger>
+              <TabsTrigger value="transactions" className="snarbles-tab">
+                <Send className="w-4 h-4 mr-2" />
+                Transactions
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="tokens">
@@ -958,6 +977,74 @@ export default function SolanaDashboard() {
                 loading={transactionLoading}
                 onRefresh={() => loadDashboardData(true)}
                 onExport={handleExportTransactions}
+              />
+            </TabsContent>
+
+            {/* Token Management Tab */}
+            <TabsContent value="management" className="space-y-6">
+              <TokenManagement
+                tokens={tokens.map(token => ({
+                  id: token.mint || '',
+                  name: token.name || 'Unknown',
+                  symbol: token.symbol || 'N/A',
+                  balance: token.uiBalance || 0,
+                  totalSupply: 1000000, // Mock data
+                  decimals: token.decimals || 9,
+                  frozen: token.isPaused || false,
+                  mintable: true,
+                  burnable: true,
+                  pausable: true,
+                  metadata: {
+                    description: 'Solana SPL Token',
+                    image: token.image,
+                  },
+                  creator: publicKey.toString(),
+                  network: 'solana' as const,
+                  mintAddress: token.mint,
+                }))}
+                network="solana"
+                userAddress={publicKey.toString()}
+                onTokenUpdate={async (tokenId: string, updates: any) => {
+                  console.log('Token update:', tokenId, updates);
+                  // Refresh data after update
+                  await loadDashboardData(true);
+                }}
+                onRefresh={() => loadDashboardData(true)}
+                isLoading={loading}
+              />
+            </TabsContent>
+
+            {/* User Analytics Tab */}
+            <TabsContent value="user-analytics" className="space-y-6">
+              <UserAnalytics
+                userAddress={publicKey.toString()}
+                tokens={tokens.map(token => ({
+                  id: token.mint || '',
+                  name: token.name || 'Unknown',
+                  symbol: token.symbol || 'N/A',
+                  totalSupply: 1000000, // Mock data
+                  currentSupply: Math.floor(Math.random() * 1000000),
+                  holders: Math.floor(Math.random() * 1000) + 1,
+                  transfers: Math.floor(Math.random() * 5000) + 100,
+                  createdAt: new Date().toISOString(),
+                  lastActivity: new Date().toISOString(),
+                  network: 'solana' as const,
+                  mintAddress: token.mint,
+                  metadata: {
+                    description: 'Solana SPL Token',
+                    image: token.image,
+                  },
+                  performance: {
+                    dailyTransfers: Math.floor(Math.random() * 50) + 5,
+                    weeklyGrowth: (Math.random() - 0.5) * 20,
+                    holderGrowth: Math.random() * 10,
+                    liquidityScore: Math.random() * 100,
+                  },
+                }))}
+                network="solana"
+                timeframe={analyticsTimeframe}
+                onTimeframeChange={setAnalyticsTimeframe}
+                isLoading={loading}
               />
             </TabsContent>
           </Tabs>

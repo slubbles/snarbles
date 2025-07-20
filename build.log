@@ -1,0 +1,58 @@
+
+> snarbles-token-platform@0.1.0 build
+> next build
+
+   ▲ Next.js 15.3.5
+   - Experiments (use with caution):
+     ✓ forceSwcTransforms
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 48s
+   Skipping linting
+   Checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/23) ...
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+bigint: Failed to load bindings, pure JS will be used (try npm run rebuild?)
+⚠️ Supabase not configured. Using Filebase S3 or fallback methods.
+⚠️ Filebase S3 not configured. Using fallback storage methods.
+   Generating static pages (5/23) 
+   Generating static pages (11/23) 
+   Generating static pages (17/23) 
+ ✓ Generating static pages (23/23)
+   Finalizing page optimization ...
+   Collecting build traces ...
+   Exporting (0/3) ...
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ ✓ Exporting (3/3)
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    12.4 kB         124 kB
+├ ○ /_not-found                            141 B         102 kB
+├ ○ /about                                 177 B         106 kB
+├ ○ /admin                               15.1 kB         316 kB
+├ ○ /affiliates                          6.82 kB         109 kB
+├ ○ /contact                             7.85 kB         116 kB
+├ ○ /create                              18.2 kB         397 kB
+├ ○ /dashboard                           4.02 kB         341 kB
+├ ○ /dashboard/algorand                  5.63 kB         342 kB
+├ ○ /dashboard/algorand/analytics        3.83 kB         341 kB
+├ ○ /dashboard/algorand/assets           11.1 kB         360 kB
+├ ○ /dashboard/solana                    46.4 kB         680 kB
+├ ○ /dashboard/solana/analytics          6.31 kB         112 kB
+├ ○ /dashboard/solana/tokens             13.6 kB         152 kB
+├ ○ /enterprise                          8.44 kB         140 kB
+├ ○ /profile                               464 B         103 kB
+├ ○ /revenue                             11.4 kB         222 kB
+├ ○ /support                             6.05 kB         118 kB
+├ ○ /token-confirmation                  2.94 kB         109 kB
+├ ○ /tokenomics                           128 kB         341 kB
+└ ○ /verify                              13.1 kB         538 kB
++ First Load JS shared by all             102 kB
+  ├ chunks/1684-51cd42073fedf9f6.js      46.5 kB
+  ├ chunks/4bd1b696-72ca08c4a98d80d9.js  53.2 kB
+  └ other shared chunks (total)          2.63 kB
+
+
+○  (Static)  prerendered as static content
+

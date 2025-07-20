@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useAlgorandWallet } from './AlgorandWalletProvider';
 import { supabase, isSupabaseAvailable } from '@/lib/supabase-client';
+import { trackEvent } from '@/lib/analytics';
 
 // Types
 export type WalletType = 'solana' | 'algorand';
@@ -118,6 +119,20 @@ export function WalletAuthProvider({ children }: { children: ReactNode }) {
         
         // Update last connected timestamp
         await updateLastConnected(address);
+        
+        // Track wallet connection analytics
+        await trackEvent(
+          'wallet_connection',
+          {
+            walletType: type,
+            networkType: detectedNetwork,
+            network: detectedNetwork === 'mainnet' ? 
+              (type === 'solana' ? 'solana' : 'algorand') : 
+              (type === 'solana' ? 'solana-devnet' : 'algorand-testnet'),
+            timestamp: new Date().toISOString()
+          },
+          address
+        );
         
         console.log(`✅ Wallet authenticated: ${type} (${address.slice(0, 8)}...)`);
       }

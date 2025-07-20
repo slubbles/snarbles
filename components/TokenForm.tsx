@@ -1033,7 +1033,7 @@ ${tokenomicsInfo.vestingSchedule?.enabled ? `- Vesting: Enabled (Team: ${tokenom
                   type="submit" 
                   className={`w-full h-14 text-lg font-medium transition-all duration-300 ${
                     isFormValid 
-                      ? 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white shadow-lg shadow-red-500/25 hover:shadow-xl hover:shadow-red-500/30 hover:scale-[1.02]' 
+                      ? 'bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white shadow-lg shadow-red-500/25 hover:shadow-xl hover:shadow-red-500/30 hover:border-red-400' 
                       : 'bg-gray-700 text-gray-400 cursor-not-allowed'
                   }`}
                   disabled={!isFormValid}

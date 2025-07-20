@@ -42,7 +42,7 @@ export default function HowItWorksSection() {
           {steps.map((step, index) => (
             <div key={index} className="text-center">
               <div className="relative mb-6">
-                <div className="glass-card p-6 inline-block">
+                <div className="snarbles-card-premium p-6 inline-block snarbles-glow-blue">
                   <div className="step-number mb-4">
                     {step.number}
                   </div>

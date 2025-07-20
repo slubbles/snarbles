@@ -1063,7 +1063,7 @@ export default function TokenomicsPage() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="glass-card-premium hover:scale-[1.02] transition-all duration-300 cursor-pointer">
+            <Card className="glass-card-premium hover:border-primary/40 transition-all duration-300 cursor-pointer">
               <CardHeader>
                 <CardTitle className="snarbles-subheading">DeFi Protocol</CardTitle>
                 <CardDescription className="text-muted-foreground">Optimized for decentralized finance applications</CardDescription>
@@ -1093,7 +1093,7 @@ export default function TokenomicsPage() {
               </CardContent>
             </Card>
             
-            <Card className="glass-card-premium hover:scale-105 transition-all duration-300 cursor-pointer glass-card snarbles-border-glow">
+            <Card className="glass-card-premium hover:border-primary/40 transition-all duration-300 cursor-pointer glass-card snarbles-border-glow">
               <CardHeader>
                 <CardTitle className="text-muted-foreground">DAO Governance</CardTitle>
                 <CardDescription className="text-muted-foreground">Balanced model for decentralized governance</CardDescription>
@@ -1123,7 +1123,7 @@ export default function TokenomicsPage() {
               </CardContent>
             </Card>
             
-            <Card className="glass-card-premium hover:scale-105 transition-all duration-300 cursor-pointer glass-card snarbles-border-glow">
+            <Card className="glass-card-premium hover:border-primary/40 transition-all duration-300 cursor-pointer glass-card snarbles-border-glow">
               <CardHeader>
                 <CardTitle className="text-muted-foreground">GameFi Project</CardTitle>
                 <CardDescription className="text-muted-foreground">Optimized for gaming and metaverse projects</CardDescription>

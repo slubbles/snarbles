@@ -121,7 +121,7 @@ export default function StatsSection() {
             return (
               <div 
                 key={index} 
-                className={`glass-card p-6 text-center transition-all duration-500 hover:scale-105 ${
+                className={`snarbles-card-premium p-6 text-center transition-all duration-500 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10 hover:scale-105 ${
                   isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
                 }`}
                 style={{ transitionDelay: `${index * 100}ms` }}
@@ -152,10 +152,10 @@ export default function StatsSection() {
 
         {/* Multi-Chain Support */}
         <div className="mt-16">
-          <div className="glass-card p-8">
+          <div className="snarbles-card-premium p-8 snarbles-glow-blue">
             <div className="text-center mb-8">
-              <h3 className="text-2xl font-bold text-foreground mb-4">Multi-Chain Support</h3>
-              <p className="text-muted-foreground">Create tokens on multiple blockchains with one platform</p>
+              <h3 className="snarbles-heading text-2xl font-bold text-foreground mb-4">Multi-Chain Support</h3>
+              <p className="snarbles-body text-muted-foreground">Create tokens on multiple blockchains with one platform</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

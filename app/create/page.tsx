@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Sparkles, Shield, CheckCircle, AlertTriangle, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import TokenFormNew from '@/components/TokenFormNew';
+import TokenPreviewLive from '@/components/TokenPreviewLive';
 import WalletConnectionManager from '@/components/WalletConnectionManager';
 import { getCreditsBalance } from '@/lib/credit-system';
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { isMobile } from '@/lib/mobile-wallet-utils';
 import MobileWalletModal from '@/components/MobileWalletModal';
+import PeraWalletAppHandler from '@/components/PeraWalletAppHandler';
 
 export default function CreateTokenPage() {
   const [tokenData, setTokenData] = useState({
@@ -90,46 +92,44 @@ export default function CreateTokenPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 md:py-8">
-        {/* Header - Mobile Optimized */}
-        <div className="mb-6 md:mb-8">
+    <PeraWalletAppHandler>
+      <div className="min-h-screen snarbles-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
           <Link 
             href="/" 
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-4 md:mb-6 min-h-[44px] py-2 px-1 -mx-1"
+            className="inline-flex items-center gap-2 snarbles-body-muted hover:text-white transition-colors mb-6 snarbles-glass-subtle px-4 py-2 rounded-xl border-0"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="text-sm md:text-base">Back to Home</span>
+            Back to Home
           </Link>
           
-          <div className="flex flex-col gap-4 mb-6 md:mb-8">
-            <div className="text-center md:text-left">
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-2">
-                Create Your Token
-              </h1>
-              <p className="text-base md:text-lg text-muted-foreground">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
+            <div>
+              <h1 className="snarbles-heading text-4xl font-bold mb-2 snarbles-gradient-text-multi">Create Your Token</h1>
+              <p className="snarbles-body text-xl max-w-2xl">
                 Turn your idea into a real token in minutes. Simple, secure, and professional.
               </p>
             </div>
             
-            {/* Mobile-optimized wallet and credits section */}
             <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
               {/* Wallet Connection Manager */}
-              <div className="flex-1">
-                <WalletConnectionManager className="w-full" />
+              <div className="flex-1 sm:flex-initial">
+                <WalletConnectionManager className="w-full sm:w-auto" />
               </div>
               
-              {/* Credits Display - Mobile Optimized */}
+              {/* Credits Display */}
               {!isLoading && (
-                <div className="glass-card p-4 w-full sm:w-auto sm:min-w-[200px]">
-                  <div className="flex items-center justify-between sm:justify-center gap-3">
-                    <div className="flex items-center gap-3">
-                      <CreditCard className="w-5 h-5 text-primary" />
-                      <div>
-                        <div className="text-sm text-muted-foreground">Your Credits</div>
-                        <div className="text-xl font-bold text-foreground">
-                          {userCredits !== null ? formatCredits(userCredits) : 'Loading...'}
-                        </div>
+                <div className="snarbles-card p-4 min-w-[200px] snarbles-border-glow">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl snarbles-gradient-green flex items-center justify-center">
+                      <CreditCard className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <div className="snarbles-body-small text-gray-400">Your Credits</div>
+                      <div className="snarbles-heading text-xl font-bold">
+                        {userCredits !== null ? formatCredits(userCredits) : 'Loading...'}
                       </div>
                     </div>
                   </div>
@@ -138,59 +138,60 @@ export default function CreateTokenPage() {
             </div>
           </div>
 
-          {/* Progress Bar - Mobile Optimized */}
-          <div className="glass-card p-4 md:p-6 mb-6 md:mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-              <h3 className="text-base md:text-lg font-semibold text-foreground">Token Setup Progress</h3>
-              <span className="text-lg md:text-xl font-bold text-green-400 self-start sm:self-center">{progressPercentage}%</span>
+          {/* Progress Bar */}
+          <div className="snarbles-card-premium p-6 mb-8 snarbles-glow-green">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="snarbles-heading text-lg font-semibold">Token Setup Progress</h3>
+              <span className="snarbles-heading text-lg font-bold text-green-400">{progressPercentage}%</span>
             </div>
             
-            <div className="w-full bg-muted rounded-full h-2 mb-4">
+            <div className="w-full snarbles-glass-subtle rounded-full h-3 mb-4 overflow-hidden">
               <div 
-                className="bg-gradient-to-r from-primary to-green-500 h-2 rounded-full transition-all duration-500"
+                className="snarbles-gradient-green h-3 rounded-full transition-all duration-500 shadow-lg shadow-green-500/50"
                 style={{ width: `${progressPercentage}%` }}
               />
             </div>
             
-            {/* Mobile-first grid with better spacing */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-              <div className={`flex flex-col items-center gap-1 md:gap-2 py-2 md:py-0 ${tokenData.name?.length >= 3 ? 'text-green-400' : 'text-muted-foreground'}`}>
-                <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
-                <span className="text-xs md:text-sm font-medium">Name</span>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-300 ${tokenData.name?.length >= 3 ? 'snarbles-gradient-green text-white' : 'snarbles-glass-subtle text-gray-400'}`}>
+                <CheckCircle className="w-5 h-5" />
+                <span className="text-xs font-medium">Name</span>
               </div>
-              <div className={`flex flex-col items-center gap-1 md:gap-2 py-2 md:py-0 ${tokenData.symbol?.length >= 2 ? 'text-green-400' : 'text-muted-foreground'}`}>
-                <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
-                <span className="text-xs md:text-sm font-medium">Symbol</span>
+              <div className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-300 ${tokenData.symbol?.length >= 2 ? 'snarbles-gradient-blue text-white' : 'snarbles-glass-subtle text-gray-400'}`}>
+                <CheckCircle className="w-5 h-5" />
+                <span className="text-xs font-medium">Symbol</span>
               </div>
-              <div className={`flex flex-col items-center gap-1 md:gap-2 py-2 md:py-0 ${tokenData.description?.length >= 10 ? 'text-green-400' : 'text-muted-foreground'}`}>
-                <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
-                <span className="text-xs md:text-sm font-medium">Description</span>
+              <div className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-300 ${tokenData.description?.length >= 10 ? 'snarbles-gradient-purple text-white' : 'snarbles-glass-subtle text-gray-400'}`}>
+                <CheckCircle className="w-5 h-5" />
+                <span className="text-xs font-medium">Description</span>
               </div>
-              <div className={`flex flex-col items-center gap-1 md:gap-2 py-2 md:py-0 ${tokenData.totalSupply && parseFloat(tokenData.totalSupply) > 0 ? 'text-green-400' : 'text-muted-foreground'}`}>
-                <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
-                <span className="text-xs md:text-sm font-medium">Supply</span>
+              <div className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-300 ${tokenData.totalSupply && parseFloat(tokenData.totalSupply) > 0 ? 'snarbles-gradient-orange text-white' : 'snarbles-glass-subtle text-gray-400'}`}>
+                <CheckCircle className="w-5 h-5" />
+                <span className="text-xs font-medium">Supply</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Mobile Wallet Connection Alert - Enhanced */}
+        {/* Mobile Wallet Connection Alert */}
         {!isAuthenticated && isMobileDevice && (
-          <div className="mb-6 md:mb-8">
-            <div className="glass-card p-4 md:p-6 border-blue-500/20 bg-blue-500/5">
-              <div className="flex flex-col sm:flex-row items-start gap-3">
-                <CreditCard className="w-6 h-6 text-blue-400 flex-shrink-0 mt-1" />
-                <div className="flex-1 w-full sm:w-auto">
-                  <h3 className="text-lg font-semibold text-blue-400 mb-2">
+          <div className="mb-8">
+            <div className="snarbles-card p-6 snarbles-glow-blue">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl snarbles-gradient-blue flex items-center justify-center flex-shrink-0">
+                  <CreditCard className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="snarbles-heading text-lg font-semibold text-blue-400 mb-2">
                     Connect Your Mobile Wallet
                   </h3>
-                  <p className="text-sm md:text-base text-muted-foreground mb-4">
+                  <p className="snarbles-body text-gray-300 mb-4">
                     To create tokens on mobile, you'll need to connect your wallet first. 
                     We support Phantom (Solana) and Pera (Algorand) mobile apps.
                   </p>
                   <button
                     onClick={() => setShowMobileWalletModal(true)}
-                    className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium px-6 py-3 rounded-lg transition-all duration-200 min-h-[44px] text-center"
+                    className="snarbles-btn-primary"
                   >
                     Connect Mobile Wallet
                   </button>
@@ -200,9 +201,8 @@ export default function CreateTokenPage() {
           </div>
         )}
 
-        {/* Main Content - Mobile Optimized Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          {/* Main Form - Full width on mobile */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Form - Order last on mobile, first on desktop */}
           <div className="lg:col-span-2 order-2 lg:order-1">
             <TokenFormNew 
               tokenData={tokenData}
@@ -210,26 +210,29 @@ export default function CreateTokenPage() {
             />
           </div>
 
-          {/* Sidebar - Optimized for mobile */}
-          <div className="space-y-4 lg:space-y-6 order-1 lg:order-2">
+          {/* Sidebar - Order first on mobile, last on desktop */}
+          <div className="space-y-6 order-1 lg:order-2">
+            {/* Live Preview */}
+            <TokenPreviewLive tokenData={tokenData} />
+            
             {/* Safety Features */}
-            <div className="glass-card p-4 md:p-6">
-              <h3 className="text-base md:text-lg font-semibold text-foreground mb-4 md:mb-6 flex items-center gap-2">
-                <Shield className="w-5 h-5 md:w-6 md:h-6 text-green-400" />
+            <div className="snarbles-card-premium p-6 snarbles-glow-green">
+              <h3 className="snarbles-heading text-lg font-bold mb-6 flex items-center gap-2">
+                <Shield className="w-6 h-6 text-green-400" />
                 Why Choose Snarbles?
               </h3>
               
-              <div className="space-y-3 md:space-y-4">
+              <div className="space-y-4">
                 {safetyFeatures.map((feature, index) => {
                   const Icon = feature.icon;
                   return (
-                    <div key={index} className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-8 h-8 bg-green-500/10 rounded-lg flex items-center justify-center">
-                        <Icon className="w-4 h-4 text-green-400" />
+                    <div key={index} className="flex items-start gap-3 p-3 rounded-xl snarbles-glass-subtle hover:border-green-500/30 transition-all duration-300">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-xl snarbles-gradient-green flex items-center justify-center">
+                        <Icon className="w-5 h-5 text-white" />
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <h4 className="text-foreground font-semibold mb-1 text-sm md:text-base">{feature.title}</h4>
-                        <p className="text-muted-foreground text-xs md:text-sm">{feature.description}</p>
+                      <div>
+                        <h4 className="snarbles-heading font-semibold mb-1 text-green-400">{feature.title}</h4>
+                        <p className="snarbles-body-small text-gray-300">{feature.description}</p>
                       </div>
                     </div>
                   );
@@ -238,23 +241,23 @@ export default function CreateTokenPage() {
             </div>
 
             {/* Pricing Info */}
-            <div className="glass-card p-4 md:p-6">
-              <h3 className="text-base md:text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <CreditCard className="w-5 h-5 md:w-6 md:h-6 text-blue-400" />
+            <div className="snarbles-card p-6">
+              <h3 className="snarbles-heading-4 mb-4 flex items-center gap-2">
+                <CreditCard className="w-6 h-6 text-blue-400" />
                 Pricing
               </h3>
               
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground text-sm md:text-base">Testnet (Free)</span>
-                  <span className="text-green-400 font-medium text-sm md:text-base">Free</span>
+                  <span className="snarbles-body text-gray-300">Testnet (Free)</span>
+                  <span className="snarbles-status-live">Free</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground text-sm md:text-base">Algorand Mainnet</span>
-                  <span className="text-foreground font-semibold text-sm md:text-base">5 credits</span>
+                  <span className="snarbles-body text-gray-300">Algorand Mainnet</span>
+                  <span className="snarbles-body font-semibold">5 credits</span>
                 </div>
-                <div className="pt-3 border-t border-border">
-                  <p className="text-muted-foreground text-xs md:text-sm">
+                <div className="pt-3 border-t border-gray-600/50">
+                  <p className="snarbles-body-small text-gray-400">
                     Start with testnet to experiment, then deploy to mainnet when ready.
                   </p>
                 </div>
@@ -262,19 +265,19 @@ export default function CreateTokenPage() {
             </div>
 
             {/* Need Help */}
-            <div className="glass-card p-4 md:p-6 bg-blue-500/5 border-blue-500/20">
+            <div className="snarbles-card p-6 bg-blue-500/5 border-blue-500/20">
               <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 md:w-6 md:h-6 text-blue-400 flex-shrink-0 mt-1" />
-                <div className="min-w-0 flex-1">
-                  <h4 className="text-blue-400 font-semibold mb-2 text-sm md:text-base">Need Help?</h4>
-                  <p className="text-muted-foreground mb-3 text-xs md:text-sm">
+                <AlertTriangle className="w-6 h-6 text-blue-400 flex-shrink-0 mt-1" />
+                <div>
+                  <h4 className="snarbles-heading-5 mb-2 text-blue-400">Need Help?</h4>
+                  <p className="snarbles-body-small text-gray-300 mb-3">
                     First time creating a token? Check out our guide or join our community.
                   </p>
                   <div className="flex flex-col gap-2">
-                    <Link href="/support" className="bg-muted hover:bg-muted/80 text-foreground border border-border text-sm py-2 px-4 text-center min-h-[44px] flex items-center justify-center rounded-lg transition-all">
+                    <Link href="/support" className="snarbles-btn-secondary text-sm py-2 px-4">
                       View Guide
                     </Link>
-                    <Link href="/support" className="text-blue-400 hover:text-blue-300 text-sm text-center py-2 transition-colors">
+                    <Link href="/support" className="text-blue-400 hover:text-blue-300 text-sm">
                       Join Discord →
                     </Link>
                   </div>
@@ -300,5 +303,6 @@ export default function CreateTokenPage() {
         }}
       />
     </div>
+    </PeraWalletAppHandler>
   );
 }

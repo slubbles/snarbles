@@ -114,7 +114,7 @@ export function PricingModal({ isOpen, onClose, onSelectTier, selectedNetwork }:
                   className={`relative cursor-pointer transition-all duration-300 ${
                     isSelected 
                       ? 'ring-2 ring-red-500 scale-105' 
-                      : 'hover:scale-105 hover:shadow-lg'
+                      : 'hover:border-primary/40 hover:shadow-lg'
                   } ${tier.popular ? 'border-purple-500/50' : ''} ${tier.recommended ? 'border-red-500/50' : ''}`}
                   onClick={() => setSelectedTier(tier)}
                 >

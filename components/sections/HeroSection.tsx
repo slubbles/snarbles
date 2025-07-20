@@ -89,7 +89,7 @@ export default function HeroSection() {
               <Link href="/create">
                 <Button 
                   size="lg" 
-                  className="button-enhanced transform hover:scale-105 transition-all duration-300 relative z-10"
+                  className="button-enhanced hover:shadow-xl transition-all duration-300 relative z-10"
                   style={{
                     background: 'linear-gradient(135deg, rgb(239, 68, 68) 0%, rgb(220, 38, 38) 100%)',
                     border: '1px solid rgba(239, 68, 68, 0.3)',
@@ -110,7 +110,7 @@ export default function HeroSection() {
                 variant="outline" 
                 size="lg" 
                 onClick={() => window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank')}
-                className="transform hover:scale-105 transition-all duration-300 relative z-10"
+                className="hover:shadow-lg transition-all duration-300 relative z-10"
                 style={{
                   backgroundColor: 'rgba(255, 255, 255, 0.1)',
                   border: '2px solid rgba(239, 68, 68, 0.3)',
@@ -163,7 +163,7 @@ export default function HeroSection() {
               </div>
               
               {/* Token preview card - exact match */}
-              <div className="glass-card p-8 max-w-md mx-auto relative overflow-hidden">
+              <div className="snarbles-card-premium p-8 max-w-md mx-auto relative overflow-hidden snarbles-glow-green">
                 <div className="absolute top-0 left-0 right-0 px-4 py-2 text-center text-sm font-semibold"
                      style={{ 
                        background: 'linear-gradient(to right, rgb(239, 68, 68), rgb(220, 38, 38))',
@@ -214,7 +214,7 @@ export default function HeroSection() {
               </div>
               
               {/* Testimonial - exact match */}
-              <div className="absolute -bottom-8 -left-8 glass-card p-4 max-w-xs hidden lg:block">
+              <div className="absolute -bottom-8 -left-8 snarbles-card p-4 max-w-xs hidden lg:block">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold"
                        style={{ background: 'linear-gradient(to br, rgb(34, 197, 94), rgb(22, 163, 74))' }}>
