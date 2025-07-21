@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { usePaymentState, usePaymentSelectors } from '@/hooks/usePaymentState';
+import { getAlgorandClient } from '@/lib/algorand';
 
 export type PaymentMethod = 'credits' | 'algo_direct';
 
@@ -48,10 +49,57 @@ export default function PaymentSelectorNew({
   const hasEnoughCredits = userCredits >= creditsRequired;
   const hasEnoughAlgo = walletBalance !== null && walletBalance >= algoRequired;
   const {
-    isAlgorandNetwork
+    canPay,
+    currentStep,
+    progressPercentage,
+    isAlgorandNetwork,
+    needsConnection,
+    hasError
   } = usePaymentSelectors();
 
-  // Update network when prop changes
+  // Function to fetch real ALGO balance
+  const fetchRealAlgoBalance = async (address: string, networkName: string): Promise<number> => {
+    try {
+      if (!networkName.includes('algorand')) {
+        console.log(`ℹ️ Not an Algorand network (${networkName}), returning 0 balance`);
+        return 0;
+      }
+      
+      console.log(`🔄 Fetching ALGO balance for address: ${address} on network: ${networkName}`);
+      const algodClient = getAlgorandClient(networkName);
+      
+      // Test connection first
+      await algodClient.status().do();
+      console.log(`✅ Connected to Algorand network: ${networkName}`);
+      
+      const accountInfo = await algodClient.accountInformation(address).do();
+      
+      // Convert from microALGOs to ALGOs (1 ALGO = 1,000,000 microALGOs)
+      const algoBalance = Number(accountInfo.amount) / 1000000;
+      console.log(`✅ Real ALGO balance fetched: ${algoBalance} ALGO for address ${address.substring(0, 8)}...`);
+      console.log(`📊 Account details:`, {
+        address: address.substring(0, 8) + '...',
+        microAlgos: accountInfo.amount,
+        algos: algoBalance,
+        minBalance: Number(accountInfo.minBalance) / 1000000
+      });
+      
+      return algoBalance;
+    } catch (error) {
+      console.error('❌ Error fetching ALGO balance:', error);
+      
+      // Provide more specific error information
+      if (error instanceof Error) {
+        if (error.message.includes('account does not exist')) {
+          console.warn('⚠️ Account not found on network - may need to fund the account first');
+        } else if (error.message.includes('network')) {
+          console.warn('⚠️ Network connection issue - please check internet connection');
+        }
+      }
+      
+      return 0;
+    }
+  };  // Update network when prop changes
   useEffect(() => {
     setNetwork(network.includes('algorand') ? 'algorand' : 'solana');
   }, [network, setNetwork]);
@@ -68,6 +116,17 @@ export default function PaymentSelectorNew({
       setSelectedMethod('credits');
     }
   }, [selectedMethod, userCredits, creditsRequired, walletAddress, setSelectedMethod]);
+
+  // Update network in payment state when prop changes
+  useEffect(() => {
+    if (network.includes('algorand')) {
+      setNetwork('algorand');
+    } else if (network.includes('solana')) {
+      setNetwork('solana');
+    } else {
+      setNetwork(null);
+    }
+  }, [network, setNetwork]);
 
   // Load user credits
   useEffect(() => {
@@ -107,13 +166,17 @@ export default function PaymentSelectorNew({
   // Load wallet balance
   useEffect(() => {
     const loadWalletBalance = async () => {
-      if (!walletAddress || !isAlgorandNetwork) return;
+      if (!walletAddress || !isAlgorandNetwork) {
+        setWalletBalance(null);
+        return;
+      }
       
       setIsLoadingBalance(true);
       try {
-        // Mock balance loading - replace with actual implementation
-        const balance = Math.random() * 100; // Mock balance
-        setWalletBalance(balance);
+        console.log(`🔄 Fetching real ALGO balance for ${walletAddress} on ${network}...`);
+        const realBalance = await fetchRealAlgoBalance(walletAddress, network);
+        setWalletBalance(realBalance);
+        console.log(`✅ ALGO balance loaded: ${realBalance} ALGO`);
       } catch (error) {
         console.error('Failed to load wallet balance:', error);
         setWalletBalance(null);
@@ -123,12 +186,10 @@ export default function PaymentSelectorNew({
     };
 
     loadWalletBalance();
-  }, [walletAddress, isAlgorandNetwork, setWalletBalance]);
+  }, [walletAddress, isAlgorandNetwork, network, setWalletBalance]);
 
   // Handle method change
   const handleMethodChange = (method: PaymentMethod) => {
-    console.log('Payment method changed to:', method);
-    console.log('Current state before change:', { selectedMethod, userCredits, walletBalance });
     setSelectedMethod(method);
     toast({
       title: "Payment Method Selected",
@@ -136,19 +197,6 @@ export default function PaymentSelectorNew({
       duration: 2000,
     });
   };
-
-  // Debug logging
-  useEffect(() => {
-    console.log('PaymentSelectorNew state:', {
-      selectedMethod,
-      userCredits,
-      walletBalance,
-      walletAddress,
-      isAlgorandNetwork,
-      hasEnoughCredits,
-      hasEnoughAlgo
-    });
-  }, [selectedMethod, userCredits, walletBalance, walletAddress, isAlgorandNetwork, hasEnoughCredits, hasEnoughAlgo]);
 
   // Payment method configurations
   const paymentMethods = [
@@ -170,7 +218,11 @@ export default function PaymentSelectorNew({
       icon: Wallet,
       available: hasEnoughAlgo,
       cost: `${algoRequired} ALGO`,
-      balance: isLoadingBalance ? 'Loading...' : walletBalance !== null ? `${walletBalance} ALGO` : 'Connect wallet',
+      balance: isLoadingBalance 
+        ? 'Loading...' 
+        : walletBalance !== null 
+          ? `${walletBalance.toFixed(6)} ALGO` 
+          : 'Connect wallet',
       recommended: false,
       disabled: !isAlgorandNetwork || !hasEnoughAlgo
     }
@@ -205,51 +257,82 @@ export default function PaymentSelectorNew({
           </Alert>
         )}
         
-        <RadioGroup value={selectedMethod || ''} onValueChange={handleMethodChange} className="space-y-3">
+        <RadioGroup value={selectedMethod || ''} onValueChange={handleMethodChange} className="space-y-4">
           {paymentMethods.map((method) => (
             <div key={method.id} className="relative">
               <div 
                 className={`
                   glass-card p-4 rounded-lg border-2 cursor-pointer transition-all duration-200
+                  touch-manipulation select-none min-h-[80px] sm:min-h-[60px]
                   ${selectedMethod === method.id 
                     ? 'border-[rgb(239,68,68)] bg-[rgb(239,68,68)]/10 shadow-lg shadow-red-500/20' 
                     : 'border-[rgb(38,38,38)] hover:border-[rgb(163,163,163)] hover:bg-[rgb(38,38,38)]/20'
                   }
-                  ${method.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'}
+                  ${method.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98] active:bg-[rgb(239,68,68)]/5'}
+                  md:hover:scale-[1.02] md:active:scale-[0.98]
                 `}
+                style={{ touchAction: 'manipulation' }}
+                role="button"
+                tabIndex={0}
+                aria-label={`Select ${method.name} payment method`}
+                aria-pressed={selectedMethod === method.id}
+                aria-disabled={method.disabled}
                 onClick={() => {
                   if (!method.disabled) {
                     handleMethodChange(method.id);
                   }
                 }}
+                onKeyDown={(e) => {
+                  if ((e.key === 'Enter' || e.key === ' ') && !method.disabled) {
+                    e.preventDefault();
+                    handleMethodChange(method.id);
+                  }
+                }}
+                onTouchStart={(e) => {
+                  // Prevent touch delay on mobile
+                  if (!method.disabled) {
+                    e.currentTarget.style.transform = 'scale(0.98)';
+                  }
+                }}
+                onTouchEnd={(e) => {
+                  // Reset scale after touch
+                  setTimeout(() => {
+                    if (!method.disabled) {
+                      e.currentTarget.style.transform = '';
+                    }
+                  }, 100);
+                }}
               >
                 <div className="flex items-start gap-3 w-full">
-                  <RadioGroupItem 
-                    id={method.id}
-                    value={method.id}
-                    disabled={method.disabled}
-                    className="text-[rgb(239,68,68)] border-[rgb(163,163,163)] mt-1 pointer-events-none"
-                    checked={selectedMethod === method.id}
-                  />
+                  <div className="relative flex items-center justify-center w-6 h-6 mt-1">
+                    <RadioGroupItem 
+                      id={method.id}
+                      value={method.id}
+                      disabled={method.disabled}
+                      className="text-[rgb(239,68,68)] border-[rgb(163,163,163)] w-5 h-5 touch-manipulation"
+                      checked={selectedMethod === method.id}
+                      style={{ touchAction: 'manipulation' }}
+                    />
+                  </div>
                   
-                  <div className="flex-1 space-y-3">
+                  <div className="flex-1 space-y-3 pointer-events-none touch-manipulation">
                     <div className="flex items-center gap-3">
                       <div className={`
-                        p-2 rounded-lg transition-all duration-200
+                        p-2 rounded-lg transition-all duration-200 pointer-events-none
                         ${method.id === 'credits' ? 'bg-[rgb(239,68,68)]/20' : 'bg-[rgb(38,38,38)]'}
                         ${selectedMethod === method.id ? 'shadow-lg' : ''}
                       `}>
                         <method.icon className={`
-                          w-5 h-5 transition-colors duration-200
+                          w-5 h-5 transition-colors duration-200 pointer-events-none
                           ${method.id === 'credits' ? 'text-[rgb(239,68,68)]' : 'text-[rgb(163,163,163)]'}
                           ${selectedMethod === method.id && method.id === 'credits' ? 'text-white' : ''}
                         `} />
                       </div>
                       
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
+                      <div className="flex-1 pointer-events-none">
+                        <div className="flex items-center gap-2 pointer-events-none">
                           <span className={`
-                            text-base font-semibold transition-colors duration-200
+                            text-base font-semibold transition-colors duration-200 pointer-events-none
                             ${method.disabled ? 'text-[rgb(163,163,163)]' : 'text-[rgb(254,254,235)]'}
                             ${selectedMethod === method.id ? 'text-white' : ''}
                           `}>
@@ -257,20 +340,20 @@ export default function PaymentSelectorNew({
                           </span>
                           
                           {method.recommended && (
-                            <Badge className="bg-[rgb(239,68,68)] text-[rgb(254,254,235)] text-xs animate-pulse">
+                            <Badge className="bg-[rgb(239,68,68)] text-[rgb(254,254,235)] text-xs animate-pulse pointer-events-none">
                               Recommended
                             </Badge>
                           )}
                           
                           {selectedMethod === method.id && (
-                            <Badge className="bg-green-500 text-white text-xs">
+                            <Badge className="bg-green-500 text-white text-xs pointer-events-none">
                               Selected
                             </Badge>
                           )}
                         </div>
                         
                         <p className={`
-                          text-sm mt-1 transition-colors duration-200
+                          text-sm mt-1 transition-colors duration-200 pointer-events-none
                           ${selectedMethod === method.id ? 'text-gray-200' : 'text-[rgb(163,163,163)]'}
                         `}>
                           {method.description}
@@ -280,25 +363,25 @@ export default function PaymentSelectorNew({
                     
                     {/* Payment Details */}
                     <div className={`
-                      pt-3 border-t grid grid-cols-2 gap-4 text-sm transition-colors duration-200
+                      pt-3 border-t grid grid-cols-2 gap-4 text-sm transition-colors duration-200 pointer-events-none
                       ${selectedMethod === method.id ? 'border-gray-500' : 'border-[rgb(38,38,38)]'}
                     `}>
-                      <div>
+                      <div className="pointer-events-none">
                         <span className={`
-                          transition-colors duration-200
+                          transition-colors duration-200 pointer-events-none
                           ${selectedMethod === method.id ? 'text-gray-300' : 'text-[rgb(163,163,163)]'}
                         `}>Cost:</span>
                         <span className={`
-                          ml-2 font-semibold transition-colors duration-200
+                          ml-2 font-semibold transition-colors duration-200 pointer-events-none
                           ${selectedMethod === method.id ? 'text-white' : 'text-[rgb(254,254,235)]'}
                         `}>{method.cost}</span>
                       </div>
-                      <div>
+                      <div className="pointer-events-none">
                         <span className={`
-                          transition-colors duration-200
+                          transition-colors duration-200 pointer-events-none
                           ${selectedMethod === method.id ? 'text-gray-300' : 'text-[rgb(163,163,163)]'}
                         `}>Balance:</span>
-                        <span className={`ml-2 font-medium ${method.available ? 'text-green-400' : 'text-red-400'}`}>
+                        <span className={`ml-2 font-medium pointer-events-none ${method.available ? 'text-green-400' : 'text-red-400'}`}>
                           {method.balance}
                         </span>
                       </div>
@@ -352,64 +435,22 @@ export default function PaymentSelectorNew({
           </Alert>
         )}
 
-        {selectedMethod === 'algo_direct' && isAlgorandNetwork && !hasEnoughAlgo && (
+        {selectedMethod === 'algo_direct' && isAlgorandNetwork && !hasEnoughAlgo && walletBalance !== null && (
           <Alert className="border-red-500/20 bg-red-500/10">
             <AlertCircle className="w-4 h-4 text-red-400" />
             <AlertDescription className="text-red-300">
-              <strong>Insufficient ALGO:</strong> You need {algoRequired} ALGO but only have {walletBalance || 0}.
+              <strong>Insufficient ALGO:</strong> You need {algoRequired} ALGO but only have {walletBalance.toFixed(6)}.
             </AlertDescription>
           </Alert>
         )}
 
-        {/* Debug Panel (only show if not in production) */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="glass-card border-2 border-purple-500/20 rounded-lg p-4 bg-purple-500/5">
-            <h4 className="text-purple-400 font-semibold mb-3">🔧 Debug Info</h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Selected Method:</span>
-                <span className="text-white">{selectedMethod || 'None'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">User Credits:</span>
-                <span className="text-white">{userCredits}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Wallet Balance:</span>
-                <span className="text-white">{walletBalance || 'N/A'} ALGO</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Has Enough Credits:</span>
-                <span className={hasEnoughCredits ? 'text-green-400' : 'text-red-400'}>
-                  {hasEnoughCredits ? 'Yes' : 'No'}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Has Enough ALGO:</span>
-                <span className={hasEnoughAlgo ? 'text-green-400' : 'text-red-400'}>
-                  {hasEnoughAlgo ? 'Yes' : 'No'}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Wallet Connected:</span>
-                <span className={walletAddress ? 'text-green-400' : 'text-red-400'}>
-                  {walletAddress ? 'Yes' : 'No'}
-                </span>
-              </div>
-            </div>
-            
-            <div className="mt-3 pt-3 border-t border-purple-500/20">
-              <button
-                onClick={() => {
-                  console.log('Testing payment method selection...');
-                  handleMethodChange('credits');
-                }}
-                className="w-full bg-purple-500 hover:bg-purple-600 text-white px-3 py-2 rounded text-sm transition-colors"
-              >
-                Test Select Credits
-              </button>
-            </div>
-          </div>
+        {selectedMethod === 'algo_direct' && isAlgorandNetwork && walletBalance === null && !isLoadingBalance && (
+          <Alert className="border-yellow-500/20 bg-yellow-500/10">
+            <AlertCircle className="w-4 h-4 text-yellow-400" />
+            <AlertDescription className="text-yellow-300">
+              <strong>Balance Load Failed:</strong> Unable to fetch wallet balance. Please check your connection.
+            </AlertDescription>
+          </Alert>
         )}
 
         {/* Pricing Comparison */}

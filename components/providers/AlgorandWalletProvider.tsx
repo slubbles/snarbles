@@ -416,22 +416,66 @@ export function AlgorandWalletProvider({ children }: AlgorandWalletProviderProps
 
       console.log('Formatted atomic group for', selectedNetwork);
 
-      // Sign the atomic group - Pera Wallet expects SignerTransaction[][]
-      const signedTxns = await peraWallet.signTransaction([signerTransactions]);
+      let signedTxns: any;
+      
+      try {
+        // Try atomic group signing first (newer Pera Wallet versions)
+        console.log('Attempting atomic group signing...');
+        signedTxns = await peraWallet.signTransaction([signerTransactions]);
+      } catch (atomicError) {
+        console.warn('Atomic group signing failed, trying fallback method:', atomicError);
+        
+        // Fallback: Try signing transactions individually but still as a group
+        try {
+          console.log('Attempting fallback signing method...');
+          const individualSigners = signerTransactions.map(st => [st]);
+          signedTxns = await peraWallet.signTransaction(individualSigners);
+          
+          // Flatten the result if needed
+          if (Array.isArray(signedTxns) && Array.isArray(signedTxns[0]) && signedTxns.length === transactions.length) {
+            signedTxns = signedTxns.map(group => group[0]);
+          }
+        } catch (fallbackError) {
+          console.error('Both atomic and fallback signing failed:', fallbackError);
+          throw atomicError; // Throw the original atomic error
+        }
+      }
+      
+      console.log('Pera Wallet response:', signedTxns);
+      console.log('Response type:', typeof signedTxns);
+      console.log('Is array:', Array.isArray(signedTxns));
+      console.log('Length:', signedTxns?.length);
       
       if (!signedTxns || signedTxns.length === 0) {
-        throw new Error('Atomic group signing failed - no signed transactions returned');
+        throw new Error('Atomic group signing failed - no response from wallet');
       }
       
       console.log(`✅ Atomic group signed successfully on ${selectedNetwork}`);
       
-      // Since we passed [signerTransactions], the result is an array where the first element
-      // contains our group of signed transactions
-      const signedGroup = signedTxns[0];
+      // Handle different response formats from Pera Wallet
+      let signedGroup: any[];
       
-      if (!signedGroup || !Array.isArray(signedGroup)) {
-        throw new Error('Atomic group signing failed - invalid response format');
+      if (Array.isArray(signedTxns)) {
+        // Check if it's a nested array (expected format)
+        if (Array.isArray(signedTxns[0])) {
+          signedGroup = signedTxns[0]; // Get the first (and only) group
+        } else {
+          // Direct array of signed transactions
+          signedGroup = signedTxns;
+        }
+      } else {
+        throw new Error('Atomic group signing failed - unexpected response format');
       }
+      
+      if (!signedGroup || signedGroup.length === 0) {
+        throw new Error('Atomic group signing failed - empty response');
+      }
+      
+      if (signedGroup.length !== transactions.length) {
+        throw new Error(`Atomic group signing failed - expected ${transactions.length} signed transactions, got ${signedGroup.length}`);
+      }
+      
+      console.log('Processing', signedGroup.length, 'signed transactions');
       
       // Convert all signed transactions to Uint8Array format
       const signedTransactions: Uint8Array[] = [];
@@ -439,15 +483,33 @@ export function AlgorandWalletProvider({ children }: AlgorandWalletProviderProps
       for (const signedTxn of signedGroup) {
         let signedTxnBytes: Uint8Array;
         
+        console.log('Processing signed transaction:', typeof signedTxn, signedTxn);
+        
         if (signedTxn instanceof Uint8Array) {
           signedTxnBytes = signedTxn;
         } else if (Array.isArray(signedTxn)) {
           signedTxnBytes = new Uint8Array(signedTxn);
-        } else if (signedTxn && typeof signedTxn === 'object' && 'blob' in signedTxn) {
-          signedTxnBytes = new Uint8Array((signedTxn as any).blob);
+        } else if (signedTxn && typeof signedTxn === 'object') {
+          // Check for various possible formats
+          if ('blob' in signedTxn && signedTxn.blob) {
+            signedTxnBytes = new Uint8Array(signedTxn.blob);
+          } else if ('signedTxn' in signedTxn && signedTxn.signedTxn) {
+            signedTxnBytes = new Uint8Array(signedTxn.signedTxn);
+          } else if ('bytes' in signedTxn && signedTxn.bytes) {
+            signedTxnBytes = new Uint8Array(signedTxn.bytes);
+          } else {
+            // Try to find any array-like property
+            const keys = Object.keys(signedTxn);
+            console.log('Available properties:', keys);
+            throw new Error(`Cannot extract signed transaction bytes. Available properties: ${keys.join(', ')}`);
+          }
         } else {
           console.error('Unexpected signed transaction format:', signedTxn);
           throw new Error(`Unexpected signed transaction format: ${typeof signedTxn}`);
+        }
+        
+        if (!signedTxnBytes || signedTxnBytes.length === 0) {
+          throw new Error('Empty signed transaction bytes');
         }
         
         signedTransactions.push(signedTxnBytes);

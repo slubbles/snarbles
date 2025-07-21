@@ -27,7 +27,8 @@ import {
   getCreditsBalance
 } from '@/lib/enhanced-payment-system';
 import { trackTokenCreation, trackFeeCollection } from '@/lib/analytics';
-import { createRealAlgorandToken } from '@/lib/real-algorand-token-creation-v2';
+import { createRealAlgorandToken, getMaximumSafeSupply, getPracticalMaximumSupply } from '@/lib/real-algorand-token-creation-v2';
+import { getFeeConfigForNetwork } from '@/lib/admin-config';
 import { createTokenWithMobileOptimizations, validateMobileWalletConnection } from '@/lib/mobile-token-creation';
 import { useAlgorandWallet } from '@/components/providers/AlgorandWalletProvider';
 // Import token creation functions - will be implemented via existing components
@@ -323,21 +324,50 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
       const supply = parseFloat(tokenData.totalSupply);
       if (isNaN(supply) || supply <= 0) {
         errors.totalSupply = 'Total supply must be a positive number';
+      } else if (supply > Number.MAX_SAFE_INTEGER) {
+        errors.totalSupply = 'Total supply is too large for safe processing';
       } else {
-        // Network-specific supply limits
+        // Network-specific supply limits with safe integer validation
         if (tokenData.network.startsWith('algorand')) {
-          // Algorand uses uint64: max value is 18,446,744,073,709,551,615
-          const algorandMaxSupply = 18446744073709551615;
-          if (supply > algorandMaxSupply) {
-            errors.totalSupply = 'Total supply exceeds Algorand maximum (18.4 quintillion)';
+          try {
+            const decimals = parseInt(tokenData.decimals) || 0;
+            
+            // Check if the supply with decimals would exceed safe integer limits
+            const maxSafeSupply = Math.floor(Number.MAX_SAFE_INTEGER / Math.pow(10, decimals));
+            
+            if (supply > maxSafeSupply) {
+              errors.totalSupply = `Token supply of ${supply.toLocaleString()} with ${decimals} decimals exceeds safe limits. Maximum safe supply for ${decimals} decimals is ${maxSafeSupply.toLocaleString()}`;
+            } else {
+              // Also check against Algorand's uint64 maximum
+              const totalWithDecimals = supply * Math.pow(10, decimals);
+              const algorandMaxUint64 = 18446744073709551615;
+              if (totalWithDecimals > algorandMaxUint64) {
+                errors.totalSupply = `Total supply with ${decimals} decimals would exceed Algorand maximum (${algorandMaxUint64.toLocaleString()})`;
+              }
+            }
+          } catch (e) {
+            errors.totalSupply = 'Total supply value is invalid';
           }
         } else if (tokenData.network.startsWith('solana')) {
           // Solana uses u64 as well, but with decimals consideration
-          // Max supply depends on decimals: max_u64 / (10^decimals)
-          const decimals = parseInt(tokenData.decimals) || 9;
-          const solanaMaxSupply = Math.floor(18446744073709551615 / Math.pow(10, decimals));
-          if (supply > solanaMaxSupply) {
-            errors.totalSupply = `Total supply with ${decimals} decimals exceeds Solana maximum (${solanaMaxSupply.toLocaleString()})`;
+          try {
+            const decimals = parseInt(tokenData.decimals) || 9;
+            
+            // Check if the supply with decimals would exceed safe integer limits
+            const maxSafeSupply = Math.floor(Number.MAX_SAFE_INTEGER / Math.pow(10, decimals));
+            
+            if (supply > maxSafeSupply) {
+              errors.totalSupply = `Token supply of ${supply.toLocaleString()} with ${decimals} decimals exceeds safe limits. Maximum safe supply for ${decimals} decimals is ${maxSafeSupply.toLocaleString()}`;
+            } else {
+              // Also check against Solana's uint64 maximum
+              const totalWithDecimals = supply * Math.pow(10, decimals);
+              const solanaMaxUint64 = 18446744073709551615;
+              if (totalWithDecimals > solanaMaxUint64) {
+                errors.totalSupply = `Total supply with ${decimals} decimals would exceed Solana maximum (${solanaMaxUint64.toLocaleString()})`;
+              }
+            }
+          } catch (e) {
+            errors.totalSupply = 'Total supply value is invalid';
           }
         }
         // For other networks, no artificial limit is applied
@@ -393,16 +423,8 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
   };
 
   const getAlgoCost = (network: string): number => {
-    switch (network) {
-      case 'algorand-mainnet':
-        return 10; // 10 ALGO for direct payment
-      case 'algorand-testnet':
-      case 'solana-devnet':
-      case 'solana-testnet':
-        return 0; // Free for testnets
-      default:
-        return 0;
-    }
+    const feeConfig = getFeeConfigForNetwork(network);
+    return feeConfig.enabled ? (feeConfig.amount / 1000000) : 0; // Convert microALGO to ALGO
   };
 
   const handleDeploy = async () => {
@@ -792,17 +814,32 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
             {/* Total Supply */}
             <div>
               <Label htmlFor="totalSupply" className="snarbles-body font-semibold">Total Supply *</Label>
+              <p className="text-xs text-gray-400 mt-1 mb-2">
+                Recommended: 1,000 to 1,000,000,000 tokens
+              </p>
               <Input
                 id="totalSupply"
                 type="number"
                 className="snarbles-input mt-2"
                 placeholder="1000000"
                 value={tokenData.totalSupply}
-                onChange={(e) => handleInputChange('totalSupply', e.target.value)}
+                min="1"
+                max="1000000000000" // 1 trillion as reasonable max
+                step="1"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  // Prevent input of extremely large numbers
+                  if (value === '' || (parseFloat(value) <= 1000000000000000)) { // 1 quadrillion max
+                    handleInputChange('totalSupply', value);
+                  }
+                }}
               />
               {validationErrors.totalSupply && (
                 <p className="text-red-400 text-sm mt-1">{validationErrors.totalSupply}</p>
               )}
+              <p className="text-xs text-gray-500 mt-1">
+                Current: {tokenData.totalSupply ? Number(tokenData.totalSupply).toLocaleString() : '0'} tokens
+              </p>
             </div>
 
             {/* Decimals */}
@@ -816,12 +853,20 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="0">0 (No decimals)</SelectItem>
-                  <SelectItem value="6">6 (Standard)</SelectItem>
-                  <SelectItem value="9">9 (Recommended)</SelectItem>
-                  <SelectItem value="18">18 (ETH-like)</SelectItem>
+                  <SelectItem value="0">0 (No decimals) - Recommended max: {getPracticalMaximumSupply(0).toLocaleString()}</SelectItem>
+                  <SelectItem value="6">6 (Standard) - Recommended max: {getPracticalMaximumSupply(6).toLocaleString()}</SelectItem>
+                  <SelectItem value="9">9 (Recommended) - Recommended max: {getPracticalMaximumSupply(9).toLocaleString()}</SelectItem>
+                  <SelectItem value="8">8 (Bitcoin-like) - Recommended max: {getPracticalMaximumSupply(8).toLocaleString()}</SelectItem>
+                  <SelectItem value="12">12 (High precision) - Recommended max: {getPracticalMaximumSupply(12).toLocaleString()}</SelectItem>
+                  <SelectItem value="18">18 (ETH-like) - Recommended max: {getPracticalMaximumSupply(18).toLocaleString()}</SelectItem>
                 </SelectContent>
               </Select>
+              {tokenData.network.startsWith('algorand') && (
+                <div className="text-xs text-gray-500 mt-1">
+                  <div>Maximum safe supply: {getMaximumSafeSupply(parseInt(tokenData.decimals) || 0).toLocaleString()} tokens</div>
+                  <div className="text-blue-400">Recommended max: {getPracticalMaximumSupply(parseInt(tokenData.decimals) || 0).toLocaleString()} tokens</div>
+                </div>
+              )}
             </div>
           </div>
 

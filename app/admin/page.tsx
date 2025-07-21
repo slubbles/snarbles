@@ -25,6 +25,12 @@ import {
   type FeeCollectionSummary
 } from '@/lib/dynamic-pricing';
 import { 
+  getAdminConfig, 
+  updateAdminConfig, 
+  isAdmin,
+  type AdminConfig 
+} from '@/lib/admin-config';
+import { 
   AlertTriangle, CheckCircle, Settings, Loader2, Shield, 
   Wallet, ArrowLeft, Rocket, BarChart3, Activity, 
   PieChart, Info, FileText, Crown, Zap, Sparkles,
@@ -85,6 +91,15 @@ export default function AdminPage() {
   const [savingPricing, setSavingPricing] = useState(false);
   const [pricingError, setPricingError] = useState('');
 
+  // Algorand fee management states
+  const [algorandConfig, setAlgorandConfig] = useState<AdminConfig | null>(null);
+  const [editingAlgorandFees, setEditingAlgorandFees] = useState(false);
+  const [savingAlgorandFees, setSavingAlgorandFees] = useState(false);
+  const [algorandFeeForm, setAlgorandFeeForm] = useState({
+    mainnetFee: '10',
+    testnetFee: '0'
+  });
+
   // Solana wallet
   const { connected, publicKey, wallet, signTransaction, signAllTransactions } = useWallet();
   const { toast } = useToast();
@@ -100,6 +115,7 @@ export default function AdminPage() {
       loadPricingData();
       loadPlatformAnalytics();
       loadPlatformSettings();
+      loadAlgorandConfig();
     }
   }, [mounted, connected, publicKey]);
 
@@ -249,6 +265,58 @@ export default function AdminPage() {
       setPricingError('Failed to load pricing configuration');
     } finally {
       setLoadingPricing(false);
+    }
+  };
+
+  // Load Algorand configuration
+  const loadAlgorandConfig = async () => {
+    try {
+      const config = getAdminConfig();
+      setAlgorandConfig(config);
+      setAlgorandFeeForm({
+        mainnetFee: config.fees.algorandMainnetFee.toString(),
+        testnetFee: config.fees.algorandTestnetFee.toString()
+      });
+    } catch (error) {
+      console.error('Error loading Algorand config:', error);
+    }
+  };
+
+  // Save Algorand fee configuration
+  const saveAlgorandFees = async () => {
+    setSavingAlgorandFees(true);
+    try {
+      const newConfig: Partial<AdminConfig> = {
+        fees: {
+          algorandMainnetFee: parseFloat(algorandFeeForm.mainnetFee),
+          algorandTestnetFee: parseFloat(algorandFeeForm.testnetFee),
+          solanaMainnetFee: algorandConfig?.fees.solanaMainnetFee || 0,
+          solanaDevnetFee: algorandConfig?.fees.solanaDevnetFee || 0,
+        }
+      };
+
+      const result = await updateAdminConfig(newConfig);
+      
+      if (result.success) {
+        await loadAlgorandConfig();
+        setEditingAlgorandFees(false);
+        toast({
+          title: "✅ Fees Updated",
+          description: "Algorand fees have been updated successfully",
+          duration: 5000,
+        });
+      } else {
+        throw new Error(result.error || 'Failed to update fees');
+      }
+    } catch (error) {
+      toast({
+        title: "❌ Update Failed",
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: "destructive",
+        duration: 8000,
+      });
+    } finally {
+      setSavingAlgorandFees(false);
     }
   };
 
@@ -1097,6 +1165,202 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Algorand Fee Configuration Section */}
+          <div className="snarbles-card-premium p-8 snarbles-glow-blue">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl snarbles-gradient-blue flex items-center justify-center">
+                  <Coins className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="snarbles-subheading text-2xl">Algorand Fee Configuration</h3>
+                  <p className="snarbles-body">Configure token creation fees for Algorand networks</p>
+                </div>
+              </div>
+              <Button
+                onClick={() => setEditingAlgorandFees(!editingAlgorandFees)}
+                variant="outline"
+                className="snarbles-button-ghost"
+              >
+                {editingAlgorandFees ? (
+                  <>
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
+                  </>
+                ) : (
+                  <>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Edit Fees
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {algorandConfig && (
+              <div className="space-y-6">
+                {/* Current Configuration Display */}
+                {!editingAlgorandFees && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="snarbles-glass-subtle p-6 rounded-xl snarbles-border-glow">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-full snarbles-gradient-green flex items-center justify-center">
+                          <Globe className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <h4 className="snarbles-subheading text-lg">Algorand Mainnet</h4>
+                          <p className="snarbles-body text-sm text-gray-400">Production network</p>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="snarbles-body text-sm">Creation Fee:</span>
+                          <span className="snarbles-heading text-lg font-bold text-green-400">
+                            {algorandConfig.fees.algorandMainnetFee} ALGO
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="snarbles-body text-sm">Status:</span>
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            algorandConfig.fees.algorandMainnetFee > 0 
+                              ? 'bg-green-500/20 text-green-400' 
+                              : 'bg-gray-500/20 text-gray-400'
+                          }`}>
+                            {algorandConfig.fees.algorandMainnetFee > 0 ? 'Enabled' : 'Free'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="snarbles-glass-subtle p-6 rounded-xl snarbles-border-glow">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-full snarbles-gradient-blue flex items-center justify-center">
+                          <Globe className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <h4 className="snarbles-subheading text-lg">Algorand Testnet</h4>
+                          <p className="snarbles-body text-sm text-gray-400">Development network</p>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="snarbles-body text-sm">Creation Fee:</span>
+                          <span className="snarbles-heading text-lg font-bold text-blue-400">
+                            {algorandConfig.fees.algorandTestnetFee} ALGO
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="snarbles-body text-sm">Status:</span>
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            algorandConfig.fees.algorandTestnetFee > 0 
+                              ? 'bg-green-500/20 text-green-400' 
+                              : 'bg-gray-500/20 text-gray-400'
+                          }`}>
+                            {algorandConfig.fees.algorandTestnetFee > 0 ? 'Enabled' : 'Free'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Fee Editing Form */}
+                {editingAlgorandFees && (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <Label htmlFor="mainnetFee" className="snarbles-subheading">
+                          Algorand Mainnet Fee (ALGO)
+                        </Label>
+                        <Input
+                          id="mainnetFee"
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          placeholder="10"
+                          value={algorandFeeForm.mainnetFee}
+                          onChange={(e) => setAlgorandFeeForm(prev => ({
+                            ...prev,
+                            mainnetFee: e.target.value
+                          }))}
+                          className="snarbles-glass-subtle h-12 text-base snarbles-border-glow"
+                        />
+                        <p className="text-sm snarbles-body text-gray-400">
+                          Fee charged for creating tokens on Algorand mainnet
+                        </p>
+                      </div>
+
+                      <div className="space-y-4">
+                        <Label htmlFor="testnetFee" className="snarbles-subheading">
+                          Algorand Testnet Fee (ALGO)
+                        </Label>
+                        <Input
+                          id="testnetFee"
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          placeholder="0"
+                          value={algorandFeeForm.testnetFee}
+                          onChange={(e) => setAlgorandFeeForm(prev => ({
+                            ...prev,
+                            testnetFee: e.target.value
+                          }))}
+                          className="snarbles-glass-subtle h-12 text-base snarbles-border-glow"
+                        />
+                        <p className="text-sm snarbles-body text-gray-400">
+                          Fee charged for creating tokens on Algorand testnet (usually 0)
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="snarbles-glass-subtle p-4 rounded-lg border border-blue-500/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Info className="w-4 h-4 text-blue-400" />
+                        <span className="snarbles-subheading text-blue-400 text-sm">Fee Recipient</span>
+                      </div>
+                      <p className="snarbles-body text-sm mb-2">Fees will be sent to your admin wallet:</p>
+                      <code className="block snarbles-glass-subtle p-2 rounded text-xs font-mono break-all">
+                        {algorandConfig.adminWallet}
+                      </code>
+                    </div>
+
+                    <div className="flex gap-4">
+                      <Button
+                        onClick={saveAlgorandFees}
+                        disabled={savingAlgorandFees}
+                        className="snarbles-button-primary"
+                      >
+                        {savingAlgorandFees ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-4 h-4 mr-2" />
+                            Save Fees
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setEditingAlgorandFees(false);
+                          setAlgorandFeeForm({
+                            mainnetFee: algorandConfig.fees.algorandMainnetFee.toString(),
+                            testnetFee: algorandConfig.fees.algorandTestnetFee.toString()
+                          });
+                        }}
+                        variant="outline"
+                        className="snarbles-button-ghost"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Dynamic Pricing Management Section */}

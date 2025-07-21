@@ -15,7 +15,9 @@ import {
   X,
   Wallet,
   Smartphone,
-  RefreshCw
+  RefreshCw,
+  BarChart3,
+  Plus
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -388,54 +390,62 @@ export default function TransactionStatusModalEnhanced({
               {/* Token Details */}
               <div className="grid grid-cols-1 gap-3">
                 {deploymentResult.assetId && (
-                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                    <div>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Asset ID</p>
-                      <p className={`font-mono ${isMobile ? 'text-sm' : 'text-base'} font-semibold`}>
-                        {deploymentResult.assetId}
-                      </p>
+                  <div className="glass-card p-4 border border-primary/20 bg-gradient-to-r from-primary/5 to-blue-500/5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-primary mb-1">Asset ID</p>
+                        <p className={`font-mono ${isMobile ? 'text-lg' : 'text-xl'} font-bold text-foreground`}>
+                          {deploymentResult.assetId}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          This is your unique token identifier on {deploymentResult.network?.replace('-', ' ')}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleCopyAssetId}
+                        className="p-2 hover:bg-primary/10"
+                      >
+                        {copiedAssetId ? (
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                        ) : (
+                          <Copy className="w-4 h-4" />
+                        )}
+                      </Button>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleCopyAssetId}
-                      className="p-2"
-                    >
-                      {copiedAssetId ? (
-                        <CheckCircle className="w-4 h-4 text-green-500" />
-                      ) : (
-                        <Copy className="w-4 h-4" />
-                      )}
-                    </Button>
                   </div>
                 )}
 
                 {deploymentResult.transactionId && (
-                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Transaction ID</p>
-                      <p className={`font-mono ${isMobile ? 'text-xs' : 'text-sm'} font-semibold truncate`}>
-                        {deploymentResult.transactionId}
-                      </p>
+                  <div className="glass-card p-3 border border-muted">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-muted-foreground mb-1">Transaction ID</p>
+                        <p className={`font-mono ${isMobile ? 'text-xs' : 'text-sm'} font-semibold truncate text-foreground`}>
+                          {deploymentResult.transactionId}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleCopyTxId}
+                        className="p-2 hover:bg-muted"
+                      >
+                        {copiedTxId ? (
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                        ) : (
+                          <Copy className="w-4 h-4" />
+                        )}
+                      </Button>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleCopyTxId}
-                      className="p-2"
-                    >
-                      {copiedTxId ? (
-                        <CheckCircle className="w-4 h-4 text-green-500" />
-                      ) : (
-                        <Copy className="w-4 h-4" />
-                      )}
-                    </Button>
                   </div>
                 )}
               </div>
 
               {/* Action Buttons */}
               <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-3`}>
+                {/* Explorer Button */}
                 {deploymentResult.explorerUrl && (
                   <Button
                     variant="default"
@@ -448,14 +458,45 @@ export default function TransactionStatusModalEnhanced({
                   </Button>
                 )}
 
+                {/* Dashboard Button */}
                 <Button
                   variant="outline"
                   size={isMobile ? "default" : "default"}
-                  className="flex-1"
+                  className="flex-1 button-enhanced border-primary/20 hover:bg-primary/10"
+                  onClick={() => {
+                    window.open('/dashboard', '_blank');
+                  }}
+                >
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Dashboard
+                </Button>
+
+                {/* Create Token Again Button */}
+                <Button
+                  variant="ghost"
+                  size={isMobile ? "default" : "default"}
+                  className="flex-1 text-primary hover:bg-primary/10"
+                  onClick={() => {
+                    onClose();
+                    // Trigger form reset or navigate to create new token
+                    window.location.reload();
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Again
+                </Button>
+              </div>
+
+              {/* Share Button - moved to separate row for better spacing */}
+              <div className="flex justify-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
                   onClick={handleShare}
                 >
                   <Share2 className="w-4 h-4 mr-2" />
-                  Share
+                  Share Token Details
                 </Button>
               </div>
 
