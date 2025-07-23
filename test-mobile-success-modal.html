@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Token Success Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: rgb(8, 8, 8);
+            color: rgb(254, 254, 235);
+            min-height: 100vh;
+        }
+        
+        .modal {
+            max-width: 400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .success-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, rgb(239, 68, 68) 0%, rgba(239, 68, 68, 0.8) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            color: white;
+            font-size: 24px;
+        }
+        
+        .title {
+            color: rgb(239, 68, 68);
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            color: rgb(163, 163, 163);
+            text-align: center;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .asset-id {
+            color: rgb(239, 68, 68);
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        
+        .asset-value {
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            color: rgb(254, 254, 235);
+            margin-bottom: 4px;
+        }
+        
+        .asset-desc {
+            color: rgb(163, 163, 163);
+            font-size: 11px;
+        }
+        
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 12px 16px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, rgb(239, 68, 68) 0%, rgb(220, 38, 38) 100%);
+            color: rgb(254, 254, 235);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid rgb(38, 38, 38);
+            color: rgb(254, 254, 235);
+        }
+        
+        .btn-outline:hover {
+            background: rgb(38, 38, 38);
+        }
+        
+        .btn-ghost {
+            background: transparent;
+            color: rgb(239, 68, 68);
+        }
+        
+        .btn-ghost:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+        
+        .share-container {
+            text-align: center;
+            margin-top: 16px;
+        }
+        
+        .share-btn {
+            background: transparent;
+            border: none;
+            color: rgb(163, 163, 163);
+            font-size: 12px;
+            cursor: pointer;
+            padding: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .completion-msg {
+            text-align: center;
+            padding: 16px 0 8px;
+            color: rgb(163, 163, 163);
+            font-size: 11px;
+        }
+        
+        @media (min-width: 768px) {
+            .buttons {
+                flex-direction: row;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="modal">
+        <!-- Success Header -->
+        <div style="text-align: center; padding: 16px 0;">
+            <div class="success-icon">✓</div>
+            <h3 class="title">🎉 Token Created Successfully!</h3>
+            <p class="subtitle">Your TEST token is now live on algorand-testnet</p>
+        </div>
+
+        <!-- Token Details -->
+        <div class="card">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="flex: 1;">
+                    <p class="asset-id">Asset ID</p>
+                    <p class="asset-value">123456789</p>
+                    <p class="asset-desc">This is your unique token identifier on algorand testnet</p>
+                </div>
+                <button style="background: transparent; border: none; color: rgb(239, 68, 68); padding: 8px; cursor: pointer;">📋</button>
+            </div>
+        </div>
+
+        <div class="card" style="border-color: rgba(163, 163, 163, 0.3);">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="flex: 1; min-width: 0;">
+                    <p style="color: rgb(163, 163, 163); font-size: 11px; margin-bottom: 4px;">Transaction ID</p>
+                    <p style="font-family: 'Courier New', monospace; font-size: 12px; font-weight: 600; color: rgb(254, 254, 235); overflow: hidden; text-overflow: ellipsis;">ABC123DEF456GHI789JKL</p>
+                </div>
+                <button style="background: transparent; border: none; color: rgb(239, 68, 68); padding: 8px; cursor: pointer;">📋</button>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="buttons">
+            <a href="#" class="btn btn-primary">
+                🔗 View on Explorer
+            </a>
+            <a href="#" class="btn btn-outline">
+                📊 Dashboard
+            </a>
+            <a href="#" class="btn btn-ghost">
+                ➕ Create Again
+            </a>
+        </div>
+
+        <!-- Share Button -->
+        <div class="share-container">
+            <button class="share-btn">
+                📤 Share Token Details
+            </button>
+        </div>
+
+        <!-- Mobile Completion Message -->
+        <div class="completion-msg">
+            Your token is ready! You can now trade, transfer, or manage it through your wallet.
+        </div>
+    </div>
+
+    <script>
+        // Test mobile detection
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        console.log('Mobile detected:', isMobile);
+        
+        // Add click handlers
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                alert(`Clicked: ${btn.textContent.trim()}`);
+            });
+        });
+        
+        document.querySelector('.share-btn').addEventListener('click', () => {
+            alert('Share button clicked');
+        });
+        
+        // Copy button handlers
+        document.querySelectorAll('button').forEach(btn => {
+            if (btn.textContent === '📋') {
+                btn.addEventListener('click', () => {
+                    alert('Copy to clipboard');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

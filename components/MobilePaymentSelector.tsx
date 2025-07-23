@@ -5,12 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { CreditCard, Wallet, AlertCircle, Info, CheckCircle, Smartphone } from 'lucide-react';
+import { CreditCard, Wallet, AlertCircle, Info, CheckCircle, Smartphone, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { usePaymentState, usePaymentSelectors } from '@/hooks/usePaymentState';
 import { isMobile } from '@/lib/mobile-wallet-utils';
+import { getAlgorandClient } from '@/lib/algorand';
 
 export type PaymentMethod = 'credits' | 'algo_direct';
 
@@ -28,6 +29,7 @@ export default function MobilePaymentSelector({
   className = ''
 }: MobilePaymentSelectorProps) {
   const [isMobileDevice, setIsMobileDevice] = useState(false);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const { walletAddress } = useWalletAuth();
   const { toast } = useToast();
   
@@ -37,6 +39,7 @@ export default function MobilePaymentSelector({
     userCredits,
     walletBalance,
     setSelectedMethod,
+    setWalletBalance,
     setNetwork,
     setIsConnected,
     setUserCredits
@@ -48,6 +51,50 @@ export default function MobilePaymentSelector({
   const {
     isAlgorandNetwork
   } = usePaymentSelectors();
+
+  // Function to fetch real ALGO balance
+  const fetchRealAlgoBalance = async (address: string, networkName: string): Promise<number> => {
+    try {
+      if (!networkName.includes('algorand')) {
+        console.log(`ℹ️ [Mobile] Not an Algorand network (${networkName}), returning 0 balance`);
+        return 0;
+      }
+      
+      console.log(`🔄 [Mobile] Fetching ALGO balance for address: ${address} on network: ${networkName}`);
+      const algodClient = getAlgorandClient(networkName);
+      
+      // Test connection first
+      await algodClient.status().do();
+      console.log(`✅ [Mobile] Connected to Algorand network: ${networkName}`);
+      
+      const accountInfo = await algodClient.accountInformation(address).do();
+      
+      // Convert from microALGOs to ALGOs (1 ALGO = 1,000,000 microALGOs)
+      const algoBalance = Number(accountInfo.amount) / 1000000;
+      console.log(`✅ [Mobile] Real ALGO balance fetched: ${algoBalance} ALGO for address ${address.substring(0, 8)}...`);
+      console.log(`📊 [Mobile] Account details:`, {
+        address: address.substring(0, 8) + '...',
+        microAlgos: accountInfo.amount,
+        algos: algoBalance,
+        minBalance: Number(accountInfo.minBalance) / 1000000
+      });
+      
+      return algoBalance;
+    } catch (error) {
+      console.error('❌ [Mobile] Error fetching ALGO balance:', error);
+      
+      // Provide more specific error information
+      if (error instanceof Error) {
+        if (error.message.includes('account does not exist')) {
+          console.warn('⚠️ [Mobile] Account not found on network - may need to fund the account first');
+        } else if (error.message.includes('network')) {
+          console.warn('⚠️ [Mobile] Network connection issue - please check internet connection');
+        }
+      }
+      
+      return 0;
+    }
+  };
 
   useEffect(() => {
     setIsMobileDevice(isMobile());
@@ -90,6 +137,31 @@ export default function MobilePaymentSelector({
 
     loadUserCredits();
   }, [walletAddress, setUserCredits]);
+
+  // Load wallet balance
+  useEffect(() => {
+    const loadWalletBalance = async () => {
+      if (!walletAddress || !isAlgorandNetwork) {
+        setWalletBalance(null);
+        return;
+      }
+      
+      setIsLoadingBalance(true);
+      try {
+        console.log(`🔄 [Mobile] Fetching real ALGO balance for ${walletAddress} on ${network}...`);
+        const realBalance = await fetchRealAlgoBalance(walletAddress, network);
+        setWalletBalance(realBalance);
+        console.log(`✅ [Mobile] ALGO balance loaded: ${realBalance} ALGO`);
+      } catch (error) {
+        console.error('[Mobile] Failed to load wallet balance:', error);
+        setWalletBalance(null);
+      } finally {
+        setIsLoadingBalance(false);
+      }
+    };
+
+    loadWalletBalance();
+  }, [walletAddress, isAlgorandNetwork, network, setWalletBalance]);
 
   const handlePaymentSelect = (method: PaymentMethod) => {
     if (method === 'credits' && !hasEnoughCredits) {
@@ -142,8 +214,8 @@ export default function MobilePaymentSelector({
           className={`
             border-2 rounded-xl p-4 cursor-pointer transition-all duration-200
             ${selectedMethod === 'credits' 
-              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20 shadow-md' 
-              : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 hover:shadow-sm'
+              ? 'border-primary glass-card shadow-md' 
+              : 'border-border hover:border-muted-foreground hover:shadow-sm'
             }
             ${!hasEnoughCredits ? 'opacity-60' : ''}
             min-h-[100px] active:scale-[0.98]
@@ -155,8 +227,8 @@ export default function MobilePaymentSelector({
             <div className={`
               w-6 h-6 rounded-full border-2 flex items-center justify-center mt-1 flex-shrink-0
               ${selectedMethod === 'credits' 
-                ? 'border-blue-500 bg-blue-500' 
-                : 'border-gray-300 dark:border-gray-600'
+                ? 'border-primary bg-primary' 
+                : 'border-muted-foreground'
               }
             `}>
               {selectedMethod === 'credits' && (
@@ -166,7 +238,7 @@ export default function MobilePaymentSelector({
             
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2">
-                <CreditCard className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                <CreditCard className="w-5 h-5 text-primary flex-shrink-0" />
                 <span className="font-semibold text-base">Pay with Credits</span>
                 {hasEnoughCredits && (
                   <Badge variant="secondary" className="text-xs px-2 py-1">
@@ -175,35 +247,35 @@ export default function MobilePaymentSelector({
                 )}
               </div>
               
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 leading-relaxed">
+              <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
                 Instant • No blockchain fees • Simple
               </p>
               
               <div className="space-y-2">
-                <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-lg border">
+                <div className="flex items-center justify-between p-2 glass-card border border-border">
                   <span className="text-sm font-medium">Available:</span>
-                  <span className={`text-sm font-bold ${hasEnoughCredits ? 'text-green-600' : 'text-red-600'}`}>
+                  <span className={`text-sm font-bold ${hasEnoughCredits ? 'text-primary' : 'text-red-500'}`}>
                     {userCredits.toLocaleString()} credits
                   </span>
                 </div>
                 
-                <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <div className="flex items-center justify-between p-2 bg-muted rounded-lg">
                   <span className="text-sm font-medium">Required:</span>
-                  <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                  <span className="text-sm font-bold text-foreground">
                     {creditsRequired.toLocaleString()} credits
                   </span>
                 </div>
               </div>
               
               {!hasEnoughCredits && (
-                <div className="mt-3 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <p className="text-sm text-red-700 dark:text-red-300 font-medium">
+                <div className="mt-3 p-3 glass-card border border-red-500/30">
+                  <p className="text-sm text-red-500 font-medium">
                     Need {(creditsRequired - userCredits).toLocaleString()} more credits
                   </p>
                   <Button 
                     variant="link" 
                     size="sm" 
-                    className="h-auto p-0 mt-1 text-red-600 dark:text-red-400 font-medium"
+                    className="h-auto p-0 mt-1 text-red-500 font-medium"
                     onClick={(e) => {
                       e.stopPropagation();
                       toast({
@@ -226,8 +298,8 @@ export default function MobilePaymentSelector({
             className={`
               border-2 rounded-xl p-4 cursor-pointer transition-all duration-200
               ${selectedMethod === 'algo_direct' 
-                ? 'border-green-500 bg-green-50 dark:bg-green-950/20 shadow-md' 
-                : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 hover:shadow-sm'
+                ? 'border-primary glass-card shadow-md' 
+                : 'border-border hover:border-muted-foreground hover:shadow-sm'
               }
               ${!walletAddress || !hasEnoughAlgo ? 'opacity-60' : ''}
               min-h-[100px] active:scale-[0.98]
@@ -239,8 +311,8 @@ export default function MobilePaymentSelector({
               <div className={`
                 w-6 h-6 rounded-full border-2 flex items-center justify-center mt-1 flex-shrink-0
                 ${selectedMethod === 'algo_direct' 
-                  ? 'border-green-500 bg-green-500' 
-                  : 'border-gray-300 dark:border-gray-600'
+                  ? 'border-primary bg-primary' 
+                  : 'border-muted-foreground'
                 }
               `}>
                 {selectedMethod === 'algo_direct' && (
@@ -250,33 +322,42 @@ export default function MobilePaymentSelector({
               
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
-                  <Wallet className="w-5 h-5 text-green-600 flex-shrink-0" />
+                  <Wallet className="w-5 h-5 text-primary flex-shrink-0" />
                   <span className="font-semibold text-base">Pay with ALGO</span>
                 </div>
                 
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 leading-relaxed">
+                <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
                   Direct blockchain payment • Supports platform
                 </p>
                 
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-lg border">
+                  <div className="flex items-center justify-between p-2 glass-card border border-border">
                     <span className="text-sm font-medium">Wallet:</span>
-                    <span className={`text-sm font-bold ${hasEnoughAlgo ? 'text-green-600' : 'text-red-600'}`}>
-                      {walletBalance !== null ? `${walletBalance.toFixed(3)} ALGO` : 'Loading...'}
+                    <span className={`text-sm font-bold ${hasEnoughAlgo ? 'text-primary' : 'text-red-500'} flex items-center gap-1`}>
+                      {isLoadingBalance ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          Loading...
+                        </>
+                      ) : walletBalance !== null ? (
+                        `${walletBalance.toFixed(3)} ALGO`
+                      ) : (
+                        'Failed to load'
+                      )}
                     </span>
                   </div>
                   
-                  <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                  <div className="flex items-center justify-between p-2 bg-muted rounded-lg">
                     <span className="text-sm font-medium">Required:</span>
-                    <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                    <span className="text-sm font-bold text-foreground">
                       {algoRequired.toFixed(3)} ALGO
                     </span>
                   </div>
                 </div>
                 
                 {walletAddress && walletBalance !== null && !hasEnoughAlgo && (
-                  <div className="mt-3 p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg">
-                    <p className="text-sm text-red-700 dark:text-red-300 font-medium">
+                  <div className="mt-3 p-3 glass-card border border-red-500/30">
+                    <p className="text-sm text-red-500 font-medium">
                       Need {(algoRequired - walletBalance).toFixed(3)} more ALGO
                     </p>
                   </div>
@@ -288,22 +369,22 @@ export default function MobilePaymentSelector({
 
         {/* Wallet Connection Prompt - Mobile Optimized */}
         {!walletAddress && (
-          <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+          <Alert className="border-primary/30 glass-card">
             <AlertCircle className="w-5 h-5" />
             <AlertDescription>
               <div className="space-y-3">
                 <div>
-                  <p className="font-semibold text-amber-800 dark:text-amber-200 mb-1">
+                  <p className="font-semibold text-primary mb-1">
                     Wallet Required for Payment
                   </p>
-                  <p className="text-sm text-amber-700 dark:text-amber-300">
+                  <p className="text-sm text-muted-foreground">
                     Connect your wallet to see available payment options and balances.
                   </p>
                 </div>
                 
                 <Button 
                   size="sm" 
-                  className="w-full bg-amber-600 hover:bg-amber-700 text-white border-0"
+                  className="w-full button-enhanced"
                   onClick={() => {
                     toast({
                       title: "Connect Wallet",
@@ -322,22 +403,22 @@ export default function MobilePaymentSelector({
 
         {/* Payment Summary - Mobile Optimized */}
         {selectedMethod && walletAddress && (
-          <div className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-950/20 dark:to-green-950/20 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+          <div className="glass-card p-4 border border-primary/20">
             <div className="flex items-center gap-2 mb-3">
-              <CheckCircle className="w-5 h-5 text-green-600" />
+              <CheckCircle className="w-5 h-5 text-primary" />
               <span className="font-semibold text-base">Payment Ready</span>
             </div>
             
             <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border">
-                <div className="text-gray-600 dark:text-gray-400 mb-1">Method</div>
+              <div className="bg-muted/50 rounded-lg p-3 border border-border">
+                <div className="text-muted-foreground mb-1">Method</div>
                 <div className="font-bold">
                   {selectedMethod === 'credits' ? 'Credits' : 'ALGO'}
                 </div>
               </div>
               
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border">
-                <div className="text-gray-600 dark:text-gray-400 mb-1">Cost</div>
+              <div className="bg-muted/50 rounded-lg p-3 border border-border">
+                <div className="text-muted-foreground mb-1">Cost</div>
                 <div className="font-bold">
                   {selectedMethod === 'credits' 
                     ? `${creditsRequired} credits` 
@@ -346,8 +427,8 @@ export default function MobilePaymentSelector({
                 </div>
               </div>
               
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border col-span-2">
-                <div className="text-gray-600 dark:text-gray-400 mb-1">Network</div>
+              <div className="bg-muted/50 rounded-lg p-3 border border-border col-span-2">
+                <div className="text-muted-foreground mb-1">Network</div>
                 <div className="font-bold capitalize">
                   {network.replace('-', ' ')}
                 </div>

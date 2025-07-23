@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { useAlgorandWallet } from '@/components/providers/AlgorandWalletProvider';
 import { useToast } from '@/hooks/use-toast';
 import { initializePlatform, getPlatformState, ADMIN_WALLET } from '@/lib/solana';
 import { 
@@ -102,7 +103,20 @@ export default function AdminPage() {
 
   // Solana wallet
   const { connected, publicKey, wallet, signTransaction, signAllTransactions } = useWallet();
+  
+  // Algorand wallet
+  const { 
+    connected: algorandConnected, 
+    address: algorandAddress
+  } = useAlgorandWallet();
+  
   const { toast } = useToast();
+
+  // Check if user is admin (supports both Algorand and Solana)
+  const isUserAdmin = (connected && publicKey && publicKey.toString() === ADMIN_WALLET.toString()) ||
+                      (algorandConnected && algorandAddress && isAdmin(algorandAddress));
+  
+  const isConnectedAsAdmin = connected || algorandConnected;
 
   // Handle hydration
   useEffect(() => {
@@ -111,13 +125,13 @@ export default function AdminPage() {
 
   // Load pricing configurations
   useEffect(() => {
-    if (mounted && connected && publicKey && publicKey.toString() === ADMIN_WALLET.toString()) {
+    if (mounted && isUserAdmin) {
       loadPricingData();
       loadPlatformAnalytics();
       loadPlatformSettings();
       loadAlgorandConfig();
     }
-  }, [mounted, connected, publicKey]);
+  }, [mounted, isUserAdmin]);
 
   const loadPlatformAnalytics = async () => {
     setLoadingAnalytics(true);
@@ -549,7 +563,7 @@ export default function AdminPage() {
   }
 
   // Show access denied if not admin wallet
-  if (connected && publicKey && publicKey.toString() !== ADMIN_WALLET.toString()) {
+  if (isConnectedAsAdmin && !isUserAdmin) {
     return (
       <div className="min-h-screen relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -583,13 +597,19 @@ export default function AdminPage() {
                   </div>
                   <div className="space-y-3 text-sm">
                     <div>
-                      <span className="snarbles-body">Connected:</span>
+                      <span className="snarbles-body">Connected ({connected ? 'Solana' : 'Algorand'}):</span>
                       <code className="block mt-1 snarbles-glass-subtle p-2 rounded text-xs font-mono break-all">
-                        {publicKey?.toString()}
+                        {connected ? publicKey?.toString() : algorandAddress}
                       </code>
                     </div>
                     <div>
-                      <span className="snarbles-body">Required:</span>
+                      <span className="snarbles-body">Required Admin (Algorand):</span>
+                      <code className="block mt-1 snarbles-glass-subtle p-2 rounded text-xs font-mono break-all border border-green-500/30">
+                        PJEIDDKUOONTJOIV3BLZS7SZSAHCVKNNHTLKMASI6RTYSOZNSDY7MWGZ3M
+                      </code>
+                    </div>
+                    <div>
+                      <span className="snarbles-body">Required Admin (Solana):</span>
                       <code className="block mt-1 snarbles-glass-subtle p-2 rounded text-xs font-mono break-all border border-green-500/30">
                         {ADMIN_WALLET.toString()}
                       </code>
@@ -620,7 +640,7 @@ export default function AdminPage() {
   }
 
   // Show wallet connection prompt if not connected
-  if (!connected) {
+  if (!isConnectedAsAdmin) {
     return (
       <div className="min-h-screen relative overflow-hidden">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -646,19 +666,47 @@ export default function AdminPage() {
                 Connect the designated admin wallet to access platform management tools.
               </p>
 
-              <div className="mb-8">
-                <WalletMultiButton className="snarbles-button-primary !min-h-[48px] !px-6 !text-base" />
+              <div className="mb-8 space-y-4">
+                <div className="snarbles-glass-subtle p-4 rounded-xl border border-blue-500/20">
+                  <h3 className="font-semibold text-blue-400 mb-2">Solana Admin Wallet</h3>
+                  <WalletMultiButton className="snarbles-button-primary !min-h-[48px] !px-6 !text-base w-full" />
+                </div>
+                
+                <div className="text-sm text-gray-400">OR</div>
+                
+                <div className="snarbles-glass-subtle p-4 rounded-xl border border-green-500/20">
+                  <h3 className="font-semibold text-green-400 mb-2">Algorand Admin Wallet</h3>
+                  <p className="text-sm text-gray-300 mb-3">Connect your Algorand wallet from the navigation menu</p>
+                  <Button 
+                    onClick={() => window.location.href = '/'}
+                    variant="outline" 
+                    className="w-full border-green-500/30 text-green-400 hover:bg-green-500/10"
+                  >
+                    Go to Navigation Menu
+                  </Button>
+                </div>
               </div>
 
-              <div className="snarbles-glass-subtle p-6 rounded-xl mb-8 snarbles-border-glow">
+              <div className="snarbles-glass-subtle p-6 rounded-xl snarbles-border-glow">
                 <div className="flex items-center gap-2 mb-4">
                   <Shield className="w-5 h-5 text-orange-400" />
                   <span className="snarbles-subheading text-orange-400 font-semibold">Admin Wallet Required</span>
                 </div>
-                <p className="snarbles-body mb-3">Only this specific wallet can access admin functions:</p>
-                <code className="block snarbles-glass-subtle p-3 rounded text-xs font-mono break-all border border-orange-500/30">
-                  {ADMIN_WALLET.toString()}
-                </code>
+                <p className="snarbles-body mb-3">Admin access is available for these wallets:</p>
+                <div className="space-y-2">
+                  <div>
+                    <span className="snarbles-body text-green-400">Algorand:</span>
+                    <code className="block mt-1 snarbles-glass-subtle p-2 rounded text-xs font-mono break-all border border-green-500/30">
+                      PJEIDDKUOONTJOIV3BLZS7SZSAHCVKNNHTLKMASI6RTYSOZNSDY7MWGZ3M
+                    </code>
+                  </div>
+                  <div>
+                    <span className="snarbles-body text-blue-400">Solana:</span>
+                    <code className="block mt-1 snarbles-glass-subtle p-2 rounded text-xs font-mono break-all border border-blue-500/30">
+                      {ADMIN_WALLET.toString()}
+                    </code>
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-4">

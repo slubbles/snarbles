@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { usePaymentState } from '@/hooks/usePaymentState';
 
 export type TransactionStatus = 'preparing' | 'signing' | 'broadcasting' | 'confirming' | 'success' | 'error';
 
@@ -69,12 +70,36 @@ export default function TransactionStatusModalEnhanced({
   const [copiedTxId, setCopiedTxId] = useState(false);
   const [copiedAssetId, setCopiedAssetId] = useState(false);
   const { toast } = useToast();
+  
+  // Use global payment state for progress tracking
+  const { tokenCreationStep, isProcessing, steps } = usePaymentState();
 
   useEffect(() => {
     setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
   }, []);
 
   const getTransactionSteps = (): TransactionStep[] => {
+    // Use global payment state steps if available and processing
+    if (isProcessing && steps.length > 0) {
+      return steps.map((stepTitle: string, index: number) => ({
+        id: `step-${index}`,
+        title: stepTitle,
+        description: index === 0 ? 'Validating parameters and preparing transaction' :
+                    index === 1 ? 'Please connect and confirm in your wallet' :
+                    index === 2 ? 'Signing the transaction in your wallet' :
+                    index === 3 ? 'Broadcasting transaction to the network' :
+                    index === 4 ? 'Waiting for network confirmation' : 'Processing...',
+        status: index < tokenCreationStep ? 'completed' : 
+               index === tokenCreationStep ? 'active' : 'pending',
+        estimatedTime: index === 0 ? '10s' : 
+                      index === 1 ? '30s' :
+                      index === 2 ? '30s' :
+                      index === 3 ? '15s' : '60s',
+        mobileOptimized: true
+      }));
+    }
+
+    // Fallback to local status-based steps
     const baseSteps: TransactionStep[] = [
       {
         id: 'preparing',
@@ -125,26 +150,26 @@ export default function TransactionStatusModalEnhanced({
   const getStatusIcon = (stepStatus: string) => {
     switch (stepStatus) {
       case 'completed':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
+        return <CheckCircle className="w-5 h-5 text-primary" />;
       case 'active':
-        return <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />;
+        return <Loader2 className="w-5 h-5 text-primary animate-spin" />;
       case 'error':
         return <AlertCircle className="w-5 h-5 text-red-500" />;
       default:
-        return <Clock className="w-5 h-5 text-gray-400" />;
+        return <Clock className="w-5 h-5 text-muted-foreground" />;
     }
   };
 
   const getStatusColor = (stepStatus: string) => {
     switch (stepStatus) {
       case 'completed':
-        return 'text-green-600 dark:text-green-400';
+        return 'text-primary';
       case 'active':
-        return 'text-blue-600 dark:text-blue-400';
+        return 'text-primary';
       case 'error':
-        return 'text-red-600 dark:text-red-400';
+        return 'text-red-500';
       default:
-        return 'text-gray-500';
+        return 'text-muted-foreground';
     }
   };
 
@@ -229,7 +254,7 @@ export default function TransactionStatusModalEnhanced({
               {isMobile && <Smartphone className="w-5 h-5" />}
               {status === 'success' ? (
                 <>
-                  <CheckCircle className="w-6 h-6 text-green-500" />
+                  <CheckCircle className="w-6 h-6 text-primary" />
                   {isMobile ? 'Token Created!' : 'Token Created Successfully!'}
                 </>
               ) : status === 'error' ? (
@@ -239,7 +264,7 @@ export default function TransactionStatusModalEnhanced({
                 </>
               ) : (
                 <>
-                  <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+                  <Loader2 className="w-6 h-6 text-primary animate-spin" />
                   {isMobile ? 'Creating Token...' : 'Creating Your Token...'}
                 </>
               )}
@@ -255,14 +280,14 @@ export default function TransactionStatusModalEnhanced({
           </div>
 
           {tokenData && (
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg p-3">
+            <div className="glass-card p-3 border border-border/20">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-primary/80 flex items-center justify-center text-white font-bold">
                   {tokenData.symbol?.charAt(0) || 'T'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm truncate">{tokenData.name}</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                  <p className="font-semibold text-sm truncate text-foreground">{tokenData.name}</p>
+                  <p className="text-xs text-muted-foreground">
                     {tokenData.symbol} • {tokenData.network?.replace('-', ' ')}
                   </p>
                 </div>
@@ -273,13 +298,13 @@ export default function TransactionStatusModalEnhanced({
           {/* Progress Bar for Mobile */}
           {isMobile && status !== 'success' && status !== 'error' && (
             <div className="space-y-2">
-              <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400">
+              <div className="flex justify-between text-xs text-muted-foreground">
                 <span>Progress</span>
                 <span>{Math.round(progressPercentage)}%</span>
               </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="w-full bg-muted rounded-full h-2">
                 <div 
-                  className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500"
+                  className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-500"
                   style={{ width: `${progressPercentage}%` }}
                 />
               </div>
@@ -296,12 +321,12 @@ export default function TransactionStatusModalEnhanced({
                   key={step.id}
                   className={`flex items-start gap-3 p-3 rounded-lg transition-all ${
                     step.status === 'active' 
-                      ? 'bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800' 
+                      ? 'glass-card border border-primary/20' 
                       : step.status === 'completed'
-                      ? 'bg-green-50 dark:bg-green-950/20'
+                      ? 'glass-card border border-muted/50'
                       : step.status === 'error'
-                      ? 'bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800'
-                      : 'bg-gray-50 dark:bg-gray-900'
+                      ? 'glass-card border border-red-500/30'
+                      : 'bg-muted/20 border border-muted/30'
                   }`}
                 >
                   <div className="flex-shrink-0 mt-0.5">
@@ -318,16 +343,16 @@ export default function TransactionStatusModalEnhanced({
                         </Badge>
                       )}
                     </div>
-                    <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-gray-600 dark:text-gray-400 mt-1`}>
+                    <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground mt-1`}>
                       {step.description}
                     </p>
                     
                     {/* Mobile-specific guidance */}
                     {isMobile && step.status === 'active' && step.id === 'signing' && (
-                      <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950/20 rounded border border-amber-200 dark:border-amber-800">
+                      <div className="mt-2 p-2 glass-card border border-primary/20">
                         <div className="flex items-center gap-2">
-                          <Wallet className="w-4 h-4 text-amber-600" />
-                          <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
+                          <Wallet className="w-4 h-4 text-primary" />
+                          <p className="text-xs text-primary font-medium">
                             Check your wallet app to sign the transaction
                           </p>
                         </div>
@@ -341,15 +366,15 @@ export default function TransactionStatusModalEnhanced({
 
           {/* Error State */}
           {status === 'error' && error && (
-            <Alert className="border-red-200 bg-red-50 dark:bg-red-950/20">
+            <Alert className="border-red-500/30 glass-card">
               <AlertCircle className="w-5 h-5" />
               <AlertDescription>
                 <div className="space-y-3">
                   <div>
-                    <p className="font-semibold text-red-800 dark:text-red-200 mb-1">
+                    <p className="font-semibold text-red-500 mb-1">
                       Transaction Failed
                     </p>
-                    <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-red-700 dark:text-red-300`}>
+                    <p className={`${isMobile ? 'text-xs' : 'text-sm'} text-muted-foreground`}>
                       {error}
                     </p>
                   </div>
@@ -376,13 +401,13 @@ export default function TransactionStatusModalEnhanced({
           {status === 'success' && deploymentResult && (
             <div className="space-y-4">
               <div className="text-center py-4">
-                <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-gradient-to-r from-primary to-primary/80 rounded-full flex items-center justify-center mx-auto mb-4">
                   <CheckCircle className="w-8 h-8 text-white" />
                 </div>
-                <h3 className={`font-bold ${isMobile ? 'text-lg' : 'text-xl'} text-green-600 dark:text-green-400`}>
+                <h3 className={`font-bold ${isMobile ? 'text-lg' : 'text-xl'} text-primary`}>
                   🎉 Token Created Successfully!
                 </h3>
-                <p className={`${isMobile ? 'text-sm' : 'text-base'} text-gray-600 dark:text-gray-400 mt-2`}>
+                <p className={`${isMobile ? 'text-sm' : 'text-base'} text-muted-foreground mt-2`}>
                   Your {tokenData?.symbol} token is now live on {deploymentResult.network?.replace('-', ' ')}
                 </p>
               </div>
@@ -390,7 +415,7 @@ export default function TransactionStatusModalEnhanced({
               {/* Token Details */}
               <div className="grid grid-cols-1 gap-3">
                 {deploymentResult.assetId && (
-                  <div className="glass-card p-4 border border-primary/20 bg-gradient-to-r from-primary/5 to-blue-500/5">
+                  <div className="glass-card p-4 border border-primary/20">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <p className="text-sm font-medium text-primary mb-1">Asset ID</p>
@@ -408,7 +433,7 @@ export default function TransactionStatusModalEnhanced({
                         className="p-2 hover:bg-primary/10"
                       >
                         {copiedAssetId ? (
-                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <CheckCircle className="w-4 h-4 text-primary" />
                         ) : (
                           <Copy className="w-4 h-4" />
                         )}
@@ -433,7 +458,7 @@ export default function TransactionStatusModalEnhanced({
                         className="p-2 hover:bg-muted"
                       >
                         {copiedTxId ? (
-                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <CheckCircle className="w-4 h-4 text-primary" />
                         ) : (
                           <Copy className="w-4 h-4" />
                         )}
@@ -450,7 +475,7 @@ export default function TransactionStatusModalEnhanced({
                   <Button
                     variant="default"
                     size={isMobile ? "default" : "default"}
-                    className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white"
+                    className="flex-1 button-enhanced"
                     onClick={() => window.open(deploymentResult.explorerUrl, '_blank')}
                   >
                     <ExternalLink className="w-4 h-4 mr-2" />
@@ -462,7 +487,7 @@ export default function TransactionStatusModalEnhanced({
                 <Button
                   variant="outline"
                   size={isMobile ? "default" : "default"}
-                  className="flex-1 button-enhanced border-primary/20 hover:bg-primary/10"
+                  className="flex-1 border-border hover:bg-muted"
                   onClick={() => {
                     window.open('/dashboard', '_blank');
                   }}
@@ -492,7 +517,7 @@ export default function TransactionStatusModalEnhanced({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+                  className="text-muted-foreground hover:text-foreground"
                   onClick={handleShare}
                 >
                   <Share2 className="w-4 h-4 mr-2" />
@@ -503,7 +528,7 @@ export default function TransactionStatusModalEnhanced({
               {/* Mobile-specific completion message */}
               {isMobile && (
                 <div className="text-center py-2">
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                  <p className="text-xs text-muted-foreground">
                     Your token is ready! You can now trade, transfer, or manage it through your wallet.
                   </p>
                 </div>

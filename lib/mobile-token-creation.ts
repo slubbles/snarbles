@@ -58,12 +58,26 @@ export async function createTokenWithMobileOptimizations(
         network: selectedNetwork
       },
       (status: string) => {
+        // Map Algorand-specific status messages to transaction status types
+        let mappedStatus = 'preparing';
+        if (status.toLowerCase().includes('validating') || status.toLowerCase().includes('preparing')) {
+          mappedStatus = 'preparing';
+        } else if (status.toLowerCase().includes('signature') || status.toLowerCase().includes('wallet')) {
+          mappedStatus = 'signing';
+        } else if (status.toLowerCase().includes('submitting') || status.toLowerCase().includes('broadcasting')) {
+          mappedStatus = 'broadcasting';
+        } else if (status.toLowerCase().includes('confirmation') || status.toLowerCase().includes('waiting')) {
+          mappedStatus = 'confirming';
+        } else if (status.toLowerCase().includes('success') || status.toLowerCase().includes('completed')) {
+          mappedStatus = 'success';
+        }
+        
         onStatusUpdate({
-          status: status.toLowerCase(),
+          status: mappedStatus,
           message: status,
           step: 4,
           totalSteps: 6,
-          mobileHint: isMobile && status.includes('confirm') 
+          mobileHint: isMobile && mappedStatus === 'confirming'
             ? 'Transaction submitted! This may take a few moments to confirm on the blockchain.'
             : undefined
         });

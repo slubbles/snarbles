@@ -9,6 +9,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useAlgorandWallet } from '@/components/providers/AlgorandWalletProvider';
 import { ADMIN_WALLET } from '@/lib/solana';
+import { isAdmin as checkIsAdmin } from '@/lib/admin-config';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
@@ -85,13 +86,14 @@ export default function Navbar() {
 
   const navLinks = [
     { name: 'Create Token', href: '/create' },
-    { name: 'Tokenomics', href: '/tokenomics' },
+    { name: 'Tokenomics Simulator', href: '/tokenomics' },
     { name: 'Verify Token', href: '/verify' },
     { name: 'Dashboard', href: '/dashboard' },
   ];
 
-  // Check if user is admin
-  const isAdmin = solanaConnected && solanaPublicKey && solanaPublicKey.toString() === ADMIN_WALLET.toString();
+  // Check if user is admin (supports both Algorand and Solana)
+  const isAdmin = (solanaConnected && solanaPublicKey && solanaPublicKey.toString() === ADMIN_WALLET.toString()) ||
+                  (algorandAddress && checkIsAdmin(algorandAddress));
 
   // Enhanced navigation with loading state
   const handleNavigation = (href: string, event?: React.MouseEvent) => {

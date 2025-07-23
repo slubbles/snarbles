@@ -72,7 +72,15 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   
   // Use global payment state instead of local state
-  const { selectedMethod: selectedPaymentMethod } = usePaymentState();
+  const { 
+    selectedMethod: selectedPaymentMethod,
+    setProcessing,
+    setTokenCreationStep,
+    setError: setPaymentError,
+    tokenCreationStep,
+    isProcessing,
+    steps
+  } = usePaymentState();
   
   // Logo upload states
   const [isUploading, setIsUploading] = useState(false);
@@ -438,8 +446,10 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
     }
 
     setIsDeploying(true);
+    setProcessing(true);
     setShowTransactionModal(true);
     setTransactionStatus('preparing');
+    setTokenCreationStep(0); // Step 0: Preparing payment
     setTransactionError('');
 
     try {
@@ -447,6 +457,7 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
       if (!selectedPaymentMethod) {
         setTransactionStatus('error');
         setTransactionError('Please select a payment method before deploying');
+        setPaymentError('Please select a payment method before deploying');
         toast({
           title: "Payment Method Required",
           description: "Please select a payment method before deploying",
@@ -455,10 +466,13 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
         return;
       }
 
-      // Show preparing status
+      // Step 0: Show preparing status
       setTransactionStatus('preparing');
+      setTokenCreationStep(0);
       await new Promise(resolve => setTimeout(resolve, 1000));
 
+      // Step 1: Connecting wallet
+      setTokenCreationStep(1);
       const paymentValidation = await validatePaymentForTokenCreation(
         walletAddress!,
         tokenData.network,
@@ -468,6 +482,7 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
       if (!paymentValidation.success) {
         setTransactionStatus('error');
         setTransactionError(paymentValidation.error || "Payment validation failed");
+        setPaymentError(paymentValidation.error || "Payment validation failed");
         toast({
           title: "Payment Error",
           description: paymentValidation.error || "Payment validation failed",
@@ -490,6 +505,7 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
           });
           setTransactionStatus('error');
           setTransactionError(walletValidation.message || 'Wallet validation failed');
+          setPaymentError(walletValidation.message || 'Wallet validation failed');
           return;
         }
         
@@ -517,8 +533,24 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
             tokenData.network,
             algorandWallet,
             (status) => {
-              // Enhanced status updates for mobile
+              // Enhanced status updates for mobile with global state integration
               setTransactionStatus(status.status || 'preparing');
+              
+              // Map status to step numbers
+              if (status.status === 'preparing') setTokenCreationStep(0);
+              else if (status.status === 'signing') {
+                setTokenCreationStep(2); // Step 2: Confirming transaction
+                setTransactionStatus('signing');
+              }
+              else if (status.status === 'broadcasting') {
+                setTokenCreationStep(3); // Step 3: Processing payment
+                setTransactionStatus('broadcasting');
+              }
+              else if (status.status === 'confirming') {
+                setTokenCreationStep(4); // Step 4: Finalizing
+                setTransactionStatus('confirming');
+              }
+              
               if (status.message) {
                 console.log(`📱 Mobile Status: ${status.message}`);
               }
@@ -536,16 +568,20 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
         }
         
       } else if (tokenData.network.includes('solana')) {
+        // Step 2: Confirming transaction
         setTransactionStatus('signing');
+        setTokenCreationStep(2);
         
         console.log('🔥 CREATING REAL SOLANA TOKEN - NOT SIMULATED');
         
-        // Show broadcasting status
+        // Step 3: Processing payment
         setTransactionStatus('broadcasting');
+        setTokenCreationStep(3);
         await new Promise(resolve => setTimeout(resolve, 2000));
         
-        // Show confirming status
+        // Step 4: Finalizing
         setTransactionStatus('confirming');
+        setTokenCreationStep(4);
         await new Promise(resolve => setTimeout(resolve, 3000));
         
         const mintAddress = `${tokenData.network.includes('mainnet') ? 'MAINNET' : 'DEVNET'}_${Date.now()}_${Math.random().toString(36).substr(2, 32)}`;
@@ -616,6 +652,7 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
 
         setDeploymentResult(result.data);
         setTransactionStatus('success');
+        setTokenCreationStep(4); // Complete all steps
         
         toast({
           title: "🎉 Token Created Successfully!",
@@ -632,6 +669,7 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
       console.error('Deployment error:', error);
       setTransactionStatus('error');
       setTransactionError(error instanceof Error ? error.message : "An unexpected error occurred during deployment.");
+      setPaymentError(error instanceof Error ? error.message : "An unexpected error occurred during deployment.");
       
       toast({
         title: "Deployment Failed",
@@ -640,6 +678,7 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
       });
     } finally {
       setIsDeploying(false);
+      setProcessing(false);
     }
   };
 
@@ -798,6 +837,37 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
               <span className="snarbles-body-small text-gray-400">{tokenData.description.length}/500</span>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Payment Method Selection - Moved up for mobile UX */}
+      <Card className="snarbles-card">
+        <CardHeader>
+          <CardTitle className="snarbles-heading-4">Payment Method</CardTitle>
+          <CardDescription className="snarbles-body-small text-gray-400">
+            Choose how you want to pay for token creation
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isMobileDevice ? (
+            <MobilePaymentSelector
+              creditsRequired={getNetworkCost(tokenData.network)}
+              algoRequired={getAlgoCost(tokenData.network)}
+              network={tokenData.network}
+            />
+          ) : (
+            <PaymentSelectorNew
+              creditsRequired={getNetworkCost(tokenData.network)}
+              algoRequired={getAlgoCost(tokenData.network)}
+              network={tokenData.network}
+            />
+          )}
+          {validationErrors.payment && (
+            <p className="text-red-400 text-sm mt-2">{validationErrors.payment}</p>
+          )}
+          {validationErrors.wallet && (
+            <p className="text-red-400 text-sm mt-2">{validationErrors.wallet}</p>
+          )}
         </CardContent>
       </Card>
 
@@ -1139,7 +1209,147 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
         </CardContent>
       </Card>
 
-      {/* Optional Information */}
+      {/* Pre-Deployment Checklist */}
+      <Card className="snarbles-card">
+        <CardHeader>
+          <CardTitle className="snarbles-heading-4 flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-green-400" />
+            Pre-Deployment Checklist
+          </CardTitle>
+          <CardDescription className="snarbles-body-small text-gray-400">
+            Complete all requirements before deploying your token
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
+              tokenData.name && tokenData.symbol && tokenData.description && tokenData.totalSupply 
+                ? 'bg-green-500/10 border border-green-500/20' 
+                : 'bg-gray-500/10 border border-gray-500/20'
+            }`}>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                tokenData.name && tokenData.symbol && tokenData.description && tokenData.totalSupply
+                  ? 'bg-green-500 text-white'
+                  : 'bg-gray-500 text-gray-300'
+              }`}>
+                {tokenData.name && tokenData.symbol && tokenData.description && tokenData.totalSupply ? '✓' : '1'}
+              </div>
+              <div>
+                <p className="font-medium">Token Information Complete</p>
+                <p className="text-sm text-gray-400">Name, symbol, description, and supply filled</p>
+              </div>
+            </div>
+
+            <div className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
+              walletAddress 
+                ? 'bg-green-500/10 border border-green-500/20' 
+                : 'bg-gray-500/10 border border-gray-500/20'
+            }`}>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                walletAddress
+                  ? 'bg-green-500 text-white'
+                  : 'bg-gray-500 text-gray-300'
+              }`}>
+                {walletAddress ? '✓' : '2'}
+              </div>
+              <div>
+                <p className="font-medium">Wallet Connected</p>
+                <p className="text-sm text-gray-400">
+                  {walletAddress ? `Connected: ${walletAddress.slice(0, 8)}...${walletAddress.slice(-6)}` : 'Connect your wallet to deploy'}
+                </p>
+              </div>
+            </div>
+
+            <div className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
+              selectedPaymentMethod 
+                ? 'bg-green-500/10 border border-green-500/20' 
+                : 'bg-gray-500/10 border border-gray-500/20'
+            }`}>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                selectedPaymentMethod
+                  ? 'bg-green-500 text-white'
+                  : 'bg-gray-500 text-gray-300'
+              }`}>
+                {selectedPaymentMethod ? '✓' : '3'}
+              </div>
+              <div>
+                <p className="font-medium">Payment Method Selected</p>
+                <p className="text-sm text-gray-400">
+                  {selectedPaymentMethod 
+                    ? `Selected: ${selectedPaymentMethod === 'credits' ? 'Credits' : 'Direct ALGO Payment'}`
+                    : 'Choose how to pay for token creation'
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Deploy Button */}
+      <Card className="snarbles-card">
+        <CardContent className="p-6">
+          {(() => {
+            const isFormComplete = tokenData.name && tokenData.symbol && tokenData.description && tokenData.totalSupply;
+            const allRequirementsMet = isFormComplete && walletAddress && selectedPaymentMethod;
+            
+            return (
+              <>
+                <Button
+                  onClick={handleDeploy}
+                  disabled={isDeploying || deploymentStatus === 'success' || !allRequirementsMet}
+                  className={`w-full py-4 text-lg transition-all ${
+                    allRequirementsMet && !isDeploying 
+                      ? 'snarbles-btn-primary' 
+                      : 'bg-gray-600 hover:bg-gray-600 cursor-not-allowed opacity-60'
+                  }`}
+                >
+                  {isDeploying ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      {deploymentStatus === 'checking' ? 'Checking Payment...' : 'Deploying Token...'}
+                    </>
+                  ) : deploymentStatus === 'success' ? (
+                    <>
+                      <CheckCircle className="w-5 h-5 mr-2" />
+                      Token Deployed Successfully!
+                    </>
+                  ) : allRequirementsMet ? (
+                    <>
+                      <Sparkles className="w-5 h-5 mr-2" />
+                      Deploy Token
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="w-5 h-5 mr-2" />
+                      Complete Requirements to Deploy
+                    </>
+                  )}
+                </Button>
+                
+                {!allRequirementsMet && !isDeploying && deploymentStatus !== 'success' && (
+                  <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                    <p className="text-yellow-400 text-sm font-medium mb-1">Missing Requirements:</p>
+                    <ul className="text-yellow-300 text-xs space-y-1">
+                      {!isFormComplete && <li>• Complete token information form</li>}
+                      {!walletAddress && <li>• Connect your wallet</li>}
+                      {!selectedPaymentMethod && <li>• Select a payment method</li>}
+                    </ul>
+                  </div>
+                )}
+                
+                {getNetworkCost(tokenData.network) === 0 && allRequirementsMet && (
+                  <p className="text-center text-sm text-green-400 mt-2">
+                    Free deployment on {tokenData.network}
+                  </p>
+                )}
+              </>
+            );
+          })()}
+        </CardContent>
+      </Card>
+
+      {/* Optional Information - Moved to end for better mobile UX */}
       <Card className="snarbles-card">
         <CardHeader>
           <CardTitle className="snarbles-heading-4">Optional Information</CardTitle>
@@ -1335,183 +1545,12 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
         </CardContent>
       </Card>
 
-      {/* Payment Method Selection */}
-      <Card className="snarbles-card">
-        <CardHeader>
-          <CardTitle className="snarbles-heading-4">Payment Method</CardTitle>
-          <CardDescription className="snarbles-body-small text-gray-400">
-            Choose how you want to pay for token creation
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isMobileDevice ? (
-            <MobilePaymentSelector
-              creditsRequired={getNetworkCost(tokenData.network)}
-              algoRequired={getAlgoCost(tokenData.network)}
-              network={tokenData.network}
-            />
-          ) : (
-            <PaymentSelectorNew
-              creditsRequired={getNetworkCost(tokenData.network)}
-              algoRequired={getAlgoCost(tokenData.network)}
-              network={tokenData.network}
-            />
-          )}
-          {validationErrors.payment && (
-            <p className="text-red-400 text-sm mt-2">{validationErrors.payment}</p>
-          )}
-          {validationErrors.wallet && (
-            <p className="text-red-400 text-sm mt-2">{validationErrors.wallet}</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Pre-Deployment Checklist */}
-      <Card className="snarbles-card">
-        <CardHeader>
-          <CardTitle className="snarbles-heading-4 flex items-center gap-2">
-            <CheckCircle className="w-5 h-5 text-green-400" />
-            Pre-Deployment Checklist
-          </CardTitle>
-          <CardDescription className="snarbles-body-small text-gray-400">
-            Complete all requirements before deploying your token
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
-              tokenData.name && tokenData.symbol && tokenData.description && tokenData.totalSupply 
-                ? 'bg-green-500/10 border border-green-500/20' 
-                : 'bg-gray-500/10 border border-gray-500/20'
-            }`}>
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                tokenData.name && tokenData.symbol && tokenData.description && tokenData.totalSupply
-                  ? 'bg-green-500 text-white'
-                  : 'bg-gray-500 text-gray-300'
-              }`}>
-                {tokenData.name && tokenData.symbol && tokenData.description && tokenData.totalSupply ? '✓' : '1'}
-              </div>
-              <div>
-                <p className="font-medium">Token Information Complete</p>
-                <p className="text-sm text-gray-400">Name, symbol, description, and supply filled</p>
-              </div>
-            </div>
-
-            <div className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
-              walletAddress 
-                ? 'bg-green-500/10 border border-green-500/20' 
-                : 'bg-gray-500/10 border border-gray-500/20'
-            }`}>
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                walletAddress
-                  ? 'bg-green-500 text-white'
-                  : 'bg-gray-500 text-gray-300'
-              }`}>
-                {walletAddress ? '✓' : '2'}
-              </div>
-              <div>
-                <p className="font-medium">Wallet Connected</p>
-                <p className="text-sm text-gray-400">
-                  {walletAddress ? `Connected: ${walletAddress.slice(0, 8)}...${walletAddress.slice(-6)}` : 'Connect your wallet to deploy'}
-                </p>
-              </div>
-            </div>
-
-            <div className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
-              selectedPaymentMethod 
-                ? 'bg-green-500/10 border border-green-500/20' 
-                : 'bg-gray-500/10 border border-gray-500/20'
-            }`}>
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                selectedPaymentMethod
-                  ? 'bg-green-500 text-white'
-                  : 'bg-gray-500 text-gray-300'
-              }`}>
-                {selectedPaymentMethod ? '✓' : '3'}
-              </div>
-              <div>
-                <p className="font-medium">Payment Method Selected</p>
-                <p className="text-sm text-gray-400">
-                  {selectedPaymentMethod 
-                    ? `Selected: ${selectedPaymentMethod === 'credits' ? 'Credits' : 'Direct ALGO Payment'}`
-                    : 'Choose how to pay for token creation'
-                  }
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Deploy Button */}
-      <Card className="snarbles-card">
-        <CardContent className="p-6">
-          {(() => {
-            const isFormComplete = tokenData.name && tokenData.symbol && tokenData.description && tokenData.totalSupply;
-            const allRequirementsMet = isFormComplete && walletAddress && selectedPaymentMethod;
-            
-            return (
-              <>
-                <Button
-                  onClick={handleDeploy}
-                  disabled={isDeploying || deploymentStatus === 'success' || !allRequirementsMet}
-                  className={`w-full py-4 text-lg transition-all ${
-                    allRequirementsMet && !isDeploying 
-                      ? 'snarbles-btn-primary' 
-                      : 'bg-gray-600 hover:bg-gray-600 cursor-not-allowed opacity-60'
-                  }`}
-                >
-                  {isDeploying ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      {deploymentStatus === 'checking' ? 'Checking Payment...' : 'Deploying Token...'}
-                    </>
-                  ) : deploymentStatus === 'success' ? (
-                    <>
-                      <CheckCircle className="w-5 h-5 mr-2" />
-                      Token Deployed Successfully!
-                    </>
-                  ) : allRequirementsMet ? (
-                    <>
-                      <Sparkles className="w-5 h-5 mr-2" />
-                      Deploy Token
-                    </>
-                  ) : (
-                    <>
-                      <AlertCircle className="w-5 h-5 mr-2" />
-                      Complete Requirements to Deploy
-                    </>
-                  )}
-                </Button>
-                
-                {!allRequirementsMet && !isDeploying && deploymentStatus !== 'success' && (
-                  <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                    <p className="text-yellow-400 text-sm font-medium mb-1">Missing Requirements:</p>
-                    <ul className="text-yellow-300 text-xs space-y-1">
-                      {!isFormComplete && <li>• Complete token information form</li>}
-                      {!walletAddress && <li>• Connect your wallet</li>}
-                      {!selectedPaymentMethod && <li>• Select a payment method</li>}
-                    </ul>
-                  </div>
-                )}
-                
-                {getNetworkCost(tokenData.network) === 0 && allRequirementsMet && (
-                  <p className="text-center text-sm text-green-400 mt-2">
-                    Free deployment on {tokenData.network}
-                  </p>
-                )}
-              </>
-            );
-          })()}
-        </CardContent>
-      </Card>
-
       {/* Enhanced Transaction Status Modal for Mobile */}
       <TransactionStatusModalEnhanced
         isOpen={showTransactionModal}
         onClose={() => setShowTransactionModal(false)}
         status={transactionStatus}
-        transactionData={deploymentResult}
+        deploymentResult={deploymentResult}
         error={transactionError}
         onRetry={() => {
           setTransactionStatus('preparing');
@@ -1519,6 +1558,11 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
           handleDeploy();
         }}
         network={tokenData.network}
+        tokenData={{
+          name: tokenData.name,
+          symbol: tokenData.symbol,
+          network: tokenData.network
+        }}
       />
     </div>
     </WalletConnectionGuard>
