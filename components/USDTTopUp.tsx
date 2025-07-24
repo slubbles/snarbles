@@ -74,7 +74,7 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
       if (result.success && result.options) {
         setNetworks(result.options.networks);
         // Default to most popular network (Polygon)
-        const defaultNetwork = result.options.networks.find(n => n.id === 'polygon') || result.options.networks[0];
+        const defaultNetwork = result.options.networks.find(n => n.name === 'polygon') || result.options.networks[0];
         setSelectedNetwork(defaultNetwork);
       }
     } catch (error) {
@@ -132,8 +132,8 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
     try {
       const result = await initiateUSDTPayment(
         walletAddress,
+        selectedNetwork.name,
         parseFloat(usdtAmount),
-        selectedNetwork.id,
         walletAddress // Assuming same wallet for simplicity
       );
 
@@ -209,26 +209,26 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {networks.map((network) => (
                   <button
-                    key={network.id}
+                    key={network.name}
                     onClick={() => setSelectedNetwork(network)}
                     className={`
                       relative p-4 rounded-lg border-2 transition-all text-left
-                      ${selectedNetwork?.id === network.id 
+                      ${selectedNetwork?.name === network.name 
                         ? 'border-primary bg-primary/10' 
                         : 'border-muted hover:border-primary/50'
                       }
                     `}
                   >
-                    {network.popular && (
+                    {network.name === 'polygon' && (
                       <Badge className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs">
                         Popular
                       </Badge>
                     )}
                     <div className="flex items-center gap-3">
-                      <div className="text-2xl">{network.icon}</div>
+                      <div className="text-2xl">💰</div>
                       <div>
-                        <div className="font-semibold">{network.name}</div>
-                        <div className="text-sm text-muted-foreground">{network.gasEstimate}</div>
+                        <div className="font-semibold">{network.displayName}</div>
+                        <div className="text-sm text-muted-foreground">Chain ID: {network.chainId}</div>
                       </div>
                     </div>
                   </button>
@@ -326,7 +326,7 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-muted-foreground">Gas Fee:</span>
-                        <span className="text-sm font-medium">{selectedNetwork.gasEstimate}</span>
+                        <span className="text-sm font-medium">Gas: Variable</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-muted-foreground">Credits Received:</span>
@@ -423,27 +423,27 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
                     <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center gap-3">
                         <div className="text-2xl">
-                          {networks.find(n => n.id === payment.network)?.icon || '💰'}
+                          💰
                         </div>
                         <div>
-                          <div className="font-medium">{payment.usdt_amount} USDT</div>
+                          <div className="font-medium">{payment.amount} USDT</div>
                           <div className="text-sm text-muted-foreground">
-                            {networks.find(n => n.id === payment.network)?.displayName || payment.network}
+                            {networks.find(n => n.name === payment.networkName)?.displayName || payment.networkName}
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-medium">{payment.credits_received} credits</div>
+                        <div className="font-medium">{payment.creditsAwarded} credits</div>
                         <div className="flex items-center gap-2">
                           {getStatusBadge(payment.status)}
-                          {payment.transaction_hash && (
+                          {payment.transactionHash && (
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => {
-                                const network = networks.find(n => n.id === payment.network);
+                                const network = networks.find(n => n.name === payment.networkName);
                                 if (network) {
-                                  window.open(`${network.explorerUrl}/tx/${payment.transaction_hash}`, '_blank');
+                                  window.open(`${network.explorerUrl}/tx/${payment.transactionHash}`, '_blank');
                                 }
                               }}
                             >
@@ -518,7 +518,7 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
                   <div className="text-sm">
                     <div><strong>Network:</strong> {paymentDetails.network.displayName}</div>
                     <div><strong>Contract:</strong> {paymentDetails.contractAddress}</div>
-                    <div><strong>Gas Estimate:</strong> {paymentDetails.network.gasEstimate}</div>
+                    <div><strong>Gas Estimate:</strong> Variable (estimated during transaction)</div>
                   </div>
                 </div>
               </div>
@@ -530,9 +530,8 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
                   <div className="text-sm space-y-1">
                     {generatePaymentInstructions(
                       paymentDetails.network,
-                      paymentDetails.usdtAmount,
-                      paymentDetails.receiverAddress
-                    ).map((instruction, index) => (
+                      paymentDetails.amount
+                    ).steps.map((instruction, index) => (
                       <div key={index}>{instruction}</div>
                     ))}
                   </div>

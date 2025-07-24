@@ -16,171 +16,119 @@ export const USDT_PRICING = {
   // 1 USDT = 1 credit (simple 1:1 ratio)
   USDT_TO_CREDITS_RATE: 1,
   
-  // Minimum purchase amounts
-  MIN_USDT_AMOUNT: 5,
+  // Minimum and maximum payment amounts
+  MIN_USDT_AMOUNT: 1,
   MAX_USDT_AMOUNT: 1000,
   
-  // Network-specific USDT contract addresses
-  USDT_CONTRACTS: {
-    ethereum: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-    polygon: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F',
-    bsc: '0x55d398326f99059fF775485246999027B3197955',
-    arbitrum: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',
-    optimism: '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58',
-    avalanche: '0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7'
-  }
+  // Payment amounts for quick selection
+  QUICK_AMOUNTS: [5, 10, 25, 50, 100]
 };
 
-// Supported networks for USDT payments
+// USDT Network interface
 export interface USDTNetwork {
-  id: string;
   name: string;
   displayName: string;
   chainId: number;
   contractAddress: string;
-  decimals: number;
-  icon: string;
   explorerUrl: string;
-  rpcUrl: string;
-  gasEstimate: string;
-  popular: boolean;
+  rpcUrl?: string;
+  nativeCurrency: {
+    name: string;
+    symbol: string;
+    decimals: number;
+  };
 }
 
+// Supported USDT networks and their contract addresses
 export const SUPPORTED_USDT_NETWORKS: USDTNetwork[] = [
   {
-    id: 'ethereum',
-    name: 'Ethereum',
-    displayName: 'USDT (Ethereum)',
-    chainId: 1,
-    contractAddress: USDT_PRICING.USDT_CONTRACTS.ethereum,
-    decimals: 6,
-    icon: '🔷',
-    explorerUrl: 'https://etherscan.io',
-    rpcUrl: 'https://mainnet.infura.io/v3/',
-    gasEstimate: '~$15-50',
-    popular: true
-  },
-  {
-    id: 'polygon',
-    name: 'Polygon',
-    displayName: 'USDT (Polygon)',
+    name: 'polygon',
+    displayName: 'Polygon (MATIC)',
     chainId: 137,
-    contractAddress: USDT_PRICING.USDT_CONTRACTS.polygon,
-    decimals: 6,
-    icon: '🟣',
+    contractAddress: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F',
     explorerUrl: 'https://polygonscan.com',
     rpcUrl: 'https://polygon-rpc.com',
-    gasEstimate: '~$0.01-0.10',
-    popular: true
+    nativeCurrency: { name: 'Polygon', symbol: 'MATIC', decimals: 18 }
   },
   {
-    id: 'bsc',
-    name: 'BSC',
-    displayName: 'USDT (BNB Smart Chain)',
+    name: 'bsc',
+    displayName: 'BNB Smart Chain',
     chainId: 56,
-    contractAddress: USDT_PRICING.USDT_CONTRACTS.bsc,
-    decimals: 18,
-    icon: '🟡',
+    contractAddress: '0x55d398326f99059fF775485246999027B3197955',
     explorerUrl: 'https://bscscan.com',
-    rpcUrl: 'https://bsc-dataseed1.binance.org',
-    gasEstimate: '~$0.20-1.00',
-    popular: true
+    rpcUrl: 'https://bsc-dataseed.binance.org',
+    nativeCurrency: { name: 'BNB Smart Chain', symbol: 'BNB', decimals: 18 }
   },
   {
-    id: 'arbitrum',
-    name: 'Arbitrum',
-    displayName: 'USDT (Arbitrum)',
+    name: 'ethereum',
+    displayName: 'Ethereum Mainnet',
+    chainId: 1,
+    contractAddress: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+    explorerUrl: 'https://etherscan.io',
+    rpcUrl: 'https://mainnet.infura.io/v3/YOUR_KEY_HERE',
+    nativeCurrency: { name: 'Ethereum', symbol: 'ETH', decimals: 18 }
+  },
+  {
+    name: 'arbitrum',
+    displayName: 'Arbitrum One',
     chainId: 42161,
-    contractAddress: USDT_PRICING.USDT_CONTRACTS.arbitrum,
-    decimals: 6,
-    icon: '🔵',
+    contractAddress: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',
     explorerUrl: 'https://arbiscan.io',
     rpcUrl: 'https://arb1.arbitrum.io/rpc',
-    gasEstimate: '~$0.50-2.00',
-    popular: false
+    nativeCurrency: { name: 'Arbitrum', symbol: 'ETH', decimals: 18 }
   },
   {
-    id: 'optimism',
-    name: 'Optimism',
-    displayName: 'USDT (Optimism)',
-    chainId: 10,
-    contractAddress: USDT_PRICING.USDT_CONTRACTS.optimism,
-    decimals: 6,
-    icon: '🔴',
-    explorerUrl: 'https://optimistic.etherscan.io',
-    rpcUrl: 'https://mainnet.optimism.io',
-    gasEstimate: '~$0.50-2.00',
-    popular: false
-  },
-  {
-    id: 'avalanche',
-    name: 'Avalanche',
-    displayName: 'USDT (Avalanche C-Chain)',
+    name: 'avalanche',
+    displayName: 'Avalanche C-Chain',
     chainId: 43114,
-    contractAddress: USDT_PRICING.USDT_CONTRACTS.avalanche,
-    decimals: 6,
-    icon: '❄️',
+    contractAddress: '0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7',
     explorerUrl: 'https://snowtrace.io',
     rpcUrl: 'https://api.avax.network/ext/bc/C/rpc',
-    gasEstimate: '~$0.50-2.00',
-    popular: false
+    nativeCurrency: { name: 'Avalanche', symbol: 'AVAX', decimals: 18 }
+  },
+  {
+    name: 'optimism',
+    displayName: 'Optimism',
+    chainId: 10,
+    contractAddress: '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58',
+    explorerUrl: 'https://optimistic.etherscan.io',
+    rpcUrl: 'https://mainnet.optimism.io',
+    nativeCurrency: { name: 'Optimism', symbol: 'ETH', decimals: 18 }
   }
 ];
 
-// USDT payment transaction interface
-export interface USDTPaymentTransaction {
+// Payment status tracking
+export interface USDTPaymentRecord {
   id: string;
-  wallet_address: string;
-  usdt_amount: number;
-  credits_received: number;
-  network: string;
-  contract_address: string;
-  transaction_hash: string;
-  from_address: string;
-  to_address: string;
+  userId: string;
+  networkName: string;
+  transactionHash: string;
+  fromAddress: string;
+  toAddress: string;
+  amount: number;
+  creditsAwarded: number;
   status: 'pending' | 'confirmed' | 'failed';
-  created_at: string;
-  confirmed_at?: string;
-  block_number?: number;
-  gas_used?: number;
-  gas_price?: string;
+  blockNumber?: number;
+  confirmations: number;
+  createdAt: Date;
+  confirmedAt?: Date;
+}
+
+// Type alias for compatibility
+export type USDTPaymentTransaction = USDTPaymentRecord;
+
+/**
+ * Get network configuration by name
+ */
+export function getNetworkByName(networkName: string): USDTNetwork | null {
+  return SUPPORTED_USDT_NETWORKS.find(network => network.name === networkName) || null;
 }
 
 /**
- * Get USDT payment options and pricing
+ * Get network configuration by chain ID
  */
-export async function getUSDTPaymentOptions(): Promise<{
-  success: boolean;
-  options?: {
-    networks: USDTNetwork[];
-    pricing: {
-      usdtToCreditsRate: number;
-      minAmount: number;
-      maxAmount: number;
-    };
-    receiverAddress: string;
-  };
-  error?: string;
-}> {
-  try {
-    return {
-      success: true,
-      options: {
-        networks: SUPPORTED_USDT_NETWORKS,
-        pricing: {
-          usdtToCreditsRate: USDT_PRICING.USDT_TO_CREDITS_RATE,
-          minAmount: USDT_PRICING.MIN_USDT_AMOUNT,
-          maxAmount: USDT_PRICING.MAX_USDT_AMOUNT
-        },
-        receiverAddress: USDT_RECEIVER_ADDRESS
-      }
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to get payment options'
-    };
-  }
+export function getNetworkByChainId(chainId: number): USDTNetwork | null {
+  return SUPPORTED_USDT_NETWORKS.find(network => network.chainId === chainId) || null;
 }
 
 /**
@@ -191,261 +139,31 @@ export function calculateCreditsFromUSDT(usdtAmount: number): number {
 }
 
 /**
- * Calculate USDT amount from desired credits
+ * Calculate USDT amount from credits
  */
 export function calculateUSDTFromCredits(credits: number): number {
   return credits / USDT_PRICING.USDT_TO_CREDITS_RATE;
 }
 
 /**
- * Initiate USDT payment (creates pending transaction record)
+ * Validate USDT payment amount
  */
-export async function initiateUSDTPayment(
-  walletAddress: string,
-  usdtAmount: number,
-  network: string,
-  fromAddress: string
-): Promise<{
-  success: boolean;
-  paymentId?: string;
-  paymentDetails?: {
-    id: string;
-    receiverAddress: string;
-    contractAddress: string;
-    network: USDTNetwork;
-    usdtAmount: number;
-    creditsToReceive: number;
-    instructions: string[];
-  };
-  error?: string;
-}> {
-  try {
-    // Validate amount
-    if (usdtAmount < USDT_PRICING.MIN_USDT_AMOUNT || usdtAmount > USDT_PRICING.MAX_USDT_AMOUNT) {
-      throw new Error(`Amount must be between ${USDT_PRICING.MIN_USDT_AMOUNT} and ${USDT_PRICING.MAX_USDT_AMOUNT} USDT`);
-    }
-
-    // Find network
-    const selectedNetwork = SUPPORTED_USDT_NETWORKS.find(n => n.id === network);
-    if (!selectedNetwork) {
-      throw new Error('Unsupported network');
-    }
-
-    const creditsToReceive = calculateCreditsFromUSDT(usdtAmount);
-    const paymentId = `usdt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-    // Store pending payment record
-    if (isSupabaseAvailable()) {
-      const { error } = await supabase.from('usdt_payments').insert({
-        id: paymentId,
-        wallet_address: walletAddress,
-        usdt_amount: usdtAmount,
-        credits_received: creditsToReceive,
-        network: network,
-        contract_address: selectedNetwork.contractAddress,
-        from_address: fromAddress,
-        to_address: USDT_RECEIVER_ADDRESS,
-        status: 'pending',
-        created_at: new Date().toISOString()
-      });
-
-      if (error) {
-        console.error('Error storing payment record:', error);
-        // Continue anyway - payment can still be processed manually
-      }
-    }
-
+export function validateUSDTAmount(amount: number): { valid: boolean; error?: string } {
+  if (amount < USDT_PRICING.MIN_USDT_AMOUNT) {
     return {
-      success: true,
-      paymentId,
-      paymentDetails: {
-        id: paymentId,
-        receiverAddress: USDT_RECEIVER_ADDRESS,
-        contractAddress: selectedNetwork.contractAddress,
-        network: selectedNetwork,
-        usdtAmount,
-        creditsToReceive,
-        instructions: [
-          `Send exactly ${usdtAmount} USDT to the address below`,
-          `Network: ${selectedNetwork.displayName}`,
-          `Contract: ${selectedNetwork.contractAddress}`,
-          `Receiver: ${USDT_RECEIVER_ADDRESS}`,
-          `You will receive ${creditsToReceive} credits after confirmation`
-        ]
-      }
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to initiate payment'
+      valid: false,
+      error: `Minimum payment amount is ${USDT_PRICING.MIN_USDT_AMOUNT} USDT`
     };
   }
-}
-
-/**
- * Confirm USDT payment (called when transaction is detected)
- */
-export async function confirmUSDTPayment(
-  paymentId: string,
-  transactionHash: string,
-  blockNumber?: number,
-  gasUsed?: number,
-  gasPrice?: string
-): Promise<{
-  success: boolean;
-  creditsAdded?: number;
-  error?: string;
-}> {
-  try {
-    if (!isSupabaseAvailable()) {
-      throw new Error('Database not available');
-    }
-
-    // Get payment record
-    const { data: payment, error: fetchError } = await supabase
-      .from('usdt_payments')
-      .select('*')
-      .eq('id', paymentId)
-      .single();
-
-    if (fetchError || !payment) {
-      throw new Error('Payment record not found');
-    }
-
-    if (payment.status === 'confirmed') {
-      throw new Error('Payment already confirmed');
-    }
-
-    // Update payment status
-    const { error: updateError } = await supabase
-      .from('usdt_payments')
-      .update({
-        status: 'confirmed',
-        transaction_hash: transactionHash,
-        confirmed_at: new Date().toISOString(),
-        block_number: blockNumber,
-        gas_used: gasUsed,
-        gas_price: gasPrice
-      })
-      .eq('id', paymentId);
-
-    if (updateError) {
-      throw new Error(`Failed to update payment: ${updateError.message}`);
-    }
-
-    // Add credits to user's balance
-    const currentBalanceResult = await getCreditsBalance(payment.wallet_address);
-    const currentBalance = currentBalanceResult.success ? (currentBalanceResult.balance || 0) : 0;
-    const newBalance = currentBalance + payment.credits_received;
-    
-    const creditsResult = await updateCreditsBalance(
-      payment.wallet_address,
-      newBalance
-    );
-
-    if (!creditsResult.success) {
-      throw new Error(`Failed to add credits: ${creditsResult.error}`);
-    }
-
-    // Record credit transaction
-    await addCreditTransaction(
-      payment.wallet_address,
-      'purchase',
-      payment.credits_received,
-      `USDT payment on ${payment.network}`,
-      {
-        transactionHash: transactionHash,
-        paymentMethod: 'usdt',
-        referenceId: paymentId,
-        status: 'completed'
-      }
-    );
-
+  
+  if (amount > USDT_PRICING.MAX_USDT_AMOUNT) {
     return {
-      success: true,
-      creditsAdded: payment.credits_received
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to confirm payment'
+      valid: false,
+      error: `Maximum payment amount is ${USDT_PRICING.MAX_USDT_AMOUNT} USDT`
     };
   }
-}
-
-/**
- * Get USDT payment history for a wallet
- */
-export async function getUSDTPaymentHistory(
-  walletAddress: string
-): Promise<{
-  success: boolean;
-  payments?: USDTPaymentTransaction[];
-  error?: string;
-}> {
-  try {
-    if (!isSupabaseAvailable()) {
-      return {
-        success: true,
-        payments: [] // Return empty array if no database
-      };
-    }
-
-    const { data, error } = await supabase
-      .from('usdt_payments')
-      .select('*')
-      .eq('wallet_address', walletAddress)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      throw new Error(`Database error: ${error.message}`);
-    }
-
-    return {
-      success: true,
-      payments: data || []
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch payment history'
-    };
-  }
-}
-
-/**
- * Get pending USDT payments (admin function)
- */
-export async function getPendingUSDTPayments(): Promise<{
-  success: boolean;
-  payments?: USDTPaymentTransaction[];
-  error?: string;
-}> {
-  try {
-    if (!isSupabaseAvailable()) {
-      throw new Error('Database not available');
-    }
-
-    const { data, error } = await supabase
-      .from('usdt_payments')
-      .select('*')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      throw new Error(`Database error: ${error.message}`);
-    }
-
-    return {
-      success: true,
-      payments: data || []
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch pending payments'
-    };
-  }
+  
+  return { valid: true };
 }
 
 /**
@@ -453,21 +171,278 @@ export async function getPendingUSDTPayments(): Promise<{
  */
 export function generatePaymentInstructions(
   network: USDTNetwork,
+  amount: number
+): {
+  title: string;
+  steps: string[];
+  warning: string;
+  explorerLink: string;
+} {
+  const credits = calculateCreditsFromUSDT(amount);
+  
+  return {
+    title: `Send ${amount} USDT on ${network.displayName}`,
+    steps: [
+      `Open your wallet app (MetaMask, Trust Wallet, etc.)`,
+      `Make sure you're connected to ${network.displayName}`,
+      `Send exactly ${amount} USDT to: ${USDT_RECEIVER_ADDRESS}`,
+      `Save the transaction hash for verification`,
+      `Wait for transaction confirmation`,
+      `Your account will be credited with ${credits} credits automatically`
+    ],
+    warning: `⚠️ Important: Send exactly ${amount} USDT to the correct address on ${network.displayName}. Incorrect amounts or wrong networks may result in loss of funds.`,
+    explorerLink: `${network.explorerUrl}/address/${USDT_RECEIVER_ADDRESS}`
+  };
+}
+
+/**
+ * Save USDT payment record to database
+ */
+export async function saveUSDTPaymentRecord(payment: Omit<USDTPaymentRecord, 'id' | 'createdAt'>): Promise<string | null> {
+  if (!isSupabaseAvailable()) {
+    console.warn('Supabase not available, payment record not saved');
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('usdt_payments')
+      .insert({
+        ...payment,
+        created_at: new Date().toISOString()
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      console.error('Failed to save USDT payment record:', error);
+      return null;
+    }
+
+    return data.id;
+  } catch (error) {
+    console.error('Failed to save USDT payment record:', error);
+    return null;
+  }
+}
+
+/**
+ * Update USDT payment status
+ */
+export async function updateUSDTPaymentStatus(
+  paymentId: string,
+  status: USDTPaymentRecord['status'],
+  blockNumber?: number,
+  confirmations?: number
+): Promise<boolean> {
+  if (!isSupabaseAvailable()) {
+    console.warn('Supabase not available, payment status not updated');
+    return false;
+  }
+
+  try {
+    const updateData: any = {
+      status,
+      confirmations: confirmations || 0
+    };
+
+    if (status === 'confirmed') {
+      updateData.confirmed_at = new Date().toISOString();
+    }
+
+    if (blockNumber) {
+      updateData.block_number = blockNumber;
+    }
+
+    const { error } = await supabase
+      .from('usdt_payments')
+      .update(updateData)
+      .eq('id', paymentId);
+
+    if (error) {
+      console.error('Failed to update payment status:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Failed to update payment status:', error);
+    return false;
+  }
+}
+
+/**
+ * Get user's USDT payment history
+ */
+export async function getUserUSDTPayments(userId: string): Promise<USDTPaymentRecord[]> {
+  if (!isSupabaseAvailable()) {
+    return [];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('usdt_payments')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Failed to get user USDT payments:', error);
+      return [];
+    }
+
+    return data.map(payment => ({
+      id: payment.id,
+      userId: payment.user_id,
+      networkName: payment.network_name,
+      transactionHash: payment.transaction_hash,
+      fromAddress: payment.from_address,
+      toAddress: payment.to_address,
+      amount: payment.amount,
+      creditsAwarded: payment.credits_awarded,
+      status: payment.status,
+      blockNumber: payment.block_number,
+      confirmations: payment.confirmations,
+      createdAt: new Date(payment.created_at),
+      confirmedAt: payment.confirmed_at ? new Date(payment.confirmed_at) : undefined
+    }));
+  } catch (error) {
+    console.error('Failed to get user USDT payments:', error);
+    return [];
+  }
+}
+
+/**
+ * Process confirmed USDT payment (award credits)
+ */
+export async function processConfirmedUSDTPayment(
+  userId: string,
+  paymentId: string,
   amount: number,
-  receiverAddress: string
-): string[] {
-  return [
-    `🔹 Send exactly ${amount} USDT`,
-    `🔹 Network: ${network.displayName}`,
-    `🔹 To address: ${receiverAddress}`,
-    `🔹 Contract: ${network.contractAddress}`,
-    `🔹 Gas estimate: ${network.gasEstimate}`,
-    `🔹 Credits received: ${calculateCreditsFromUSDT(amount)}`,
-    '',
-    '⚠️ Important:',
-    '• Send from the same wallet you connected',
-    '• Double-check the receiver address',
-    '• Credits will be added after 1-3 confirmations',
-    '• Contact support if payment not processed within 1 hour'
-  ];
+  transactionHash: string,
+  networkName: string
+): Promise<boolean> {
+  try {
+    const credits = calculateCreditsFromUSDT(amount);
+    
+    // Add credit transaction
+    const result = await addCreditTransaction(
+      userId,
+      'purchase',
+      credits,
+      `USDT payment: ${amount} USDT via ${networkName}`,
+      {
+        referenceId: paymentId,
+        paymentMethod: 'usdt',
+        transactionHash,
+        status: 'completed',
+        metadata: {
+          networkName,
+          usdtAmount: amount
+        }
+      }
+    );
+
+    if (result.success) {
+      // Update payment status to confirmed
+      await updateUSDTPaymentStatus(paymentId, 'confirmed');
+      console.log(`Awarded ${credits} credits for USDT payment: ${transactionHash}`);
+    }
+
+    return result.success;
+  } catch (error) {
+    console.error('Failed to process confirmed USDT payment:', error);
+    return false;
+  }
+}
+
+/**
+ * Get USDT payment options for UI
+ */
+export function getUSDTPaymentOptions() {
+  return {
+    success: true,
+    options: {
+      networks: SUPPORTED_USDT_NETWORKS.map(network => ({
+        id: network.name,
+        ...network
+      })),
+      pricing: USDT_PRICING,
+      receiverAddress: USDT_RECEIVER_ADDRESS,
+      quickAmounts: USDT_PRICING.QUICK_AMOUNTS
+    }
+  };
+}
+
+/**
+ * Get USDT payment history (alias for getUserUSDTPayments)
+ */
+export async function getUSDTPaymentHistory(userId: string): Promise<{ success: boolean; payments: USDTPaymentRecord[] }> {
+  try {
+    const payments = await getUserUSDTPayments(userId);
+    return { success: true, payments };
+  } catch (error) {
+    console.error('Failed to get USDT payment history:', error);
+    return { success: false, payments: [] };
+  }
+}
+
+/**
+ * Initiate a USDT payment (creates a payment record)
+ */
+export async function initiateUSDTPayment(
+  userId: string,
+  networkName: string,
+  amount: number,
+  fromAddress: string
+): Promise<{ success: boolean; paymentId?: string; paymentDetails?: any; error?: string }> {
+  try {
+    // Validate amount
+    const validation = validateUSDTAmount(amount);
+    if (!validation.valid) {
+      return { success: false, error: validation.error };
+    }
+
+    // Get network info
+    const network = getNetworkByName(networkName);
+    if (!network) {
+      return { success: false, error: 'Invalid network' };
+    }
+
+    // Create payment record
+    const paymentRecord: Omit<USDTPaymentRecord, 'id' | 'createdAt'> = {
+      userId,
+      networkName,
+      transactionHash: '', // Will be filled when transaction is sent
+      fromAddress,
+      toAddress: USDT_RECEIVER_ADDRESS,
+      amount,
+      creditsAwarded: calculateCreditsFromUSDT(amount),
+      status: 'pending',
+      confirmations: 0
+    };
+
+    const paymentId = await saveUSDTPaymentRecord(paymentRecord);
+    
+    if (paymentId) {
+      const paymentDetails = {
+        paymentId,
+        network,
+        amount,
+        credits: calculateCreditsFromUSDT(amount),
+        toAddress: USDT_RECEIVER_ADDRESS,
+        instructions: generatePaymentInstructions(network, amount)
+      };
+      
+      return { success: true, paymentId, paymentDetails };
+    } else {
+      return { success: false, error: 'Failed to create payment record' };
+    }
+  } catch (error) {
+    console.error('Failed to initiate USDT payment:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error occurred' 
+    };
+  }
 }
