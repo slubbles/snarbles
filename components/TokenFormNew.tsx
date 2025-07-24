@@ -578,7 +578,7 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
           // Import Solana token creation library - using the reliable direct method
           const { createTokenOnChain } = await import('@/lib/solana');
           
-          // Get wallet interface for Solana
+          // Get wallet interface for Solana with mobile detection
           const walletInterface = {
             publicKey: (window as any).solana?.publicKey,
             signTransaction: (window as any).solana?.signTransaction?.bind((window as any).solana),
@@ -588,8 +588,13 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
           if (!walletInterface.publicKey || !walletInterface.signTransaction) {
             throw new Error('Solana wallet not properly connected');
           }
+
+          // Check if mobile environment and use appropriate method
+          const isMobileEnv = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
           
-          // Real Solana token creation using the reliable method
+          console.log(`🔥 CREATING REAL SOLANA TOKEN ${isMobileEnv ? 'WITH MOBILE OPTIMIZATION' : 'WITH DESKTOP VERSION'}`);
+          
+          // Real Solana token creation with mobile optimization
           result = await createTokenOnChain(walletInterface, {
             name: tokenData.name,
             symbol: tokenData.symbol,
@@ -605,30 +610,40 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
             pausable: tokenData.pausable
           }, {
             onStepUpdate: (step, status, details) => {
-              // Enhanced status updates - map to transaction status format
+              // Enhanced status updates for mobile and desktop
               if (status === 'in-progress') {
-                if (step === 'wallet-check') {
+                if (step === 'environment-check' || step === 'mobile-optimization' || step === 'wallet-check') {
                   setTransactionStatus('preparing');
                   setTokenCreationStep(1);
-                } else if (step === 'transaction-prep') {
-                  setTransactionStatus('signing');
+                } else if (step === 'token-setup' || step === 'transaction-build') {
+                  setTransactionStatus('preparing');
                   setTokenCreationStep(2);
-                } else if (step === 'transaction-send') {
-                  setTransactionStatus('broadcasting');
+                } else if (step === 'wallet-approval' || step === 'signing') {
+                  setTransactionStatus('signing');
                   setTokenCreationStep(3);
-                } else if (step === 'confirmation') {
-                  setTransactionStatus('confirming');
+                } else if (step === 'blockchain-submit' || step === 'submitting') {
+                  setTransactionStatus('broadcasting');
                   setTokenCreationStep(4);
+                } else if (step === 'confirming') {
+                  setTransactionStatus('confirming');
+                  setTokenCreationStep(5);
                 }
               } else if (status === 'completed') {
-                setTransactionStatus('success');
-                setTokenCreationStep(5);
+                if (step === 'success') {
+                  setTransactionStatus('success');
+                  setTokenCreationStep(6);
+                }
               } else if (status === 'failed') {
                 setTransactionStatus('error');
               }
               
               if (details?.message) {
-                console.log(`📱 Solana Status: ${details.message}`);
+                console.log(`📱 Solana ${isMobileEnv ? 'Mobile' : 'Desktop'} Status: ${details.message}`);
+              }
+              
+              // Additional mobile-specific hints
+              if (isMobileEnv && details?.userAction) {
+                console.log(`💡 Mobile User Action: ${details.userAction}`);
               }
             }
           });

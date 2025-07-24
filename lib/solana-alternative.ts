@@ -22,6 +22,14 @@ import { CURRENT_SOLANA_NETWORK } from './solana-data';
 // Use the existing connection from solana.ts
 import { connection } from './solana';
 
+// Import mobile-optimized functions
+import { 
+  createSolanaTokenMobile, 
+  detectMobileWalletEnvironment,
+  validateMobileWalletForSolana,
+  MobileWalletInterface
+} from './solana-mobile-optimized';
+
 // Alternative token creation using standard Solana token program
 export async function createSolanaTokenDirect(
   wallet: { publicKey: PublicKey; signTransaction: (txn: any) => Promise<any> },
@@ -45,6 +53,91 @@ export async function createSolanaTokenDirect(
 ) {
   try {
     const { onStepUpdate } = options || {};
+    
+    // Detect mobile environment
+    const environment = detectMobileWalletEnvironment();
+    
+    if (onStepUpdate) {
+      onStepUpdate('environment-check', 'in-progress', { 
+        message: `Detected ${environment.isMobile ? 'mobile' : 'desktop'} environment`,
+        environment 
+      });
+    }
+
+    // Use mobile-optimized creation if on mobile
+    if (environment.isMobile) {
+      if (onStepUpdate) {
+        onStepUpdate('mobile-optimization', 'in-progress', { 
+          message: 'Using mobile-optimized token creation...' 
+        });
+      }
+
+      // Validate mobile wallet readiness
+      const validation = validateMobileWalletForSolana();
+      if (!validation.isReady) {
+        throw new Error(`Mobile wallet not ready: ${validation.issues.join(', ')}. ${validation.recommendations.join(' ')}`);
+      }
+
+      // Convert wallet interface for mobile optimization
+      const mobileWallet: MobileWalletInterface = {
+        publicKey: wallet.publicKey,
+        signTransaction: wallet.signTransaction,
+        isPhantom: !!(window as any).phantom?.solana?.isPhantom,
+        isOKX: !!(window as any).okxwallet?.solana,
+        isMobile: true
+      };
+
+      const result = await createSolanaTokenMobile(
+        mobileWallet,
+        tokenData,
+        (step: string, message: string, details?: any) => {
+          if (onStepUpdate) {
+            onStepUpdate(step, 'in-progress', { message, details });
+          }
+        }
+      );
+
+      if (result.success) {
+        if (onStepUpdate) {
+          onStepUpdate('success', 'completed', { 
+            message: 'Token created successfully on mobile!',
+            signature: result.signature,
+            mintAddress: result.mintAddress
+          });
+        }
+
+        return {
+          success: true,
+          mintAddress: result.mintAddress,
+          signature: result.signature,
+          tokenAccount: result.tokenAccount,
+          metadata: {
+            name: tokenData.name,
+            symbol: tokenData.symbol,
+            description: tokenData.description,
+            image: tokenData.logoUrl,
+            external_url: tokenData.website,
+            properties: {
+              files: tokenData.logoUrl ? [{ uri: tokenData.logoUrl, type: 'image' }] : [],
+              category: 'token',
+              decimals: tokenData.decimals,
+              total_supply: tokenData.totalSupply,
+              mintable: tokenData.mintable,
+              burnable: tokenData.burnable
+            }
+          }
+        };
+      } else {
+        throw new Error(result.error || 'Mobile token creation failed');
+      }
+    }
+
+    // Fall back to desktop version for non-mobile environments
+    if (onStepUpdate) {
+      onStepUpdate('desktop-fallback', 'in-progress', { 
+        message: 'Using desktop token creation...' 
+      });
+    }
     
     if (onStepUpdate) {
       onStepUpdate('wallet-check', 'in-progress', { message: 'Validating wallet...' });

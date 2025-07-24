@@ -12,6 +12,7 @@ import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { isMobile } from '@/lib/mobile-wallet-utils';
 import MobileWalletModal from '@/components/MobileWalletModal';
+import SolanaMobileWalletManager from '@/components/SolanaMobileWalletManager';
 import PeraWalletAppHandler from '@/components/PeraWalletAppHandler';
 
 export default function CreateTokenPage() {
@@ -245,6 +246,24 @@ export default function CreateTokenPage() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Enhanced Solana Mobile Wallet Manager - Show for Solana networks */}
+        {isMobileDevice && tokenData.network.startsWith('solana') && (
+          <div className="mb-8">
+            <SolanaMobileWalletManager 
+              onConnectionChange={(connected) => {
+                if (connected) {
+                  toast({
+                    title: "Solana Wallet Connected",
+                    description: "Ready to create tokens on Solana!",
+                    duration: 3000,
+                  });
+                }
+              }}
+              showInstructions={!isAuthenticated}
+            />
           </div>
         )}
 
