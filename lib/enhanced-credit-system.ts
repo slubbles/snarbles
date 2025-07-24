@@ -9,6 +9,7 @@
 import { supabase, isSupabaseAvailable } from './supabase-client';
 import { getAlgorandClient } from './algorand';
 import { getCreditsBalance, updateCreditsBalance, addCreditTransaction } from './credit-system';
+import { getAdminConfig } from './admin-config';
 import algosdk from 'algosdk';
 
 // Enhanced pricing configuration
@@ -173,9 +174,9 @@ export async function processAlgoPayment(
   try {
     const algodClient = getAlgorandClient(network);
     
-    // Platform wallet address (where payments go)
-    const PLATFORM_WALLET = process.env.NEXT_PUBLIC_PLATFORM_WALLET_ADDRESS || 
-                           'PLATFORM_WALLET_ADDRESS_HERE'; // Replace with actual address
+    // Get platform wallet address from admin config
+    const adminConfig = getAdminConfig();
+    const PLATFORM_WALLET = adminConfig.feeRecipients.algorand;
     
     // Get suggested transaction parameters
     const suggestedParams = await algodClient.getTransactionParams().do();

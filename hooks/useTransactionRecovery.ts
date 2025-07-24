@@ -228,13 +228,15 @@ export function useTransactionRecovery(config: Partial<TransactionRecoveryConfig
     network: 'solana' | 'algorand'
   ): Promise<'confirmed' | 'failed' | 'pending'> => {
     try {
-      // This would need to be implemented based on the specific blockchain
-      // For now, return a mock status
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log(`🔍 Checking ${network} transaction status:`, transactionId);
+      console.log('🔗 Blockchain API integration required for real status checking');
       
-      // Simulate random status for demonstration
-      const statuses: Array<'confirmed' | 'failed' | 'pending'> = ['confirmed', 'failed', 'pending'];
-      return statuses[Math.floor(Math.random() * statuses.length)];
+      // In production, this would query the blockchain directly:
+      // - Algorand: Use algod.pendingTransactionInformation()
+      // - Solana: Use connection.getSignatureStatus()
+      
+      // For now, return pending to indicate the transaction needs manual verification
+      return 'pending';
     } catch (error) {
       console.error('Failed to check transaction status:', error);
       return 'failed';

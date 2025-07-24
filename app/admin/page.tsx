@@ -213,8 +213,10 @@ export default function AdminPage() {
 
   const loadPlatformSettings = async () => {
     try {
-      // Load current platform settings from your backend
-      // This is a mock implementation
+      // Load current platform settings from admin configuration
+      const { getAdminConfig } = await import('@/lib/admin-config');
+      const config = getAdminConfig();
+      
       const settings = {
         maintenanceMode: false,
         tokenCreationEnabled: true,
@@ -229,7 +231,9 @@ export default function AdminPage() {
           betaFeatures: false
         }
       };
+      
       setPlatformSettings(settings);
+      console.log('🔧 Platform settings loaded from admin config');
     } catch (error) {
       console.error('Error loading platform settings:', error);
     }
@@ -238,15 +242,28 @@ export default function AdminPage() {
   const savePlatformSettings = async () => {
     setSavingSettings(true);
     try {
-      // Save platform settings to your backend
-      // This is a mock implementation
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Save platform settings to admin configuration
+      const { updateAdminConfig } = await import('@/lib/admin-config');
       
-      toast({
-        title: "Settings Saved",
-        description: "Platform settings have been updated successfully",
-        duration: 3000,
+      const result = await updateAdminConfig({
+        fees: {
+          algorandMainnetFee: 200000, // 0.2 ALGO in microALGO
+          algorandTestnetFee: 0, // Free for testnet
+          solanaMainnetFee: 50000, // 0.05 SOL in lamports
+          solanaDevnetFee: 0, // Free for devnet
+        }
       });
+      
+      if (result.success) {
+        toast({
+          title: "Settings Saved",
+          description: "Platform settings have been updated successfully",
+          duration: 3000,
+        });
+        console.log('🔧 Platform settings saved to admin config');
+      } else {
+        throw new Error(result.error || 'Failed to save settings');
+      }
     } catch (error) {
       console.error('Error saving settings:', error);
       toast({

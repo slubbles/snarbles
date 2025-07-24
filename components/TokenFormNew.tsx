@@ -572,36 +572,51 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
         setTransactionStatus('signing');
         setTokenCreationStep(2);
         
-        console.log('🔥 CREATING REAL SOLANA TOKEN - NOT SIMULATED');
+        console.log('🔥 CREATING REAL SOLANA TOKEN');
         
-        // Step 3: Processing payment
-        setTransactionStatus('broadcasting');
-        setTokenCreationStep(3);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Step 4: Finalizing
-        setTransactionStatus('confirming');
-        setTokenCreationStep(4);
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        
-        const mintAddress = `${tokenData.network.includes('mainnet') ? 'MAINNET' : 'DEVNET'}_${Date.now()}_${Math.random().toString(36).substr(2, 32)}`;
-        const txId = `sol_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        
-        result = {
-          success: true,
-          data: {
-            mintAddress: mintAddress,
-            transactionId: txId,
-            explorerUrl: tokenData.network === 'solana-mainnet'
-              ? `https://explorer.solana.com/address/${mintAddress}`
-              : `https://explorer.solana.com/address/${mintAddress}?cluster=devnet`,
-            network: tokenData.network,
-            tokenName: tokenData.name,
-            tokenSymbol: tokenData.symbol
-          }
-        };
-        
-        console.log('✅ REAL Solana token creation completed:', result.data);
+        try {
+          // Import Solana token creation library
+          const { createSolanaToken } = await import('@/lib/solana-token-creation');
+          
+          // Real Solana token creation
+          result = await createSolanaToken({
+            name: tokenData.name,
+            symbol: tokenData.symbol,
+            description: tokenData.description,
+            decimals: parseInt(tokenData.decimals),
+            totalSupply: tokenData.totalSupply,
+            logoUrl: tokenData.logoUrl || 'https://via.placeholder.com/150',
+            website: tokenData.website,
+            github: tokenData.github,
+            twitter: tokenData.twitter,
+            mintable: tokenData.mintable,
+            burnable: tokenData.burnable,
+            pausable: tokenData.pausable,
+            network: tokenData.network
+          }, tokenData.network, (status) => {
+            // Enhanced status updates
+            setTransactionStatus(status.status || 'preparing');
+            
+            // Map status to step numbers
+            if (status.status === 'signing') {
+              setTokenCreationStep(2); // Step 2: Confirming transaction
+            } else if (status.status === 'broadcasting') {
+              setTokenCreationStep(3); // Step 3: Processing payment
+            } else if (status.status === 'confirming') {
+              setTokenCreationStep(4); // Step 4: Finalizing
+            }
+            
+            if (status.message) {
+              console.log(`📱 Solana Status: ${status.message}`);
+            }
+          });
+          
+          console.log('✅ REAL Solana token creation completed:', result.data);
+          
+        } catch (tokenError) {
+          console.error('Real Solana token creation failed:', tokenError);
+          throw new Error(`Solana token creation failed: ${tokenError instanceof Error ? tokenError.message : 'Unknown error'}`);
+        }
         
       } else {
         throw new Error(`Unsupported network: ${tokenData.network}`);

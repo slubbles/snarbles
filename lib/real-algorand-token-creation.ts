@@ -62,8 +62,16 @@ export async function createRealAlgorandToken(
       throw new Error('Wallet must be connected to create tokens');
     }
 
-    // TODO: Complete the implementation
-    throw new Error('This function is not yet implemented. Use createRealAlgorandToken from real-algorand-token-creation-v2.ts instead.');
+    // This function has been superseded by real-algorand-token-creation-v2.ts
+    // Redirect to the fully implemented version
+    const { createRealAlgorandToken } = await import('./real-algorand-token-creation-v2');
+    
+    console.log('🔄 Redirecting to fully implemented createRealAlgorandToken...');
+    return await createRealAlgorandToken(
+      params,
+      onStatusUpdate,
+      walletProvider
+    );
     
   } catch (error) {
     console.error('Real Algorand token creation failed:', error);

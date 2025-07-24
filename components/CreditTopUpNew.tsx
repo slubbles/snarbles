@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
+import { useAlgorandWallet } from '@/components/providers/AlgorandWalletProvider';
 import { getCreditsBalance } from '@/lib/credit-system';
 import { purchaseCreditsWithAlgo, PRICING } from '@/lib/enhanced-payment-system';
 
@@ -59,17 +60,17 @@ export default function CreditTopUp() {
 
     setIsPurchasing(true);
     try {
-      // Mock signing function - replace with actual wallet signing
-      const mockSignTransaction = async (txn: any) => {
-        console.log('Signing transaction:', txn);
-        // This would use actual wallet signing in production
-        return new Uint8Array([1, 2, 3, 4, 5]);
-      };
+      // Use real wallet signing from provider
+      const { signTransaction } = useAlgorandWallet();
+      
+      if (!signTransaction) {
+        throw new Error('Wallet signing function not available');
+      }
 
       const result = await purchaseCreditsWithAlgo(
         walletAddress,
         algoAmount,
-        mockSignTransaction
+        signTransaction
       );
 
       if (result.success) {

@@ -54,6 +54,10 @@ import {
   AlgorandTokenInfo,
   AlgorandTransactionInfo
 } from '@/lib/algorand-data';
+import { useDashboardWebSocket } from '@/lib/websocket-client';
+import { useRealTimeData } from '@/lib/real-time-data';
+import SuperAdvancedAnalytics from '@/components/dashboard/SuperAdvancedAnalytics';
+import PerformanceMonitor from '@/components/dashboard/PerformanceMonitor';
 import { 
   mintAlgorandAssets, 
   burnAlgorandAssets, 
@@ -114,6 +118,37 @@ export default function AlgorandDashboard() {
   const [activeTab, setActiveTab] = useState('tokens');
   const [analyticsTimeframe, setAnalyticsTimeframe] = useState<'24h' | '7d' | '30d' | '90d' | '1y'>('7d');
   const [viewMode, setViewMode] = useState<'enhanced' | 'legacy'>('enhanced');
+  
+  // Real-time WebSocket connection
+  const { isConnected: wsConnected, subscribe, unsubscribe } = useDashboardWebSocket(walletAddress || undefined);
+  
+  // Real-time data hooks
+  const { 
+    data: realTimeTokens, 
+    loading: realTimeLoading, 
+    refresh: refreshRealTimeTokens 
+  } = useRealTimeData<AlgorandTokenInfo[]>(
+    `tokens:algorand:${walletAddress}`,
+    async () => {
+      if (!walletAddress) return [];
+      const result = await getAlgorandEnhancedTokenInfo(walletAddress, selectedNetwork);
+      return result.success ? result.data || [] : [];
+    },
+    { enabled: !!walletAddress && connected }
+  );
+  
+  const { 
+    data: realTimeTransactions, 
+    refresh: refreshRealTimeTransactions 
+  } = useRealTimeData<AlgorandTransactionInfo[]>(
+    `transactions:algorand:${walletAddress}`,
+    async () => {
+      if (!walletAddress) return [];
+      const result = await getAlgorandTransactionHistory(walletAddress, 20, selectedNetwork);
+      return result.success ? result.data || [] : [];
+    },
+    { enabled: !!walletAddress && connected }
+  );
   
   // Selected token and action state
   const [selectedToken, setSelectedToken] = useState<AlgorandTokenInfo | null>(null);

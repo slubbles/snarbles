@@ -64,6 +64,10 @@ import {
 import { mintTokens, burnTokens, transferTokens, getTokenBalance, pauseToken, unpauseToken } from '@/lib/solana';
 import { DashboardSkeleton, TokenCardSkeleton } from '@/components/skeletons/DashboardSkeletons';
 import { TokenHistoryList } from '@/components/TokenHistoryList';
+import { useDashboardWebSocket } from '@/lib/websocket-client';
+import { useRealTimeData } from '@/lib/real-time-data';
+import SuperAdvancedAnalytics from '@/components/dashboard/SuperAdvancedAnalytics';
+import PerformanceMonitor from '@/components/dashboard/PerformanceMonitor';
 
 import { isSupabaseAvailable } from '@/lib/supabase-client';
 import { useToast } from '@/hooks/use-toast';
@@ -140,6 +144,48 @@ export default function SolanaDashboard() {
   const [activeTab, setActiveTab] = useState('tokens');
   const [analyticsTimeframe, setAnalyticsTimeframe] = useState<'24h' | '7d' | '30d' | '90d' | '1y'>('7d');
   const [viewMode, setViewMode] = useState<'enhanced' | 'legacy'>('enhanced');
+  
+  // Real-time WebSocket connection
+  const { isConnected: wsConnected, subscribe, unsubscribe } = useDashboardWebSocket(publicKey?.toString());
+  
+  // Real-time data hooks
+  const { 
+    data: realTimeTokens, 
+    loading: realTimeLoading, 
+    refresh: refreshRealTimeTokens 
+  } = useRealTimeData<TokenData[]>(
+    `tokens:solana:${publicKey?.toString()}`,
+    async () => {
+      if (!publicKey) return [];
+      const result = await fetchEnhancedTokenInfo(publicKey.toString());
+      if (result.success && result.data) {
+        // Map EnhancedTokenInfo to TokenData format
+        return result.data.map(token => ({
+          address: token.mint,
+          mint: token.mint,
+          name: token.name,
+          symbol: token.symbol,
+          balance: token.balance,
+          uiBalance: token.uiBalance,
+          decimals: token.decimals,
+          verified: token.verified,
+          image: token.image,
+          marketData: token.marketData
+        }));
+      }
+      return [];
+    },
+    { enabled: !!publicKey && connected }
+  );
+  
+  const { 
+    data: realTimeWalletSummary, 
+    refresh: refreshRealTimeWalletSummary 
+  } = useRealTimeData<any>(
+    `wallet_summary:solana:${publicKey?.toString()}`,
+    () => fetchWalletSummary(publicKey!.toString()),
+    { enabled: !!publicKey && connected }
+  );
 
   // Check if user is admin
   const isAdmin = connected && publicKey && publicKey.toString() === ADMIN_WALLET.toString();

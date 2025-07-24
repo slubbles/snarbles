@@ -1,6 +1,7 @@
 import { supabase, isSupabaseAvailable } from './supabase-client';
 import { getCreditsBalance, spendCreditsForTokenCreation } from './credit-system';
 import { getAlgorandClient } from './algorand';
+import { getAdminConfig } from './admin-config';
 import algosdk from 'algosdk';
 
 export type PaymentMethod = 'credits' | 'algo_direct';
@@ -111,13 +112,14 @@ export async function purchaseCreditsWithAlgo(
     // Get suggested transaction parameters
     const suggestedParams = await algodClient.getTransactionParams().do();
     
-    // Platform payment address - replace with actual address
-    const SNARBLES_PAYMENT_ADDRESS = 'SNARBLES_PAYMENT_ADDRESS_HERE';
+    // Get platform payment address from admin config
+    const adminConfig = getAdminConfig();
+    const platformAddress = adminConfig.feeRecipients.algorand;
     
     // Create payment transaction
     const paymentTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
       sender: walletAddress,
-      receiver: SNARBLES_PAYMENT_ADDRESS,
+      receiver: platformAddress,
       amount: algoAmount * 1000000, // Convert to microALGOs
       note: new TextEncoder().encode(`Purchase ${creditsToReceive} credits`),
       suggestedParams
@@ -208,13 +210,14 @@ export async function processAlgoPayment(
     // Get suggested transaction parameters
     const suggestedParams = await algodClient.getTransactionParams().do();
     
-    // Platform payment address - replace with actual address
-    const SNARBLES_PAYMENT_ADDRESS = 'SNARBLES_PAYMENT_ADDRESS_HERE';
+    // Get platform payment address from admin config
+    const adminConfig = getAdminConfig();
+    const platformAddress = adminConfig.feeRecipients.algorand;
     
     // Create payment transaction
     const paymentTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
       sender: walletAddress,
-      receiver: SNARBLES_PAYMENT_ADDRESS,
+      receiver: platformAddress,
       amount: PRICING.ALGO_REQUIRED * 1000000, // Convert to microALGOs
       note: new TextEncoder().encode(`Direct payment for token creation on ${network}`),
       suggestedParams

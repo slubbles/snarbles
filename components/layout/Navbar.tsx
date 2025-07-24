@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Sun, Moon, Wallet, ChevronDown, Copy, Check, AlertTriangle, HelpCircle } from 'lucide-react';
+import { Menu, X, Sun, Moon, Wallet, ChevronDown, Copy, Check, AlertTriangle, HelpCircle, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -86,6 +86,7 @@ export default function Navbar() {
 
   const navLinks = [
     { name: 'Create Token', href: '/create' },
+    { name: 'Credits', href: '/credits' },
     { name: 'Tokenomics Simulator', href: '/tokenomics' },
     { name: 'Verify Token', href: '/verify' },
     { name: 'Dashboard', href: '/dashboard' },
@@ -414,6 +415,20 @@ export default function Navbar() {
                                 </div>
                               </div>
                               
+                              {/* Credits Management Button */}
+                              <Button
+                                onClick={() => {
+                                  handleNavigation('/credits');
+                                  setShowWalletOptions(false);
+                                }}
+                                variant="outline"
+                                size="sm"
+                                className="w-full border-blue-500/20 text-blue-400 hover:bg-blue-500/10 hover:border-blue-500/40 text-xs h-8"
+                              >
+                                <CreditCard className="w-3 h-3 mr-2" />
+                                Manage Credits
+                              </Button>
+                              
                               {/* Disconnect Button */}
                               <Button
                                 onClick={async () => {
@@ -519,6 +534,20 @@ export default function Navbar() {
                                     </div>
                                   </div>
                                 </div>
+                                
+                                {/* Credits Management Button */}
+                                <Button
+                                  onClick={() => {
+                                    handleNavigation('/credits');
+                                    setShowWalletOptions(false);
+                                  }}
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full border-blue-500/20 text-blue-400 hover:bg-blue-500/10 hover:border-blue-500/40 text-xs h-8"
+                                >
+                                  <CreditCard className="w-3 h-3 mr-2" />
+                                  Manage Credits
+                                </Button>
                                 
                                 {/* Disconnect Button */}
                                 <Button

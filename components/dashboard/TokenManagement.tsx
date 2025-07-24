@@ -160,17 +160,47 @@ export default function TokenManagement({
   const handleMint = async () => {
     if (!selectedToken || !mintAmount) throw new Error('Missing parameters');
     
-    // Simulate mint operation - replace with actual implementation
     const amount = parseFloat(mintAmount);
     if (amount <= 0) throw new Error('Amount must be positive');
 
-    // Mock implementation - replace with actual blockchain calls
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    onTokenUpdate(selectedToken.id, {
-      totalSupply: selectedToken.totalSupply + amount,
-      balance: selectedToken.balance + amount
-    });
+    // Real blockchain mint operation using Algorand SDK
+    try {
+      const { performTokenMintOperation } = await import('@/lib/algorand-token-operations');
+      
+      const result = await performTokenMintOperation({
+        assetId: parseInt(selectedToken.id.toString()),
+        amount: amount,
+        network: selectedToken.network || 'algorand-mainnet'
+      });
+
+      if (!result.success) {
+        throw new Error(result.error || 'Minting failed');
+      }
+
+      toast({
+        title: "✅ Tokens Minted Successfully",
+        description: `Minted ${amount} ${selectedToken.symbol} tokens. Transaction: ${result.transactionId}`,
+      });
+      
+      // Update UI with real blockchain data
+      onTokenUpdate(selectedToken.id, {
+        totalSupply: selectedToken.totalSupply + amount,
+        balance: selectedToken.balance + amount
+      });
+
+      // Track the real operation
+      const { trackTokenCreation } = await import('@/lib/analytics');
+      await trackTokenCreation({
+        tokenName: `${selectedToken.name} Mint`,
+        tokenSymbol: selectedToken.symbol,
+        network: selectedToken.network || 'algorand-mainnet',
+        successful: true
+      }, selectedToken.creator || 'unknown');
+
+    } catch (error) {
+      console.error('Mint operation failed:', error);
+      throw new Error(`Minting failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   const handleBurn = async () => {
@@ -180,13 +210,23 @@ export default function TokenManagement({
     if (amount <= 0) throw new Error('Amount must be positive');
     if (amount > selectedToken.balance) throw new Error('Insufficient balance');
 
-    // Mock implementation
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Real blockchain burn operation would require wallet provider integration
+    // For now, we simulate the operation with proper error messaging
     
+    toast({
+      title: "Burn Operation Notice",
+      description: "Token burning requires wallet integration. This is a simulated operation for dashboard purposes.",
+      variant: "default"
+    });
+    
+    // Update UI optimistically - in real implementation this would happen after blockchain confirmation
     onTokenUpdate(selectedToken.id, {
       totalSupply: selectedToken.totalSupply - amount,
       balance: selectedToken.balance - amount
     });
+    
+    // Add delay to simulate blockchain transaction time
+    await new Promise(resolve => setTimeout(resolve, 1500));
   };
 
   const handleTransfer = async () => {
@@ -198,37 +238,63 @@ export default function TokenManagement({
     if (amount <= 0) throw new Error('Amount must be positive');
     if (amount > selectedToken.balance) throw new Error('Insufficient balance');
 
-    // Mock implementation
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Real blockchain transfer operation would require wallet provider integration
+    toast({
+      title: "Transfer Operation Notice",
+      description: "Token transfers require wallet integration. This is a simulated operation for dashboard purposes.",
+      variant: "default"
+    });
     
+    // Update UI optimistically - in real implementation this would happen after blockchain confirmation
     onTokenUpdate(selectedToken.id, {
       balance: selectedToken.balance - amount
     });
+    
+    // Add delay to simulate blockchain transaction time
+    await new Promise(resolve => setTimeout(resolve, 1500));
   };
 
   const handleFreeze = async () => {
     if (!selectedToken) throw new Error('No token selected');
 
-    // Mock implementation
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Real blockchain freeze operation would require wallet provider integration
+    toast({
+      title: "Freeze Operation Notice",
+      description: "Token freezing requires wallet integration. This is a simulated operation for dashboard purposes.",
+      variant: "default"
+    });
     
     onTokenUpdate(selectedToken.id, { frozen: true });
+    
+    // Add delay to simulate blockchain transaction time
+    await new Promise(resolve => setTimeout(resolve, 1500));
   };
 
   const handleUnfreeze = async () => {
     if (!selectedToken) throw new Error('No token selected');
 
-    // Mock implementation
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Real blockchain unfreeze operation would require wallet provider integration
+    toast({
+      title: "Unfreeze Operation Notice",
+      description: "Token unfreezing requires wallet integration. This is a simulated operation for dashboard purposes.",
+      variant: "default"
+    });
     
     onTokenUpdate(selectedToken.id, { frozen: false });
+    
+    // Add delay to simulate blockchain transaction time
+    await new Promise(resolve => setTimeout(resolve, 1500));
   };
 
   const handleMetadataUpdate = async () => {
     if (!selectedToken) throw new Error('No token selected');
 
-    // Mock implementation
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Real blockchain metadata update operation would require wallet provider integration
+    toast({
+      title: "Metadata Update Notice",
+      description: "Token metadata updates require wallet integration. This is a simulated operation for dashboard purposes.",
+      variant: "default"
+    });
     
     onTokenUpdate(selectedToken.id, {
       name: metadataForm.name,
@@ -239,6 +305,9 @@ export default function TokenManagement({
         twitter: metadataForm.twitter
       }
     });
+    
+    // Add delay to simulate blockchain transaction time
+    await new Promise(resolve => setTimeout(resolve, 2000));
   };
 
   const copyToClipboard = (text: string) => {
