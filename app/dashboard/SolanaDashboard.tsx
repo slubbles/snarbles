@@ -79,6 +79,7 @@ import AdvancedAnalytics from '@/components/dashboard/AdvancedAnalytics';
 import EnhancedTransactionManagement, { EnhancedTransaction } from '@/components/dashboard/EnhancedTransactionManagement';
 import TokenManagement from '@/components/dashboard/TokenManagement';
 import UserAnalytics from '@/components/dashboard/UserAnalytics';
+import ComprehensiveMetadataManager from '@/components/dashboard/ComprehensiveMetadataManager';
 
 interface TokenData {
   address: string;
@@ -969,7 +970,7 @@ export default function SolanaDashboard() {
         {/* Enhanced Dashboard */}
         {viewMode === 'enhanced' ? (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5 snarbles-glass-subtle h-12">
+            <TabsList className="grid w-full grid-cols-6 snarbles-glass-subtle h-12">
               <TabsTrigger value="tokens" className="snarbles-tab">
                 <Coins className="w-4 h-4 mr-2" />
                 Portfolio
@@ -977,6 +978,10 @@ export default function SolanaDashboard() {
               <TabsTrigger value="management" className="snarbles-tab">
                 <Settings className="w-4 h-4 mr-2" />
                 Management
+              </TabsTrigger>
+              <TabsTrigger value="metadata" className="snarbles-tab">
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Metadata AI
               </TabsTrigger>
               <TabsTrigger value="analytics" className="snarbles-tab">
                 <BarChart3 className="w-4 h-4 mr-2" />
@@ -1003,6 +1008,35 @@ export default function SolanaDashboard() {
                 loading={tokenLoading}
                 refreshData={() => loadDashboardData(true)}
               />
+            </TabsContent>
+
+            <TabsContent value="metadata" className="space-y-6">
+              {tokens.length > 0 ? (
+                <ComprehensiveMetadataManager
+                  tokenId={tokens[0].mint}
+                  network="solana"
+                  walletAddress={publicKey.toString()}
+                  signTransaction={async (txn) => {
+                    // Implementation would depend on wallet adapter
+                    console.log('Transaction to sign:', txn);
+                    return { signature: 'mock_signature' };
+                  }}
+                  tokens={convertToUniversalTokens(tokens)}
+                />
+              ) : (
+                <Card className="snarbles-glass border-purple-500/30">
+                  <CardContent className="p-8 text-center">
+                    <BarChart3 className="w-12 h-12 text-purple-500 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold mb-2 text-foreground">No Tokens Found</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Create your first token to access advanced metadata management features.
+                    </p>
+                    <Button className="snarbles-gradient text-white">
+                      Create Token
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="analytics">

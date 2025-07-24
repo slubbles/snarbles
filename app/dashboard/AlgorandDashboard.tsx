@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar } from 'recharts';
 import { 
   Coins, 
@@ -33,7 +34,9 @@ import {
   AlertTriangle,
   MessageSquare,
   Clock,
-  Activity
+  Activity,
+  Star,
+  Shield
 } from 'lucide-react';
 import { 
   DropdownMenu,
@@ -76,6 +79,9 @@ import { trackPageView } from '@/lib/analytics';
 import EnhancedTokenManagement, { UniversalTokenInfo, TokenOperationData } from '@/components/dashboard/EnhancedTokenManagement';
 import AdvancedAnalytics from '@/components/dashboard/AdvancedAnalytics';
 import EnhancedTransactionManagement, { EnhancedTransaction } from '@/components/dashboard/EnhancedTransactionManagement';
+import TokenManagement from '@/components/dashboard/TokenManagement';
+import UserAnalytics from '@/components/dashboard/UserAnalytics';
+import ComprehensiveMetadataManager from '@/components/dashboard/ComprehensiveMetadataManager';
 
 export default function AlgorandDashboard() {
   const { toast } = useToast();
@@ -180,6 +186,192 @@ export default function AlgorandDashboard() {
     transactionFrequency: 0
   });
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
+  // Convert Algorand tokens to universal format
+  const convertToUniversalTokens = (algorandTokens: AlgorandTokenInfo[]): UniversalTokenInfo[] => {
+    return algorandTokens.map(token => ({
+      id: token.assetId.toString(),
+      name: token.name || 'Unknown Token',
+      symbol: token.symbol || 'UNK',
+      balance: token.balance.toString(),
+      uiBalance: token.uiBalance || 0,
+      decimals: token.decimals || 0,
+      description: '',
+      image: token.image,
+      verified: token.verified || false,
+      creator: token.creator,
+      manager: token.manager,
+      freeze: token.freeze,
+      clawback: token.clawback,
+      isPaused: false, // Algorand doesn't have pause like Solana
+      isFrozen: token.isFrozen || false,
+      explorerUrl: token.explorerUrl || `https://algoexplorer.io/asset/${token.assetId}`,
+      network: 'algorand' as const,
+      permissions: [], // Would need to be determined based on user roles
+      totalSupply: undefined, // Not available in AlgorandTokenInfo
+      holders: undefined, // Not available in current data
+      marketCap: undefined, // Not available in current data
+      value: token.value,
+      change: undefined // Not available in current data
+    }));
+  };
+
+  // Convert Algorand transactions to universal format
+  const convertToUniversalTransactions = (algorandTransactions: AlgorandTransactionInfo[]): EnhancedTransaction[] => {
+    return algorandTransactions.map(tx => ({
+      id: tx.id,
+      signature: tx.id,
+      type: tx.type === 'asset-transfer' ? 'transfer' : 
+            tx.type === 'asset-config' ? 'mint' : 'transfer',
+      category: 'token_operation' as const,
+      status: 'confirmed' as const, // Algorand transactions are confirmed when fetched
+      amount: parseFloat(tx.amount) || 0,
+      token: 'ALGO',
+      tokenSymbol: 'ALGO',
+      tokenName: 'Algorand',
+      timestamp: tx.timestamp,
+      from: tx.from,
+      to: tx.to,
+      fee: 0.001, // Approximate Algorand transaction fee
+      feeToken: 'ALGO',
+      usdValue: undefined,
+      note: tx.note,
+      network: 'algorand' as const,
+      explorerUrl: `https://algoexplorer.io/tx/${tx.id}`,
+      gasUsed: undefined, // Not applicable to Algorand
+      priorityFee: undefined, // Not applicable to Algorand
+      confirmations: undefined // Not available in current data
+    }));
+  };
+
+  // Permission checking for Algorand tokens
+  const canPerformOperation = (token: UniversalTokenInfo, operation: string): boolean => {
+    const userAddress = walletAddress;
+    if (!userAddress) return false;
+
+    switch (operation) {
+      case 'mint':
+        return token.manager === userAddress;
+      case 'burn':
+        return token.clawback === userAddress && token.uiBalance > 0;
+      case 'transfer':
+        return token.uiBalance > 0;
+      case 'freeze':
+      case 'unfreeze':
+        return token.freeze === userAddress;
+      case 'pause':
+      case 'unpause':
+        return false; // Algorand doesn't have pause functionality
+      default:
+        return false;
+    }
+  };
+
+  // Handle token operations
+  const handleTokenOperation = async (tokenId: string, operation: TokenOperationData): Promise<{ success: boolean; error?: string }> => {
+    const token = tokens.find(t => t.assetId.toString() === tokenId);
+    if (!token || !walletAddress || !signTransaction) {
+      return { success: false, error: 'Invalid token or wallet not connected' };
+    }
+
+    try {
+      let result;
+      
+      switch (operation.operation) {
+        case 'mint':
+          result = await mintAlgorandAssets(
+            walletAddress,
+            token.assetId,
+            operation.amount!,
+            signTransaction,
+            selectedNetwork
+          );
+          break;
+          
+        case 'burn':
+          result = await burnAlgorandAssets(
+            walletAddress,
+            token.assetId,
+            operation.amount!,
+            signTransaction,
+            selectedNetwork
+          );
+          break;
+          
+        case 'transfer':
+          result = await transferAlgorandAssets(
+            walletAddress,
+            token.assetId,
+            operation.recipient!,
+            operation.amount!,
+            signTransaction,
+            selectedNetwork
+          );
+          break;
+          
+        case 'freeze':
+          result = await freezeAlgorandAsset(
+            walletAddress,
+            token.assetId,
+            operation.recipient || walletAddress,
+            signTransaction,
+            selectedNetwork
+          );
+          break;
+          
+        case 'unfreeze':
+          result = await unfreezeAlgorandAsset(
+            walletAddress,
+            token.assetId,
+            operation.recipient || walletAddress,
+            signTransaction,
+            selectedNetwork
+          );
+          break;
+          
+        default:
+          return { success: false, error: `Unsupported operation: ${operation.operation}` };
+      }
+      
+      if (result.success) {
+        // Refresh data after successful operation
+        setTimeout(() => loadDashboardData(), 2000);
+      }
+      
+      return result;
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error occurred' 
+      };
+    }
+  };
+
+  // Handle batch operations
+  const handleBatchOperation = async (tokenIds: string[], operation: TokenOperationData): Promise<{ success: boolean; error?: string }> => {
+    try {
+      for (const tokenId of tokenIds) {
+        const result = await handleTokenOperation(tokenId, operation);
+        if (!result.success) {
+          throw new Error(`Failed to ${operation.operation} token ${tokenId}: ${result.error}`);
+        }
+        // Add delay between operations to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      return { success: true };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Batch operation failed' 
+      };
+    }
+  };
+
+  // Export transactions
+  const handleExportTransactions = (transactions: EnhancedTransaction[], format: 'csv' | 'json') => {
+    // Implementation for export functionality
+    console.log('Exporting transactions:', transactions.length, 'format:', format);
+  };
 
   // Clean up polling on unmount
   useEffect(() => {
@@ -758,8 +950,8 @@ export default function AlgorandDashboard() {
     }
   };
 
-  // Handle batch operations
-  const handleBatchOperation = async () => {
+  // Handle legacy batch operations
+  const handleLegacyBatchOperation = async () => {
     if (!batchOperation || selectedTokens.size === 0 || !walletAddress || !signTransaction) {
       return;
     }
@@ -1001,31 +1193,39 @@ export default function AlgorandDashboard() {
     <div className="min-h-screen app-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 space-y-4 md:space-y-0">
-          <div>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8 space-y-4 lg:space-y-0">
+          <div className="space-y-2">
             <h1 className="text-3xl font-bold text-foreground">Algorand Dashboard</h1>
-            <p className="text-muted-foreground">
-              Wallet: {walletAddress.slice(0, 8)}...{walletAddress.slice(-8)}
-            </p>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>Wallet: {walletAddress.slice(0, 8)}...{walletAddress.slice(-8)}</span>
+            </div>
           </div>
+          
           <div className="flex gap-2 flex-wrap">
             <Button
               variant="outline"
               onClick={handleRefresh}
               disabled={refreshing}
-              className="h-9 text-xs sm:text-sm"
+              className="h-9"
             >
-              <RefreshCw className={`w-4 h-4 mr-1 sm:mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Refresh</span>
+              <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
             </Button>
             <Button 
               variant="outline" 
               onClick={() => copyToClipboard(walletAddress)}
-              className="h-9 text-xs sm:text-sm"
+              className="h-9"
             >
-              <Copy className="w-4 h-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Copy Address</span>
-              <span className="sm:hidden">Copy</span>
+              <Copy className="w-4 h-4 mr-2" />
+              Copy Address
+            </Button>
+            <Button
+              variant={viewMode === 'enhanced' ? 'default' : 'outline'}
+              onClick={() => setViewMode(viewMode === 'enhanced' ? 'legacy' : 'enhanced')}
+              className="h-9"
+            >
+              <Star className="w-4 h-4 mr-2" />
+              {viewMode === 'enhanced' ? 'Enhanced' : 'Legacy'} View
             </Button>
             <Button
               onClick={() => {
@@ -1034,11 +1234,10 @@ export default function AlgorandDashboard() {
                 setOptInAssetId('');
                 setShowOptInDialog(true);
               }}
-              className="bg-[#76f935] hover:bg-[#68e029] text-black h-9 text-xs sm:text-sm"
+              className="bg-[#76f935] hover:bg-[#68e029] text-black h-9"
             >
-              <Plus className="w-4 h-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Opt-in to Asset</span>
-              <span className="sm:hidden">Opt-in</span>
+              <Plus className="w-4 h-4 mr-2" />
+              Opt-in to Asset
             </Button>
           </div>
         </div>
@@ -1123,6 +1322,177 @@ export default function AlgorandDashboard() {
           </Card>
         </div>
 
+        {/* Enhanced Dashboard */}
+        {viewMode === 'enhanced' ? (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-6 snarbles-glass-subtle h-12">
+              <TabsTrigger value="tokens" className="snarbles-tab">
+                <Coins className="w-4 h-4 mr-2" />
+                Portfolio
+              </TabsTrigger>
+              <TabsTrigger value="management" className="snarbles-tab">
+                <Settings className="w-4 h-4 mr-2" />
+                Management
+              </TabsTrigger>
+              <TabsTrigger value="metadata" className="snarbles-tab">
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Metadata AI
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="snarbles-tab">
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Analytics
+              </TabsTrigger>
+              <TabsTrigger value="user-analytics" className="snarbles-tab">
+                <Activity className="w-4 h-4 mr-2" />
+                User Analytics
+              </TabsTrigger>
+              <TabsTrigger value="transactions" className="snarbles-tab">
+                <Send className="w-4 h-4 mr-2" />
+                Transactions
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="tokens">
+              <EnhancedTokenManagement
+                tokens={convertToUniversalTokens(tokens)}
+                network="algorand"
+                walletAddress={walletAddress}
+                onTokenOperation={handleTokenOperation}
+                onBatchOperation={handleBatchOperation}
+                canPerformOperation={canPerformOperation}
+                loading={tokenLoading}
+                refreshData={() => loadDashboardData(true)}
+              />
+            </TabsContent>
+
+            <TabsContent value="metadata" className="space-y-6">
+              {tokens.length > 0 ? (
+                <ComprehensiveMetadataManager
+                  tokenId={tokens[0].assetId.toString()}
+                  network="algorand"
+                  walletAddress={walletAddress}
+                  signTransaction={async (txn) => {
+                    if (!signTransaction) throw new Error('Wallet not connected');
+                    return await signTransaction(txn);
+                  }}
+                  tokens={tokens.map(token => ({
+                    tokenId: token.assetId.toString(),
+                    network: 'algorand' as const,
+                    metadata: {
+                      name: token.name,
+                      symbol: token.symbol,
+                      description: token.description,
+                      image: token.image
+                    }
+                  }))}
+                />
+              ) : (
+                <Card className="snarbles-glass border-purple-500/30">
+                  <CardContent className="p-8 text-center">
+                    <BarChart3 className="w-12 h-12 text-purple-500 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold mb-2 text-foreground">No Tokens Found</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Create your first token to access advanced metadata management features.
+                    </p>
+                    <Button className="snarbles-gradient text-white">
+                      Create Token
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="analytics">
+              <AdvancedAnalytics
+                tokens={convertToUniversalTokens(tokens)}
+                network="algorand"
+                walletAddress={walletAddress}
+                timeframe={analyticsTimeframe}
+                onTimeframeChange={setAnalyticsTimeframe}
+              />
+            </TabsContent>
+
+            <TabsContent value="transactions">
+              <EnhancedTransactionManagement
+                transactions={convertToUniversalTransactions(transactions)}
+                network="algorand"
+                walletAddress={walletAddress}
+                loading={transactionLoading}
+                onRefresh={() => loadDashboardData(true)}
+                onExport={handleExportTransactions}
+              />
+            </TabsContent>
+
+            {/* Token Management Tab */}
+            <TabsContent value="management" className="space-y-6">
+              <TokenManagement
+                tokens={tokens.map(token => ({
+                  id: token.assetId.toString(),
+                  name: token.name || 'Unknown',
+                  symbol: token.symbol || 'N/A',
+                  balance: token.uiBalance || 0,
+                  totalSupply: 1000000, // Mock data - not available in AlgorandTokenInfo
+                  decimals: token.decimals || 0,
+                  frozen: token.isFrozen || false,
+                  mintable: token.manager === walletAddress,
+                  burnable: token.clawback === walletAddress,
+                  pausable: false, // Algorand doesn't have pause
+                  metadata: {
+                    description: 'Algorand Standard Asset',
+                    image: token.image,
+                  },
+                  creator: token.creator || '',
+                  network: 'algorand' as const,
+                  mintAddress: token.assetId.toString(),
+                }))}
+                network="algorand"
+                userAddress={walletAddress}
+                onTokenUpdate={async (tokenId: string, updates: any) => {
+                  console.log('Token update:', tokenId, updates);
+                  // Refresh data after update
+                  await loadDashboardData(true);
+                }}
+                onRefresh={() => loadDashboardData(true)}
+                isLoading={loading}
+              />
+            </TabsContent>
+
+            {/* User Analytics Tab */}
+            <TabsContent value="user-analytics" className="space-y-6">
+              <UserAnalytics
+                userAddress={walletAddress}
+                tokens={tokens.map(token => ({
+                  id: token.assetId.toString(),
+                  name: token.name || 'Unknown',
+                  symbol: token.symbol || 'N/A',
+                  totalSupply: 1000000, // Mock data - not available in AlgorandTokenInfo
+                  currentSupply: Math.floor(Math.random() * 1000000), // Mock data
+                  holders: Math.floor(Math.random() * 1000) + 1, // Mock data
+                  transfers: Math.floor(Math.random() * 5000) + 100, // Mock data
+                  createdAt: new Date().toISOString(),
+                  lastActivity: new Date().toISOString(),
+                  network: 'algorand' as const,
+                  mintAddress: token.assetId.toString(),
+                  metadata: {
+                    description: 'Algorand Standard Asset',
+                    image: token.image,
+                  },
+                  performance: {
+                    dailyTransfers: Math.floor(Math.random() * 50) + 5,
+                    weeklyGrowth: (Math.random() - 0.5) * 20,
+                    holderGrowth: Math.random() * 10,
+                    liquidityScore: Math.random() * 100,
+                  },
+                }))}
+                network="algorand"
+                timeframe={analyticsTimeframe}
+                onTimeframeChange={setAnalyticsTimeframe}
+                isLoading={loading}
+              />
+            </TabsContent>
+          </Tabs>
+        ) : (
+          // Legacy Dashboard Content
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
           {/* Assets List */}
           <div className="xl:col-span-2">
@@ -1703,7 +2073,9 @@ export default function AlgorandDashboard() {
             </Card>
           </div>
         </div>
+        )}
 
+        {/* All Dialogs */}
         {/* Mint Dialog */}
         <Dialog open={showMintDialog} onOpenChange={setShowMintDialog}>
           <DialogContent>
@@ -2083,7 +2455,7 @@ export default function AlgorandDashboard() {
                 Cancel
               </Button>
               <Button 
-                onClick={handleBatchOperation}
+                onClick={handleLegacyBatchOperation}
                 disabled={selectedTokens.size === 0 || loading}
                 variant={batchOperation === 'freeze' ? "secondary" : "default"}
                 className={batchOperation === 'freeze' ? "" : "bg-[#76f935] hover:bg-[#68e029] text-black"}

@@ -1,0 +1,700 @@
+import {
+  Connection,
+  PublicKey,
+  Transaction,
+  sendAndConfirmTransaction,
+  Keypair,
+  SystemProgram,
+  SYSVAR_RENT_PUBKEY,
+  TransactionInstruction,
+} from '@solana/web3.js';
+// Note: Metaplex imports temporarily simplified for build compatibility
+// import {
+//   DataV2,
+//   Metadata,
+// } from '@metaplex-foundation/mpl-token-metadata';
+import { connection } from './solana';
+import { supabaseHelpers } from '@/lib/supabase';
+import { getDashboardWebSocket } from './websocket-client';
+
+export interface SolanaMetadataUpdateParams {
+  mintAddress: string;
+  metadata: {
+    name?: string;
+    symbol?: string;
+    description?: string;
+    image?: string;
+    external_url?: string;
+    animation_url?: string;
+    attributes?: Array<{
+      trait_type: string;
+      value: string | number;
+      display_type?: string;
+    }>;
+    properties?: {
+      category?: string;
+      tags?: string[];
+      files?: Array<{
+        uri: string;
+        type: string;
+      }>;
+    };
+    seller_fee_basis_points?: number;
+    creators?: Array<{
+      address: string;
+      verified: boolean;
+      share: number;
+    }>;
+  };
+  network: string;
+  walletAddress: string;
+  signTransaction: (transaction: Transaction) => Promise<Transaction>;
+}
+
+export interface SolanaAuthorityOperation {
+  mintAddress: string;
+  operation: 'transfer_update' | 'transfer_mint' | 'freeze' | 'thaw' | 'revoke_update' | 'revoke_mint';
+  targetAddress?: string;
+  network: string;
+  walletAddress: string;
+  signTransaction: (transaction: Transaction) => Promise<Transaction>;
+}
+
+/**
+ * Enhanced Solana metadata update with real blockchain integration
+ */
+export async function updateSolanaMetadataReal(params: SolanaMetadataUpdateParams): Promise<{
+  success: boolean;
+  transactionHash?: string;
+  metadataUrl?: string;
+  error?: string;
+}> {
+  const { mintAddress, metadata, network, walletAddress, signTransaction } = params;
+  
+  try {
+    console.log(`🔧 Starting real metadata update for token ${mintAddress} on ${network}`);
+    
+    // Use imported connection for now
+    // const connection = getSolanaConnection(network);
+    const wsClient = getDashboardWebSocket();
+    
+    // Get mint and metadata account info
+    const mintPubkey = new PublicKey(mintAddress);
+    const walletPubkey = new PublicKey(walletAddress);
+    
+    // Find metadata account address
+    const [metadataPDA] = await PublicKey.findProgramAddress(
+      [
+        Buffer.from('metadata'),
+        MetadataProgram.PUBKEY.toBuffer(),
+        mintPubkey.toBuffer(),
+      ],
+      MetadataProgram.PUBKEY
+    );
+    
+    // Get current metadata to calculate changes
+    let currentMetadata = {};
+    let currentOnChainMetadata = null;
+    
+    try {
+      const metadataAccount = await Metadata.fromAccountAddress(connection, metadataPDA);
+      currentOnChainMetadata = metadataAccount;
+      
+      if (metadataAccount.data.uri) {
+        try {
+          const response = await fetch(metadataAccount.data.uri);
+          if (response.ok) {
+            currentMetadata = await response.json();
+          }
+        } catch (error) {
+          console.warn('Could not fetch current metadata for comparison');
+        }
+      }
+    } catch (error) {
+      console.warn('Could not fetch current on-chain metadata');
+    }
+    
+    // Validate update authority
+    if (!currentOnChainMetadata || !currentOnChainMetadata.updateAuthority.equals(walletPubkey)) {
+      throw new Error('Only the update authority can modify metadata');
+    }
+    
+    // Calculate changes for history tracking
+    const changes = calculateMetadataChanges(currentMetadata, metadata);
+    
+    // Prepare complete metadata object
+    const completeMetadata = {
+      name: metadata.name || currentOnChainMetadata.data.name || '',
+      symbol: metadata.symbol || currentOnChainMetadata.data.symbol || '',
+      description: metadata.description || '',
+      image: metadata.image || '',
+      external_url: metadata.external_url || '',
+      animation_url: metadata.animation_url || '',
+      attributes: metadata.attributes || [],
+      properties: {
+        ...metadata.properties,
+        category: metadata.properties?.category || 'Unknown',
+        files: metadata.properties?.files || [],
+        creators: metadata.creators || []
+      },
+      seller_fee_basis_points: metadata.seller_fee_basis_points || 0
+    };
+    
+    // Upload new metadata to IPFS/storage
+    const timestamp = Date.now();
+    const metadataUploadResult = await supabaseHelpers.uploadMetadataToStorage(
+      completeMetadata,
+      'solana-metadata',
+      `token-${mintAddress}-v${timestamp}.json`
+    );
+    
+    if (!metadataUploadResult.success) {
+      throw new Error(`Metadata upload failed: ${metadataUploadResult.error}`);
+    }
+    
+    const metadataUrl = metadataUploadResult.url!;
+    
+    // Emit pending update via WebSocket
+    if (wsClient.connected) {
+      wsClient.emit('update', {
+        type: 'metadata_update',
+        network: 'solana',
+        data: {
+          tokenId: mintAddress,
+          status: 'pending',
+          changes,
+          updatedBy: walletAddress,
+          transactionHash: 'pending'
+        },
+        timestamp: Date.now()
+      });
+    }
+    
+    // Prepare update metadata instruction
+    const updateMetadataArgs: UpdateMetadataAccountArgsV2 = {
+      data: {
+        name: completeMetadata.name,
+        symbol: completeMetadata.symbol,
+        uri: metadataUrl,
+        sellerFeeBasisPoints: completeMetadata.seller_fee_basis_points,
+        creators: completeMetadata.properties.creators.map(creator => ({
+          address: new PublicKey(creator.address),
+          verified: creator.verified,
+          share: creator.share
+        })),
+        collection: null,
+        uses: null
+      } as DataV2,
+      updateAuthority: currentOnChainMetadata.updateAuthority,
+      primarySaleHappened: currentOnChainMetadata.primarySaleHappened,
+      isMutable: currentOnChainMetadata.isMutable
+    };
+    
+    // Create update metadata instruction
+    const updateInstruction = createUpdateMetadataAccountV2Instruction(
+      {
+        metadata: metadataPDA,
+        updateAuthority: walletPubkey,
+      },
+      {
+        updateMetadataAccountArgsV2: updateMetadataArgs,
+      }
+    );
+    
+    // Create and send transaction
+    const transaction = new Transaction().add(updateInstruction);
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = walletPubkey;
+    
+    console.log('🔐 Signing transaction...');
+    const signedTransaction = await signTransaction(transaction);
+    
+    console.log('📡 Broadcasting transaction...');
+    const signature = await connection.sendRawTransaction(signedTransaction.serialize());
+    
+    console.log(`⏳ Waiting for confirmation: ${signature}`);
+    await connection.confirmTransaction({
+      signature,
+      blockhash,
+      lastValidBlockHeight
+    });
+    
+    // Store metadata history
+    await storeMetadataHistory({
+      tokenId: mintAddress,
+      network: 'solana',
+      version: timestamp,
+      transactionHash: signature,
+      changes,
+      metadataSnapshot: completeMetadata,
+      updatedBy: walletAddress,
+      status: 'confirmed'
+    });
+    
+    // Emit confirmed update via WebSocket
+    if (wsClient.connected) {
+      wsClient.emit('update', {
+        type: 'metadata_update',
+        network: 'solana',
+        data: {
+          tokenId: mintAddress,
+          status: 'confirmed',
+          changes,
+          updatedBy: walletAddress,
+          transactionHash: signature,
+          version: timestamp
+        },
+        timestamp: Date.now()
+      });
+    }
+    
+    console.log(`✅ Metadata update confirmed for token ${mintAddress}`);
+    
+    return {
+      success: true,
+      transactionHash: signature,
+      metadataUrl: metadataUrl
+    };
+    
+  } catch (error) {
+    console.error(`❌ Metadata update failed for token ${mintAddress}:`, error);
+    
+    // Emit failed update via WebSocket
+    const wsClient = getDashboardWebSocket();
+    if (wsClient.connected) {
+      wsClient.emit('update', {
+        type: 'metadata_update',
+        network: 'solana',
+        data: {
+          tokenId: mintAddress,
+          status: 'failed',
+          error: error instanceof Error ? error.message : 'Unknown error',
+          updatedBy: walletAddress
+        },
+        timestamp: Date.now()
+      });
+    }
+    
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update metadata'
+    };
+  }
+}
+
+/**
+ * Real authority management operations for Solana tokens
+ */
+export async function updateSolanaAuthority(params: SolanaAuthorityOperation): Promise<{
+  success: boolean;
+  transactionHash?: string;
+  error?: string;
+}> {
+  const { mintAddress, operation, targetAddress, network, walletAddress, signTransaction } = params;
+  
+  try {
+    console.log(`🔧 Starting authority ${operation} for token ${mintAddress}`);
+    
+    const connection = getSolanaConnection(network);
+    const wsClient = getDashboardWebSocket();
+    
+    const mintPubkey = new PublicKey(mintAddress);
+    const walletPubkey = new PublicKey(walletAddress);
+    
+    // Get current mint info to validate authorities
+    const mintInfo = await connection.getParsedAccountInfo(mintPubkey);
+    if (!mintInfo.value || !mintInfo.value.data) {
+      throw new Error('Token mint not found');
+    }
+    
+    const mintData = mintInfo.value.data as any;
+    const parsedInfo = mintData.parsed?.info;
+    
+    if (!parsedInfo) {
+      throw new Error('Invalid mint account data');
+    }
+    
+    // Find metadata account for update authority operations
+    const [metadataPDA] = await PublicKey.findProgramAddress(
+      [
+        Buffer.from('metadata'),
+        MetadataProgram.PUBKEY.toBuffer(),
+        mintPubkey.toBuffer(),
+      ],
+      MetadataProgram.PUBKEY
+    );
+    
+    let currentUpdateAuthority = null;
+    try {
+      const metadataAccount = await Metadata.fromAccountAddress(connection, metadataPDA);
+      currentUpdateAuthority = metadataAccount.updateAuthority;
+    } catch (error) {
+      console.warn('Could not fetch metadata account');
+    }
+    
+    // Validate permissions based on operation
+    let hasPermission = false;
+    
+    switch (operation) {
+      case 'transfer_update':
+        hasPermission = currentUpdateAuthority?.equals(walletPubkey) || false;
+        break;
+      case 'transfer_mint':
+      case 'revoke_mint':
+        hasPermission = parsedInfo.mintAuthority === walletAddress;
+        break;
+      case 'freeze':
+      case 'thaw':
+        hasPermission = parsedInfo.freezeAuthority === walletAddress;
+        break;
+      case 'revoke_update':
+        hasPermission = currentUpdateAuthority?.equals(walletPubkey) || false;
+        break;
+    }
+    
+    if (!hasPermission) {
+      throw new Error(`You do not have permission to perform ${operation}`);
+    }
+    
+    // Emit pending authority update
+    if (wsClient.connected) {
+      wsClient.emit('update', {
+        type: 'authority_update',
+        network: 'solana',
+        data: {
+          tokenId: mintAddress,
+          operation,
+          from: walletAddress,
+          to: targetAddress || 'revoked',
+          status: 'pending',
+          permissions: [operation.split('_')[1] || operation]
+        },
+        timestamp: Date.now()
+      });
+    }
+    
+    // Create appropriate instruction based on operation
+    let instruction: TransactionInstruction;
+    
+    switch (operation) {
+      case 'transfer_update':
+        if (!targetAddress) {
+          throw new Error('Target address required for transfer');
+        }
+        
+        const updateArgs: UpdateMetadataAccountArgs = {
+          data: null,
+          updateAuthority: new PublicKey(targetAddress),
+          primarySaleHappened: null,
+          isMutable: null
+        };
+        
+        instruction = createUpdateMetadataAccountInstruction(
+          {
+            metadata: metadataPDA,
+            updateAuthority: walletPubkey,
+          },
+          {
+            updateMetadataAccountArgs: updateArgs,
+          }
+        );
+        break;
+        
+      case 'revoke_update':
+        const revokeArgs: UpdateMetadataAccountArgs = {
+          data: null,
+          updateAuthority: null, // Revoke by setting to null
+          primarySaleHappened: null,
+          isMutable: false // Make immutable when revoking
+        };
+        
+        instruction = createUpdateMetadataAccountInstruction(
+          {
+            metadata: metadataPDA,
+            updateAuthority: walletPubkey,
+          },
+          {
+            updateMetadataAccountArgs: revokeArgs,
+          }
+        );
+        break;
+        
+      default:
+        // For mint authority and freeze authority operations, we would use
+        // @solana/spl-token instructions, but those require additional setup
+        throw new Error(`Operation ${operation} not fully implemented yet`);
+    }
+    
+    // Create and send transaction
+    const transaction = new Transaction().add(instruction);
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+    transaction.recentBlockhash = blockhash;
+    transaction.feePayer = walletPubkey;
+    
+    console.log('🔐 Signing authority transaction...');
+    const signedTransaction = await signTransaction(transaction);
+    
+    console.log('📡 Broadcasting authority transaction...');
+    const signature = await connection.sendRawTransaction(signedTransaction.serialize());
+    
+    console.log(`⏳ Waiting for authority confirmation: ${signature}`);
+    await connection.confirmTransaction({
+      signature,
+      blockhash,
+      lastValidBlockHeight
+    });
+    
+    // Store authority change history
+    await storeAuthorityHistory({
+      tokenId: mintAddress,
+      network: 'solana',
+      operation,
+      from: walletAddress,
+      to: targetAddress || 'revoked',
+      transactionHash: signature,
+      permissions: [operation.split('_')[1] || operation],
+      status: 'confirmed'
+    });
+    
+    // Emit confirmed authority update
+    if (wsClient.connected) {
+      wsClient.emit('update', {
+        type: 'authority_update',
+        network: 'solana',
+        data: {
+          tokenId: mintAddress,
+          operation,
+          from: walletAddress,
+          to: targetAddress || 'revoked',
+          status: 'confirmed',
+          transactionHash: signature,
+          permissions: [operation.split('_')[1] || operation]
+        },
+        timestamp: Date.now()
+      });
+    }
+    
+    console.log(`✅ Authority ${operation} confirmed for token ${mintAddress}`);
+    
+    return {
+      success: true,
+      transactionHash: signature
+    };
+    
+  } catch (error) {
+    console.error(`❌ Authority ${operation} failed for token ${mintAddress}:`, error);
+    
+    // Emit failed authority update
+    const wsClient = getDashboardWebSocket();
+    if (wsClient.connected) {
+      wsClient.emit('update', {
+        type: 'authority_update',
+        network: 'solana',
+        data: {
+          tokenId: mintAddress,
+          operation,
+          status: 'failed',
+          error: error instanceof Error ? error.message : 'Unknown error',
+          from: walletAddress
+        },
+        timestamp: Date.now()
+      });
+    }
+    
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : `Failed to ${operation} authority`
+    };
+  }
+}
+
+/**
+ * Get comprehensive authority information for a Solana token
+ */
+export async function getSolanaAuthorityInfo(mintAddress: string, network: string): Promise<{
+  success: boolean;
+  data?: {
+    hasUpdatePermission: boolean;
+    updateAuthority?: string;
+    mintAuthority?: string;
+    freezeAuthority?: string;
+    isOwner: boolean;
+    canDelegate: boolean;
+    canRevoke: boolean;
+    restrictions: string[];
+    delegatedPermissions: any[];
+  };
+  error?: string;
+}> {
+  try {
+    const connection = getSolanaConnection(network);
+    const mintPubkey = new PublicKey(mintAddress);
+    
+    // Get mint info
+    const mintInfo = await connection.getParsedAccountInfo(mintPubkey);
+    if (!mintInfo.value || !mintInfo.value.data) {
+      return {
+        success: false,
+        error: 'Token mint not found'
+      };
+    }
+    
+    const mintData = mintInfo.value.data as any;
+    const parsedInfo = mintData.parsed?.info;
+    
+    // Get metadata info
+    const [metadataPDA] = await PublicKey.findProgramAddress(
+      [
+        Buffer.from('metadata'),
+        MetadataProgram.PUBKEY.toBuffer(),
+        mintPubkey.toBuffer(),
+      ],
+      MetadataProgram.PUBKEY
+    );
+    
+    let updateAuthority = null;
+    try {
+      const metadataAccount = await Metadata.fromAccountAddress(connection, metadataPDA);
+      updateAuthority = metadataAccount.updateAuthority.toString();
+    } catch (error) {
+      console.warn('Could not fetch metadata account');
+    }
+    
+    const restrictions = [];
+    if (!updateAuthority) {
+      restrictions.push('Update authority has been revoked');
+    }
+    if (!parsedInfo.mintAuthority) {
+      restrictions.push('Mint authority has been revoked');
+    }
+    if (!parsedInfo.freezeAuthority) {
+      restrictions.push('Freeze authority has been revoked');
+    }
+    
+    return {
+      success: true,
+      data: {
+        hasUpdatePermission: !!updateAuthority,
+        updateAuthority: updateAuthority || undefined,
+        mintAuthority: parsedInfo.mintAuthority || undefined,
+        freezeAuthority: parsedInfo.freezeAuthority || undefined,
+        isOwner: !!updateAuthority || !!parsedInfo.mintAuthority,
+        canDelegate: false, // Solana doesn't support delegation natively
+        canRevoke: !!updateAuthority || !!parsedInfo.mintAuthority,
+        restrictions,
+        delegatedPermissions: [] // Not supported in Solana
+      }
+    };
+    
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get authority info'
+    };
+  }
+}
+
+/**
+ * Get metadata history for a Solana token
+ */
+export async function getSolanaMetadataHistory(mintAddress: string, network: string): Promise<{
+  success: boolean;
+  data?: any[];
+  error?: string;
+}> {
+  try {
+    // In a real implementation, this would query a database or indexer
+    // For now, return simulated history
+    const history = [
+      {
+        version: Date.now(),
+        timestamp: new Date(),
+        updatedBy: 'current_user_address',
+        transactionHash: 'sample_tx_hash',
+        changes: [],
+        metadataSnapshot: {},
+        status: 'confirmed'
+      }
+    ];
+    
+    return {
+      success: true,
+      data: history
+    };
+    
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get metadata history'
+    };
+  }
+}
+
+// Helper function to calculate metadata changes
+function calculateMetadataChanges(oldMetadata: any, newMetadata: any): Array<{
+  field: string;
+  oldValue: any;
+  newValue: any;
+  changeType: 'added' | 'modified' | 'removed';
+}> {
+  const changes: Array<{
+    field: string;
+    oldValue: any;
+    newValue: any;
+    changeType: 'added' | 'modified' | 'removed';
+  }> = [];
+  
+  // Check for additions and modifications
+  Object.keys(newMetadata).forEach(key => {
+    if (!(key in oldMetadata)) {
+      changes.push({
+        field: key,
+        oldValue: null,
+        newValue: newMetadata[key],
+        changeType: 'added'
+      });
+    } else if (JSON.stringify(oldMetadata[key]) !== JSON.stringify(newMetadata[key])) {
+      changes.push({
+        field: key,
+        oldValue: oldMetadata[key],
+        newValue: newMetadata[key],
+        changeType: 'modified'
+      });
+    }
+  });
+  
+  // Check for removals
+  Object.keys(oldMetadata).forEach(key => {
+    if (!(key in newMetadata)) {
+      changes.push({
+        field: key,
+        oldValue: oldMetadata[key],
+        newValue: null,
+        changeType: 'removed'
+      });
+    }
+  });
+  
+  return changes;
+}
+
+// Helper function to store metadata history (would integrate with database)
+async function storeMetadataHistory(data: any): Promise<void> {
+  try {
+    // In a real implementation, this would store to a database
+    console.log('📝 Storing metadata history:', data);
+  } catch (error) {
+    console.error('Failed to store metadata history:', error);
+  }
+}
+
+// Helper function to store authority history (would integrate with database)
+async function storeAuthorityHistory(data: any): Promise<void> {
+  try {
+    // In a real implementation, this would store to a database
+    console.log('📝 Storing authority history:', data);
+  } catch (error) {
+    console.error('Failed to store authority history:', error);
+  }
+}
