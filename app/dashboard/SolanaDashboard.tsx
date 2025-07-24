@@ -270,6 +270,26 @@ export default function SolanaDashboard() {
     }));
   };
 
+  // Convert to format expected by ComprehensiveMetadataManager
+  const convertToMetadataTokens = (solanaTokens: TokenData[]): Array<{
+    tokenId: string;
+    network: 'algorand' | 'solana';
+    metadata: any;
+  }> => {
+    return solanaTokens.map(token => ({
+      tokenId: token.mint,
+      network: 'solana' as const,
+      metadata: {
+        name: token.name || 'Unknown Token',
+        symbol: token.symbol || 'UNK',
+        description: '',
+        image: token.image,
+        decimals: token.decimals || 9,
+        verified: token.verified || false
+      }
+    }));
+  };
+
   // Convert Solana transactions to universal format
   const convertToUniversalTransactions = (solanaTransactions: Transaction[]): EnhancedTransaction[] => {
     return solanaTransactions.map(tx => ({
@@ -906,11 +926,49 @@ export default function SolanaDashboard() {
           </div>
         </div>
 
-        {/* Network Status */}
-        <div className="flex items-center justify-center mb-6">
-          <div className="flex items-center px-4 py-2 rounded-full bg-gradient-to-r from-[#14f195]/10 to-[#9945ff]/10 border border-[#14f195]/30">
-            <div className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></div>
-            <span className="font-medium text-sm">Solana Devnet</span>
+        {/* Enhanced Network Status & Quick Actions - More prominent */}
+        <div className="flex items-center justify-center mb-8">
+          <div className="flex flex-col lg:flex-row items-center gap-4 px-8 py-4 rounded-2xl bg-gradient-to-r from-[#14f195]/10 to-[#9945ff]/10 border border-[#14f195]/30 snarbles-glow-green">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+                <span className="font-semibold text-sm">Solana Devnet</span>
+              </div>
+              
+              <div className="h-4 w-px bg-gray-500/30"></div>
+              
+              <div className="flex items-center gap-2 text-sm text-gray-300">
+                <span>Fast & Free</span>
+                <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30">
+                  Test Network
+                </Badge>
+              </div>
+            </div>
+            
+            <div className="h-4 w-px bg-gray-500/30 hidden lg:block"></div>
+            
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.location.href = '/create?network=solana-devnet'}
+                className="snarbles-btn-primary h-9 text-sm px-4"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Token
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="h-9"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -975,25 +1033,25 @@ export default function SolanaDashboard() {
                 <Coins className="w-4 h-4 mr-2" />
                 Portfolio
               </TabsTrigger>
+              <TabsTrigger value="transactions" className="snarbles-tab">
+                <Send className="w-4 h-4 mr-2" />
+                Transactions
+              </TabsTrigger>
               <TabsTrigger value="management" className="snarbles-tab">
                 <Settings className="w-4 h-4 mr-2" />
                 Management
-              </TabsTrigger>
-              <TabsTrigger value="metadata" className="snarbles-tab">
-                <BarChart3 className="w-4 h-4 mr-2" />
-                Metadata AI
               </TabsTrigger>
               <TabsTrigger value="analytics" className="snarbles-tab">
                 <BarChart3 className="w-4 h-4 mr-2" />
                 Analytics
               </TabsTrigger>
+              <TabsTrigger value="metadata" className="snarbles-tab">
+                <Star className="w-4 h-4 mr-2" />
+                Metadata AI
+              </TabsTrigger>
               <TabsTrigger value="user-analytics" className="snarbles-tab">
                 <Activity className="w-4 h-4 mr-2" />
                 User Analytics
-              </TabsTrigger>
-              <TabsTrigger value="transactions" className="snarbles-tab">
-                <Send className="w-4 h-4 mr-2" />
-                Transactions
               </TabsTrigger>
             </TabsList>
 
@@ -1010,45 +1068,6 @@ export default function SolanaDashboard() {
               />
             </TabsContent>
 
-            <TabsContent value="metadata" className="space-y-6">
-              {tokens.length > 0 ? (
-                <ComprehensiveMetadataManager
-                  tokenId={tokens[0].mint}
-                  network="solana"
-                  walletAddress={publicKey.toString()}
-                  signTransaction={async (txn) => {
-                    // Implementation would depend on wallet adapter
-                    console.log('Transaction to sign:', txn);
-                    return { signature: 'mock_signature' };
-                  }}
-                  tokens={convertToUniversalTokens(tokens)}
-                />
-              ) : (
-                <Card className="snarbles-glass border-purple-500/30">
-                  <CardContent className="p-8 text-center">
-                    <BarChart3 className="w-12 h-12 text-purple-500 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold mb-2 text-foreground">No Tokens Found</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Create your first token to access advanced metadata management features.
-                    </p>
-                    <Button className="snarbles-gradient text-white">
-                      Create Token
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-
-            <TabsContent value="analytics">
-              <AdvancedAnalytics
-                tokens={convertToUniversalTokens(tokens)}
-                network="solana"
-                walletAddress={publicKey.toString()}
-                timeframe={analyticsTimeframe}
-                onTimeframeChange={setAnalyticsTimeframe}
-              />
-            </TabsContent>
-
             <TabsContent value="transactions">
               <EnhancedTransactionManagement
                 transactions={convertToUniversalTransactions(transactions)}
@@ -1060,7 +1079,6 @@ export default function SolanaDashboard() {
               />
             </TabsContent>
 
-            {/* Token Management Tab */}
             <TabsContent value="management" className="space-y-6">
               <TokenManagement
                 tokens={tokens.map(token => ({
@@ -1092,6 +1110,49 @@ export default function SolanaDashboard() {
                 onRefresh={() => loadDashboardData(true)}
                 isLoading={loading}
               />
+            </TabsContent>
+
+            <TabsContent value="analytics">
+              <AdvancedAnalytics
+                tokens={convertToUniversalTokens(tokens)}
+                network="solana"
+                walletAddress={publicKey.toString()}
+                timeframe={analyticsTimeframe}
+                onTimeframeChange={setAnalyticsTimeframe}
+              />
+            </TabsContent>
+
+            <TabsContent value="metadata" className="space-y-6">
+              {tokens.length > 0 ? (
+                <ComprehensiveMetadataManager
+                  tokenId={tokens[0].mint}
+                  network="solana"
+                  walletAddress={publicKey.toString()}
+                  signTransaction={async (txn) => {
+                    // Implementation would depend on wallet adapter
+                    console.log('Transaction to sign:', txn);
+                    return { signature: 'mock_signature' };
+                  }}
+                  tokens={convertToMetadataTokens(tokens)}
+                />
+              ) : (
+                <Card className="snarbles-glass border-purple-500/30">
+                  <CardContent className="p-8 text-center">
+                    <Star className="w-12 h-12 text-purple-500 mx-auto mb-4" />
+                    <h3 className="text-xl font-semibold mb-2 text-foreground">No Tokens Found</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Create your first token to access advanced metadata management features.
+                    </p>
+                    <Button 
+                      onClick={() => window.location.href = '/create?network=solana-devnet'}
+                      className="snarbles-gradient text-white"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Token
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             {/* User Analytics Tab */}
@@ -1265,21 +1326,80 @@ export default function SolanaDashboard() {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-12">
-                      <div className="w-20 h-20 bg-gradient-to-br from-[#14f195]/10 to-[#9945ff]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Coins className="w-10 h-10 text-[#14f195]" />
+                    <div className="space-y-6">
+                      {/* Enhanced Solana Onboarding Banner */}
+                      <Card className="snarbles-card-premium snarbles-glow-purple border-purple-500/30">
+                        <CardContent className="p-8">
+                          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-8">
+                            <div className="flex-shrink-0">
+                              <div className="w-20 h-20 bg-gradient-to-br from-[#14f195] to-[#9945ff] rounded-3xl flex items-center justify-center">
+                                <Sparkles className="w-10 h-10 text-white" />
+                              </div>
+                            </div>
+                            
+                            <div className="flex-1">
+                              <h3 className="text-3xl font-bold text-foreground mb-3">
+                                Welcome to Solana! 🚀
+                              </h3>
+                              <p className="text-muted-foreground text-lg mb-6">
+                                Create your first SPL token in under 30 seconds. Fast, free, and secure on Solana devnet.
+                              </p>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                                <div className="flex items-center gap-3 p-4 rounded-xl snarbles-glass-subtle border border-green-500/30">
+                                  <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0" />
+                                  <div>
+                                    <div className="font-semibold text-green-400">Free Testing</div>
+                                    <div className="text-sm text-gray-400">Zero cost on devnet</div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3 p-4 rounded-xl snarbles-glass-subtle border border-yellow-500/30">
+                                  <Zap className="w-6 h-6 text-yellow-400 flex-shrink-0" />
+                                  <div>
+                                    <div className="font-semibold text-yellow-400">Lightning Fast</div>
+                                    <div className="text-sm text-gray-400">Sub-second finality</div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3 p-4 rounded-xl snarbles-glass-subtle border border-blue-500/30">
+                                  <Shield className="w-6 h-6 text-blue-400 flex-shrink-0" />
+                                  <div>
+                                    <div className="font-semibold text-blue-400">Secure</div>
+                                    <div className="text-sm text-gray-400">Enterprise-grade</div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="flex flex-col sm:flex-row gap-4">
+                                <Button 
+                                  onClick={() => window.location.href = '/create?network=solana-devnet'}
+                                  className="snarbles-gradient text-white px-8 py-4 text-lg h-auto"
+                                >
+                                  <Plus className="w-5 h-5 mr-2" />
+                                  Create Your First Token
+                                </Button>
+                                <Button 
+                                  variant="outline"
+                                  onClick={() => window.open('https://docs.snarbles.xyz/solana', '_blank')}
+                                  className="px-8 py-4 text-lg h-auto border-purple-500/30 text-purple-400 hover:bg-purple-500/10"
+                                >
+                                  Learn More
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      
+                      {/* Original No Tokens Message - Simplified */}
+                      <div className="text-center py-8">
+                        <div className="w-16 h-16 bg-gradient-to-br from-[#14f195]/10 to-[#9945ff]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <Coins className="w-8 h-8 text-[#14f195]" />
+                        </div>
+                        <h3 className="text-lg font-semibold mb-2 text-gray-400">No SPL Tokens Found</h3>
+                        <p className="text-muted-foreground text-sm">
+                          You don't have any SPL tokens in this wallet yet.
+                        </p>
                       </div>
-                      <h3 className="text-xl font-semibold mb-2">No SPL Tokens Found</h3>
-                      <p className="text-muted-foreground mb-6">
-                        You don't have any SPL tokens in this wallet yet.
-                      </p>
-                      <Button 
-                        onClick={() => window.location.href = '/create?network=solana'}
-                        className="bg-gradient-to-r from-[#14f195] to-[#9945ff] hover:from-[#14f195]/80 hover:to-[#9945ff]/80 text-white"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Create Your First Token
-                      </Button>
                     </div>
                   )}
                 </CardContent>

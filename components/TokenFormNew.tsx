@@ -575,43 +575,65 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
         console.log('🔥 CREATING REAL SOLANA TOKEN');
         
         try {
-          // Import Solana token creation library
-          const { createSolanaToken } = await import('@/lib/solana-token-creation');
+          // Import Solana token creation library - using the reliable direct method
+          const { createTokenOnChain } = await import('@/lib/solana');
           
-          // Real Solana token creation
-          result = await createSolanaToken({
+          // Get wallet interface for Solana
+          const walletInterface = {
+            publicKey: (window as any).solana?.publicKey,
+            signTransaction: (window as any).solana?.signTransaction?.bind((window as any).solana),
+            signAllTransactions: (window as any).solana?.signAllTransactions?.bind((window as any).solana)
+          };
+          
+          if (!walletInterface.publicKey || !walletInterface.signTransaction) {
+            throw new Error('Solana wallet not properly connected');
+          }
+          
+          // Real Solana token creation using the reliable method
+          result = await createTokenOnChain(walletInterface, {
             name: tokenData.name,
             symbol: tokenData.symbol,
             description: tokenData.description,
             decimals: parseInt(tokenData.decimals),
-            totalSupply: tokenData.totalSupply,
+            totalSupply: parseFloat(tokenData.totalSupply),
             logoUrl: tokenData.logoUrl || 'https://via.placeholder.com/150',
             website: tokenData.website,
             github: tokenData.github,
             twitter: tokenData.twitter,
             mintable: tokenData.mintable,
             burnable: tokenData.burnable,
-            pausable: tokenData.pausable,
-            network: tokenData.network
-          }, tokenData.network, (status) => {
-            // Enhanced status updates
-            setTransactionStatus(status.status || 'preparing');
-            
-            // Map status to step numbers
-            if (status.status === 'signing') {
-              setTokenCreationStep(2); // Step 2: Confirming transaction
-            } else if (status.status === 'broadcasting') {
-              setTokenCreationStep(3); // Step 3: Processing payment
-            } else if (status.status === 'confirming') {
-              setTokenCreationStep(4); // Step 4: Finalizing
-            }
-            
-            if (status.message) {
-              console.log(`📱 Solana Status: ${status.message}`);
+            pausable: tokenData.pausable
+          }, {
+            onStepUpdate: (step, status, details) => {
+              // Enhanced status updates - map to transaction status format
+              if (status === 'in-progress') {
+                if (step === 'wallet-check') {
+                  setTransactionStatus('preparing');
+                  setTokenCreationStep(1);
+                } else if (step === 'transaction-prep') {
+                  setTransactionStatus('signing');
+                  setTokenCreationStep(2);
+                } else if (step === 'transaction-send') {
+                  setTransactionStatus('broadcasting');
+                  setTokenCreationStep(3);
+                } else if (step === 'confirmation') {
+                  setTransactionStatus('confirming');
+                  setTokenCreationStep(4);
+                }
+              } else if (status === 'completed') {
+                setTransactionStatus('success');
+                setTokenCreationStep(5);
+              } else if (status === 'failed') {
+                setTransactionStatus('error');
+              }
+              
+              if (details?.message) {
+                console.log(`📱 Solana Status: ${details.message}`);
+              }
             }
           });
           
-          console.log('✅ REAL Solana token creation completed:', result.data);
+          console.log('✅ REAL Solana token creation completed:', result);
           
         } catch (tokenError) {
           console.error('Real Solana token creation failed:', tokenError);
@@ -1172,6 +1194,51 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
                        <p className="text-xs text-gray-400 mt-2">
                          ⚡ Credits are deducted only after successful deployment
                        </p>
+                     </div>
+                   </div>
+                 </div>
+               )}
+
+               {/* Solana-Specific Guidance */}
+               {tokenData.network.includes('solana') && (
+                 <div className="snarbles-card-premium p-6 snarbles-glow-purple">
+                   <div className="flex items-start gap-3">
+                     <div className="w-8 h-8 rounded-xl snarbles-gradient-purple flex items-center justify-center flex-shrink-0">
+                       <span className="text-white text-sm font-bold">S</span>
+                     </div>
+                     <div className="flex-1">
+                       <h4 className="snarbles-heading font-semibold text-purple-400 mb-3">Solana Token Creation Guide</h4>
+                       
+                       <div className="space-y-3">
+                         <div className="snarbles-glass-subtle p-4 rounded-lg">
+                           <h5 className="snarbles-heading font-semibold text-green-400 mb-2">✅ Requirements</h5>
+                           <ul className="snarbles-body-small text-gray-300 space-y-1">
+                             <li>• Solana wallet connected (Phantom, Solflare, etc.)</li>
+                             <li>• Minimum 0.01 SOL for transaction fees</li>
+                             <li>• Token metadata (name, symbol, description)</li>
+                           </ul>
+                         </div>
+                         
+                         <div className="snarbles-glass-subtle p-4 rounded-lg">
+                           <h5 className="snarbles-heading font-semibold text-blue-400 mb-2">⚡ What happens next?</h5>
+                           <ul className="snarbles-body-small text-gray-300 space-y-1">
+                             <li>• SPL token created using standard Solana token program</li>
+                             <li>• Metadata uploaded to ensure proper display</li>
+                             <li>• Token appears in your wallet immediately</li>
+                             <li>• View on Solana Explorer for verification</li>
+                           </ul>
+                         </div>
+                         
+                         <div className="snarbles-glass-subtle p-4 rounded-lg">
+                           <h5 className="snarbles-heading font-semibold text-yellow-400 mb-2">💡 Pro Tips</h5>
+                           <ul className="snarbles-body-small text-gray-300 space-y-1">
+                             <li>• Test on devnet first - it's completely free</li>
+                             <li>• Use meaningful names and symbols</li>
+                             <li>• Keep decimals at 9 for compatibility</li>
+                             <li>• Enable mintable for future token issuance</li>
+                           </ul>
+                         </div>
+                       </div>
                      </div>
                    </div>
                  </div>

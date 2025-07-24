@@ -164,22 +164,22 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
     });
   };
 
-  const getStatusBadge = (status: string) => {
+    const getStatusBadge = (status: 'pending' | 'confirmed' | 'failed') => {
     switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="text-yellow-600"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;
+        return <Badge variant="outline" className="border-primary/30 text-muted-foreground"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;
       case 'confirmed':
-        return <Badge variant="default" className="text-green-600 bg-green-100"><CheckCircle className="w-3 h-3 mr-1" />Confirmed</Badge>;
+        return <Badge variant="default" className="bg-primary/10 text-primary border-primary/20"><CheckCircle className="w-3 h-3 mr-1" />Confirmed</Badge>;
       case 'failed':
         return <Badge variant="destructive"><AlertCircle className="w-3 h-3 mr-1" />Failed</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="secondary">Unknown</Badge>;
     }
   };
 
   if (isLoading) {
     return (
-      <Card className="border-2 border-muted">
+      <Card className="snarbles-glass border-primary/20">
         <CardContent className="p-6 text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading payment options...</p>
@@ -191,9 +191,9 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
   return (
     <div className="space-y-6">
       <Tabs defaultValue="topup" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="topup">Top Up Credits</TabsTrigger>
-          <TabsTrigger value="history">Payment History</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 snarbles-glass-subtle">
+          <TabsTrigger value="topup" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Top Up Credits</TabsTrigger>
+          <TabsTrigger value="history" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Payment History</TabsTrigger>
         </TabsList>
 
         <TabsContent value="topup" className="space-y-6">
@@ -220,7 +220,7 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
                     `}
                   >
                     {network.popular && (
-                      <Badge className="absolute -top-2 -right-2 bg-green-500 text-white text-xs">
+                      <Badge className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs">
                         Popular
                       </Badge>
                     )}
@@ -241,7 +241,7 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
           <Card className="border-2 border-muted">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-green-500" />
+                <DollarSign className="w-5 h-5 text-primary" />
                 Payment Amount
               </CardTitle>
             </CardHeader>
@@ -304,16 +304,16 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
               </div>
 
               {/* Exchange Rate Info */}
-              <div className="flex items-center justify-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-center p-3 snarbles-glass-subtle rounded-lg">
                 <div className="text-center">
-                  <div className="text-sm font-medium text-blue-800">Exchange Rate</div>
-                  <div className="text-lg font-bold text-blue-600">1 USDT = 1 Credit</div>
+                  <div className="text-sm font-medium text-foreground">Exchange Rate</div>
+                  <div className="text-lg font-bold text-primary">1 USDT = 1 Credit</div>
                 </div>
               </div>
 
               {/* Payment Summary */}
               {selectedNetwork && parseFloat(usdtAmount) > 0 && (
-                <Card className="bg-gray-50 border-gray-200">
+                <Card className="snarbles-glass-subtle border-primary/10">
                   <CardContent className="p-4">
                     <div className="space-y-2">
                       <div className="flex justify-between">
@@ -341,7 +341,7 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
               <Button
                 onClick={handleInitiatePayment}
                 disabled={!selectedNetwork || !usdtAmount || parseFloat(usdtAmount) <= 0 || isProcessing}
-                className="w-full h-12 text-lg"
+                className="w-full h-12 text-lg snarbles-gradient-red text-white font-semibold hover:scale-[1.02] transition-all duration-200"
                 size="lg"
               >
                 {isProcessing ? (
@@ -361,17 +361,17 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
           </Card>
 
           {/* Features */}
-          <Card className="border-2 border-green-200 bg-green-50">
+          <Card className="snarbles-glass border-primary/20">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-700">
-                <Shield className="w-5 h-5" />
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <Shield className="w-5 h-5 text-primary" />
                 Why Pay with USDT?
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                  <CheckCircle className="w-5 h-5 text-primary mt-0.5" />
                   <div>
                     <div className="font-medium">Multiple Networks</div>
                     <div className="text-sm text-muted-foreground">
@@ -380,7 +380,7 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                  <CheckCircle className="w-5 h-5 text-primary mt-0.5" />
                   <div>
                     <div className="font-medium">Stable Value</div>
                     <div className="text-sm text-muted-foreground">
@@ -389,7 +389,7 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+                  <CheckCircle className="w-5 h-5 text-primary mt-0.5" />
                   <div>
                     <div className="font-medium">Fast Processing</div>
                     <div className="text-sm text-muted-foreground">
@@ -477,7 +477,7 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
           {paymentDetails && (
             <div className="space-y-4">
               {/* Payment Summary */}
-              <Card className="bg-blue-50 border-blue-200">
+              <Card className="snarbles-glass border-primary/20">
                 <CardContent className="p-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>

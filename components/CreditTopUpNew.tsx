@@ -163,12 +163,12 @@ export default function CreditTopUp() {
 
       {/* Payment Method Tabs */}
       <Tabs defaultValue="usdt" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="usdt" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-2 snarbles-glass-subtle">
+          <TabsTrigger value="usdt" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <DollarSign className="w-4 h-4" />
             Pay with USDT
           </TabsTrigger>
-          <TabsTrigger value="algo" className="flex items-center gap-2">
+          <TabsTrigger value="algo" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Coins className="w-4 h-4" />
             Pay with ALGO
           </TabsTrigger>
@@ -176,15 +176,15 @@ export default function CreditTopUp() {
 
         {/* USDT Payment Tab */}
         <TabsContent value="usdt" className="space-y-4">
-          <Card className="border-2 border-green-200 bg-green-50">
+          <Card className="snarbles-glass border-primary/20">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-green-700">
-                <DollarSign className="w-5 h-5" />
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <DollarSign className="w-5 h-5 text-primary" />
                 Top Up with USDT
               </CardTitle>
-              <p className="text-sm text-green-600">
+              <p className="text-sm text-primary">
                 Pay with USDT from multiple networks - all funds go to: <br />
-                <code className="text-xs bg-green-100 px-2 py-1 rounded">0x9ca8362c35db2649614cd4029ab0067d285660ef</code>
+                <code className="text-xs bg-primary/10 border border-primary/20 px-2 py-1 rounded">0x9ca8362c35db2649614cd4029ab0067d285660ef</code>
               </p>
             </CardHeader>
             <CardContent>
@@ -198,13 +198,13 @@ export default function CreditTopUp() {
 
         {/* ALGO Payment Tab */}
         <TabsContent value="algo" className="space-y-4">
-          <Card className="border-2 border-blue-200 bg-blue-50">
+          <Card className="snarbles-glass border-primary/20">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-blue-700">
-                <Coins className="w-5 h-5" />
+              <CardTitle className="flex items-center gap-2 text-foreground">
+                <Coins className="w-5 h-5 text-primary" />
                 Purchase with ALGO
               </CardTitle>
-              <p className="text-sm text-blue-600">
+              <p className="text-sm text-muted-foreground">
                 Direct payment with Algorand (ALGO) - requires Algorand wallet connection
               </p>
             </CardHeader>
@@ -231,7 +231,7 @@ export default function CreditTopUp() {
                         </div>
                         
                         {option.bonus > 0 && (
-                          <div className="text-xs text-green-400">
+                          <div className="text-xs text-primary">
                             +{option.bonus} bonus credits
                           </div>
                         )}
@@ -243,7 +243,7 @@ export default function CreditTopUp() {
                         <Button 
                           onClick={() => handlePurchaseCredits(option.algo)}
                           disabled={isPurchasing || walletType !== 'algorand'}
-                          className="w-full"
+                          className={`w-full ${option.popular ? 'snarbles-gradient-red text-white font-semibold hover:scale-[1.02] transition-all duration-200' : ''}`}
                           variant={option.popular ? "default" : "outline"}
                         >
                           {isPurchasing ? 'Processing...' : 'Purchase'}
@@ -255,10 +255,10 @@ export default function CreditTopUp() {
               </div>
               
               {walletType !== 'algorand' && (
-                <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                <div className="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
                   <div className="flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-yellow-500" />
-                    <span className="text-sm text-yellow-600">
+                    <AlertCircle className="w-4 h-4 text-primary" />
+                    <span className="text-sm text-muted-foreground">
                       Algorand wallet required to purchase credits with ALGO
                     </span>
                   </div>
@@ -274,17 +274,17 @@ export default function CreditTopUp() {
       </Tabs>
 
       {/* Features */}
-      <Card className="border-2 border-muted">
+      <Card className="snarbles-glass border-primary/20">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-green-500" />
+            <Shield className="w-5 h-5 text-primary" />
             Why Use Credits?
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             <div className="flex items-start gap-3">
-              <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+              <CheckCircle className="w-5 h-5 text-primary mt-0.5" />
               <div>
                 <div className="font-medium">Instant Deployment</div>
                 <div className="text-sm text-muted-foreground">
@@ -293,7 +293,7 @@ export default function CreditTopUp() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+              <CheckCircle className="w-5 h-5 text-primary mt-0.5" />
               <div>
                 <div className="font-medium">Cost Effective</div>
                 <div className="text-sm text-muted-foreground">
@@ -302,7 +302,7 @@ export default function CreditTopUp() {
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <CheckCircle className="w-5 h-5 text-green-500 mt-0.5" />
+              <CheckCircle className="w-5 h-5 text-primary mt-0.5" />
               <div>
                 <div className="font-medium">Bulk Purchases</div>
                 <div className="text-sm text-muted-foreground">

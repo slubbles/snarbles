@@ -93,7 +93,7 @@ export default function DashboardPage() {
                   <WalletConnectionManager className="w-full" />
                   <Link 
                     href="/dashboard/solana"
-                    className="w-full bg-purple-500 hover:bg-purple-600 text-white px-4 py-3 rounded-lg text-center transition-colors font-medium"
+                    className="w-full snarbles-btn-primary text-white px-4 py-3 rounded-lg text-center transition-colors font-medium"
                   >
                     Access Solana Dashboard
                     <ArrowRight className="w-4 h-4 ml-2 inline" />
@@ -132,7 +132,7 @@ export default function DashboardPage() {
                   <WalletConnectionManager className="w-full" />
                   <Link 
                     href="/dashboard/algorand"
-                    className="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-lg text-center transition-colors font-medium"
+                    className="w-full snarbles-btn-primary text-white px-4 py-3 rounded-lg text-center transition-colors font-medium"
                   >
                     Access Algorand Dashboard
                     <ArrowRight className="w-4 h-4 ml-2 inline" />
@@ -212,7 +212,7 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-center">
-                    <Button className="w-full bg-purple-500 hover:bg-purple-600 text-white">
+                    <Button className="w-full snarbles-btn-primary text-white">
                       Open Solana Dashboard
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
@@ -237,7 +237,7 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-center">
-                    <Button className="w-full bg-green-500 hover:bg-green-600 text-white">
+                    <Button className="w-full snarbles-btn-primary text-white">
                       Open Algorand Dashboard
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>

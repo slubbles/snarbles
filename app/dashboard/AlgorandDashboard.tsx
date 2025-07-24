@@ -1330,24 +1330,25 @@ export default function AlgorandDashboard() {
                 <Coins className="w-4 h-4 mr-2" />
                 Portfolio
               </TabsTrigger>
+              <TabsTrigger value="transactions" className="snarbles-tab">
+                <Send className="w-4 h-4 mr-2" />
+                Transactions
+              </TabsTrigger>
               <TabsTrigger value="management" className="snarbles-tab">
                 <Settings className="w-4 h-4 mr-2" />
                 Management
-              </TabsTrigger>
-              <TabsTrigger value="metadata" className="snarbles-tab">
-                <BarChart3 className="w-4 h-4 mr-2" />
-                Metadata AI
               </TabsTrigger>
               <TabsTrigger value="analytics" className="snarbles-tab">
                 <BarChart3 className="w-4 h-4 mr-2" />
                 Analytics
               </TabsTrigger>
+              <TabsTrigger value="metadata" className="snarbles-tab">
+                <Star className="w-4 h-4 mr-2" />
+                Metadata AI
+              </TabsTrigger>
               <TabsTrigger value="user-analytics" className="snarbles-tab">
                 <Activity className="w-4 h-4 mr-2" />
                 User Analytics
-              </TabsTrigger>
-              <TabsTrigger value="transactions" className="snarbles-tab">
-                <Send className="w-4 h-4 mr-2" />
                 Transactions
               </TabsTrigger>
             </TabsList>
