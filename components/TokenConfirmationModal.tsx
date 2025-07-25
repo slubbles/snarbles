@@ -1,0 +1,259 @@
+'use client';
+
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { 
+  Coins, 
+  Globe, 
+  Twitter, 
+  Github, 
+  RefreshCw, 
+  Flame, 
+  Pause, 
+  CheckCircle, 
+  AlertTriangle 
+} from 'lucide-react';
+
+interface TokenData {
+  name: string;
+  symbol: string;
+  description: string;
+  totalSupply: string;
+  decimals: string;
+  logoUrl: string;
+  website: string;
+  twitter: string;
+  github: string;
+  mintable: boolean;
+  burnable: boolean;
+  pausable: boolean;
+  network: string;
+}
+
+interface TokenConfirmationModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  tokenData: TokenData;
+  isLoading?: boolean;
+}
+
+export default function TokenConfirmationModal({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  tokenData, 
+  isLoading = false 
+}: TokenConfirmationModalProps) {
+  
+  // Format total supply
+  const formatSupply = (supply: string) => {
+    const num = parseFloat(supply) || 0;
+    
+    if (num >= 1e15) {
+      const formatted = num / 1e15;
+      return (formatted % 1 === 0 ? formatted.toFixed(0) : formatted.toFixed(1)) + 'Q';
+    } else if (num >= 1e12) {
+      const formatted = num / 1e12;
+      return (formatted % 1 === 0 ? formatted.toFixed(0) : formatted.toFixed(1)) + 'T';
+    } else if (num >= 1e9) {
+      const formatted = num / 1e9;
+      return (formatted % 1 === 0 ? formatted.toFixed(0) : formatted.toFixed(1)) + 'B';
+    } else if (num >= 1e6) {
+      const formatted = num / 1e6;
+      return (formatted % 1 === 0 ? formatted.toFixed(0) : formatted.toFixed(1)) + 'M';
+    } else if (num >= 1e3) {
+      const formatted = num / 1e3;
+      return (formatted % 1 === 0 ? formatted.toFixed(0) : formatted.toFixed(1)) + 'K';
+    } else {
+      return num.toLocaleString();
+    }
+  };
+
+  // Get network info
+  const getNetworkInfo = (network: string) => {
+    switch (network) {
+      case 'algorand-mainnet':
+        return { name: 'Algorand Mainnet', cost: '5 credits + 0.1 ALGO', icon: '🔺' };
+      case 'algorand-testnet':
+        return { name: 'Algorand Testnet', cost: 'Free', icon: '🔸' };
+      case 'solana-devnet':
+        return { name: 'Solana Devnet', cost: 'Free', icon: '🟣' };
+      default:
+        return { name: 'Unknown Network', cost: 'Unknown', icon: '❓' };
+    }
+  };
+
+  const networkInfo = getNetworkInfo(tokenData.network);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md bg-card border-border text-foreground">
+        <DialogHeader>
+          <DialogTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-primary" />
+            Confirm Token Creation
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4">
+          {/* Token Header */}
+          <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center flex-shrink-0">
+              {tokenData.logoUrl ? (
+                <img 
+                  src={tokenData.logoUrl} 
+                  alt="Token logo" 
+                  className="w-full h-full rounded-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              ) : (
+                <Coins className="w-6 h-6 text-white" />
+              )}
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <h4 className="text-base font-bold text-foreground truncate">
+                {tokenData.name}
+              </h4>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-sm font-semibold text-muted-foreground">
+                  {tokenData.symbol}
+                </span>
+                <Badge variant="outline" className="text-xs border-border">
+                  {networkInfo.icon} {networkInfo.name}
+                </Badge>
+              </div>
+            </div>
+          </div>
+
+          <Separator className="bg-border" />
+
+          {/* Token Details */}
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <span className="text-muted-foreground">Supply:</span>
+                <p className="font-semibold text-foreground">{formatSupply(tokenData.totalSupply)}</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Decimals:</span>
+                <p className="font-semibold text-foreground">{tokenData.decimals}</p>
+              </div>
+            </div>
+
+            {tokenData.description && (
+              <div>
+                <span className="text-muted-foreground text-sm">Description:</span>
+                <p className="text-sm text-foreground mt-1 leading-relaxed">{tokenData.description}</p>
+              </div>
+            )}
+
+            {/* Features */}
+            {(tokenData.mintable || tokenData.burnable || tokenData.pausable) && (
+              <div>
+                <span className="text-muted-foreground text-sm">Features:</span>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {tokenData.mintable && (
+                    <Badge variant="outline" className="text-green-500 border-green-500/50 text-xs">
+                      <RefreshCw className="w-3 h-3 mr-1" />
+                      Mintable
+                    </Badge>
+                  )}
+                  {tokenData.burnable && (
+                    <Badge variant="outline" className="text-orange-500 border-orange-500/50 text-xs">
+                      <Flame className="w-3 h-3 mr-1" />
+                      Burnable
+                    </Badge>
+                  )}
+                  {tokenData.pausable && (
+                    <Badge variant="outline" className="text-blue-500 border-blue-500/50 text-xs">
+                      <Pause className="w-3 h-3 mr-1" />
+                      Pausable
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Social Links */}
+            {(tokenData.website || tokenData.twitter || tokenData.github) && (
+              <div>
+                <span className="text-muted-foreground text-sm">Links:</span>
+                <div className="flex gap-2 mt-1">
+                  {tokenData.website && (
+                    <div className="p-2 bg-muted/50 rounded text-xs flex items-center gap-1">
+                      <Globe className="w-3 h-3" />
+                      Website
+                    </div>
+                  )}
+                  {tokenData.twitter && (
+                    <div className="p-2 bg-muted/50 rounded text-xs flex items-center gap-1">
+                      <Twitter className="w-3 h-3" />
+                      Twitter
+                    </div>
+                  )}
+                  {tokenData.github && (
+                    <div className="p-2 bg-muted/50 rounded text-xs flex items-center gap-1">
+                      <Github className="w-3 h-3" />
+                      GitHub
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <Separator className="bg-border" />
+
+          {/* Cost Information */}
+          <div className="p-3 bg-muted/20 rounded-lg">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Total Cost:</span>
+              <span className="text-sm font-semibold text-foreground">{networkInfo.cost}</span>
+            </div>
+          </div>
+
+          {/* Warning */}
+          <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
+            <p className="text-xs text-foreground leading-relaxed">
+              <strong>Important:</strong> Once created, this token cannot be deleted. Please review all details carefully before proceeding.
+            </p>
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button 
+            variant="outline" 
+            onClick={onClose}
+            disabled={isLoading}
+            className="flex-1"
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={onConfirm}
+            disabled={isLoading}
+            className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+          >
+            {isLoading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Create Token
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

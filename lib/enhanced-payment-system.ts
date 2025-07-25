@@ -1,5 +1,5 @@
 import { supabase, isSupabaseAvailable } from './supabase-client';
-import { getCreditsBalance, spendCreditsForTokenCreation } from './credit-system';
+import { getCreditsBalance, spendCreditsForTokenCreation, addCreditTransaction } from './credit-system';
 import { getAlgorandClient } from './algorand';
 import { getAdminConfig } from './admin-config';
 import algosdk from 'algosdk';
@@ -9,10 +9,27 @@ export type PaymentMethod = 'credits' | 'algo_direct';
 // Re-export functions from credit-system for convenience
 export { getCreditsBalance } from './credit-system';
 
+// ALGO payment configuration
+const ALGO_PAYMENT_CONFIG = {
+  MAINNET: {
+    receiverAddress: 'PJEIDDKUOONTJOIV3BLZS7SZSAHCVKNNHTLKMASI6RTYSOZNSDY7MWGZ3M', // Your wallet address
+    algodServer: 'https://mainnet-api.algonode.cloud',
+    explorerUrl: 'https://algoexplorer.io'
+  },
+  TESTNET: {
+    receiverAddress: 'PJEIDDKUOONTJOIV3BLZS7SZSAHCVKNNHTLKMASI6RTYSOZNSDY7MWGZ3M', // Your wallet address
+    algodServer: 'https://testnet-api.algonode.cloud',
+    explorerUrl: 'https://testnet.algoexplorer.io'
+  }
+};
+
 export interface PaymentResult {
   success: boolean;
-  transactionHash?: string;
   error?: string;
+  message?: string;
+  transactionHash?: string;
+  creditsReceived?: number;
+  newBalance?: number;
   details?: any;
 }
 
@@ -25,8 +42,58 @@ export const PRICING = {
   CREDITS_REQUIRED: 5,
   ALGO_REQUIRED: 10,
   CREDIT_TO_ALGO_RATE: 0.5, // 1 credit = 0.5 ALGO
-  ALGO_TO_CREDIT_RATE: 2    // 1 ALGO = 2 credits
+  ALGO_TO_CREDIT_RATE: 2,    // 1 ALGO = 2 credits
+  packages: [
+    {
+      credits: 20,
+      priceALGO: 10,
+      priceUSD: 10,
+      bonus: 0,
+      popular: false
+    },
+    {
+      credits: 45,
+      priceALGO: 20,
+      priceUSD: 20,
+      bonus: 5,
+      popular: true
+    },
+    {
+      credits: 110,
+      priceALGO: 50,
+      priceUSD: 50,
+      bonus: 10,
+      popular: false
+    }
+  ]
 };
+
+/**
+ * Calculate credits from custom ALGO amount with bonus
+ */
+export function calculateCreditsFromAlgo(algoAmount: number): { credits: number; bonus: number; total: number } {
+  // Base rate: 1 ALGO = 2 credits
+  const baseCredits = Math.floor(algoAmount * PRICING.ALGO_TO_CREDIT_RATE);
+  
+  // Bonus calculation based on amount tiers
+  let bonus = 0;
+  if (algoAmount >= 50) {
+    // 50+ ALGO gets 20% bonus
+    bonus = Math.floor(baseCredits * 0.2);
+  } else if (algoAmount >= 20) {
+    // 20+ ALGO gets 10% bonus
+    bonus = Math.floor(baseCredits * 0.1);
+  } else if (algoAmount >= 10) {
+    // 10+ ALGO gets 5% bonus
+    bonus = Math.floor(baseCredits * 0.05);
+  }
+  
+  return {
+    credits: baseCredits,
+    bonus,
+    total: baseCredits + bonus
+  };
+}
 
 /**
  * Get real ALGO balance for a wallet
@@ -95,98 +162,162 @@ export async function getPaymentOptions(walletAddress: string, network: string) 
 }
 
 /**
- * Purchase credits with ALGO
+ * Purchase credits with ALGO (supports both packages and custom amounts)
+ * NOW WITH REAL ALGO TRANSACTIONS
  */
 export async function purchaseCreditsWithAlgo(
   walletAddress: string,
   algoAmount: number,
-  signTransaction: (txn: any) => Promise<Uint8Array>
+  signTransaction: (txn: algosdk.Transaction) => Promise<Uint8Array>,
+  isCustomAmount: boolean = false
 ): Promise<PaymentResult> {
+  if (!isSupabaseAvailable()) {
+    return {
+      success: false,
+      error: 'Database not available for credit tracking'
+    };
+  }
+
   try {
     // Calculate credits to receive
-    const creditsToReceive = Math.floor(algoAmount * PRICING.ALGO_TO_CREDIT_RATE);
+    let creditsToReceive: number;
+    let bonusCredits: number = 0;
     
-    // Get Algorand client
-    const algodClient = getAlgorandClient('algorand-testnet'); // Default to testnet for now
+    if (isCustomAmount) {
+      const calculation = calculateCreditsFromAlgo(algoAmount);
+      creditsToReceive = calculation.total;
+      bonusCredits = calculation.bonus;
+    } else {
+      // Find matching package
+      const pkg = PRICING.packages.find(p => p.priceALGO === algoAmount);
+      if (!pkg) {
+        throw new Error('Invalid package selected');
+      }
+      creditsToReceive = pkg.credits + pkg.bonus;
+      bonusCredits = pkg.bonus;
+    }
+
+    console.log(`Processing REAL ALGO payment: ${algoAmount} ALGO -> ${creditsToReceive} credits (${bonusCredits} bonus)`);
+
+    // Get Algorand client for mainnet (real transactions)
+    const config = ALGO_PAYMENT_CONFIG.MAINNET;
+    const algodClient = new algosdk.Algodv2('', config.algodServer, '');
     
+    // Validate addresses
+    if (!algosdk.isValidAddress(walletAddress)) {
+      throw new Error('Invalid wallet address');
+    }
+    if (!algosdk.isValidAddress(config.receiverAddress)) {
+      throw new Error('Invalid receiver address');
+    }
+
+    // Get account info to check balance
+    const accountInfo = await algodClient.accountInformation(walletAddress).do();
+    const currentBalance = Number(accountInfo.amount) / 1_000_000; // Convert microALGOs to ALGOs
+    
+    if (currentBalance < algoAmount + 0.001) { // Add small buffer for fees
+      throw new Error(`Insufficient ALGO balance. Available: ${currentBalance.toFixed(3)} ALGO, Required: ${algoAmount + 0.001} ALGO`);
+    }
+
     // Get suggested transaction parameters
     const suggestedParams = await algodClient.getTransactionParams().do();
     
-    // Get platform payment address from admin config
-    const adminConfig = getAdminConfig();
-    const platformAddress = adminConfig.feeRecipients.algorand;
+    // Calculate amount in microALGOs
+    const amountMicroAlgos = Math.floor(algoAmount * 1_000_000);
     
     // Create payment transaction
     const paymentTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
       sender: walletAddress,
-      receiver: platformAddress,
-      amount: algoAmount * 1000000, // Convert to microALGOs
-      note: new TextEncoder().encode(`Purchase ${creditsToReceive} credits`),
-      suggestedParams
+      receiver: config.receiverAddress,
+      amount: amountMicroAlgos,
+      suggestedParams,
+      note: new Uint8Array(Buffer.from(`Snarbles Credits Purchase: ${creditsToReceive} credits`))
     });
+
+    console.log('🔐 Requesting wallet signature for REAL ALGO transaction...');
     
-    // Sign transaction
+    // Sign transaction with real wallet
     const signedTxn = await signTransaction(paymentTxn);
     
-    // Broadcast transaction
-    const txnResponse = await algodClient.sendRawTransaction(signedTxn).do();
-    const txHash = txnResponse.txid;
+    console.log('📡 Submitting transaction to Algorand blockchain...');
     
-    // Wait for confirmation
-    await algosdk.waitForConfirmation(algodClient, txHash, 4);
+    // Submit transaction to blockchain
+    const response = await algodClient.sendRawTransaction(signedTxn).do();
+    const txId = response.txid;
     
-    // Add credits to user account
-    if (isSupabaseAvailable()) {
-      const { error } = await supabase
-        .from('credit_transactions')
-        .insert({
-          wallet_address: walletAddress,
-          type: 'purchase',
-          amount: creditsToReceive,
-          description: `Purchased ${creditsToReceive} credits with ${algoAmount} ALGO`,
-          transaction_hash: txHash,
-          status: 'completed',
-          payment_method: 'algo',
-          payment_address: walletAddress
-        });
-      
-      if (error) {
-        throw new Error(`Failed to record credit purchase: ${error.message}`);
-      }
-      
-      // Get current balance and update
-      const balanceResult = await getCreditsBalance(walletAddress);
-      const currentBalance = balanceResult.success ? (balanceResult.balance || 0) : 0;
-      const newBalance = currentBalance + creditsToReceive;
-      
-      // Update user balance
-      const { error: balanceError } = await supabase
-        .from('user_profiles')
-        .upsert({
-          wallet_address: walletAddress,
-          credits_balance: newBalance,
-          updated_at: new Date().toISOString()
-        })
-        .eq('wallet_address', walletAddress);
-      
-      if (balanceError) {
-        throw new Error(`Failed to update balance: ${balanceError.message}`);
-      }
+    if (!txId) {
+      throw new Error('Transaction submission failed - no transaction ID returned');
     }
     
+    console.log('⏳ Waiting for blockchain confirmation...', txId);
+    
+    // Wait for confirmation (this is the real blockchain confirmation)
+    const confirmedTxn = await algosdk.waitForConfirmation(algodClient, txId, 4);
+    
+    console.log('✅ REAL ALGO transaction confirmed in round:', confirmedTxn.confirmedRound);
+    
+    // NOW record the REAL transaction in database
+    const { success: transactionSuccess, error } = await addCreditTransaction(
+      walletAddress,
+      'purchase',
+      creditsToReceive,
+      `Purchased ${creditsToReceive} credits with ${algoAmount} ALGO${bonusCredits > 0 ? ` (${bonusCredits} bonus)` : ''}`,
+      {
+        transactionHash: txId,
+        referenceId: txId,
+        metadata: {
+          algoAmount,
+          baseCredits: creditsToReceive - bonusCredits,
+          bonusCredits,
+          isCustomAmount,
+          blockRound: confirmedTxn.confirmedRound,
+          realTransaction: true
+        }
+      }
+    );
+    
+    if (!transactionSuccess) {
+      // Transaction succeeded on blockchain but failed to record in DB
+      console.error('⚠️ ALGO payment succeeded but database recording failed:', error);
+      return {
+        success: false,
+        error: `Payment successful (TX: ${txId}) but failed to record credits. Please contact support.`,
+        transactionHash: txId
+      };
+    }
+    
+    // Get current balance and update
+    const balanceResult = await getCreditsBalance(walletAddress);
+    const currentCreditsBalance = balanceResult.success ? (balanceResult.balance || 0) : 0;
+    const newBalance = currentCreditsBalance + creditsToReceive;
+    
+    // Update user balance
+    const { error: balanceError } = await supabase
+      .from('user_profiles')
+      .update({ 
+        credits_balance: newBalance,
+        updated_at: new Date().toISOString()
+      })
+      .eq('wallet_address', walletAddress);
+    
+    if (balanceError) {
+      console.error('⚠️ Credits recorded but balance update failed:', balanceError);
+      // Don't fail here - the transaction succeeded and was recorded
+    }
+
     return {
       success: true,
-      transactionHash: txHash,
-      details: {
-        algoSpent: algoAmount,
-        creditsReceived: creditsToReceive,
-        newBalance: creditsToReceive // This would be calculated properly
-      }
+      message: `Successfully purchased ${creditsToReceive} credits${bonusCredits > 0 ? ` (including ${bonusCredits} bonus credits)` : ''} with REAL ALGO payment!`,
+      transactionHash: txId,
+      creditsReceived: creditsToReceive,
+      newBalance
     };
+
   } catch (error) {
+    console.error('❌ Error in REAL ALGO credit purchase:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to purchase credits'
+      error: error instanceof Error ? error.message : 'ALGO payment failed'
     };
   }
 }

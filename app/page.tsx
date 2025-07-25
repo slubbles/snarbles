@@ -4,7 +4,7 @@ import StatsSection from "@/components/sections/StatsSection"
 import FeaturesGrid from "@/components/sections/FeaturesGrid"
 import TestimonialsSection from "@/components/TestimonialsSection"
 import FAQSection from "@/components/FAQSection"
-import HowItWorksSection from "@/components/HowItWorksSection"
+import WalletAwareHowItWorksSection from "@/components/WalletAwareHowItWorksSection"
 import CTASection from "@/components/CTASection"
 import MultiChainSection from "@/components/sections/MultiChainSection"
 
@@ -38,7 +38,7 @@ export default function Home() {
 
       {/* How It Works */}
       <Suspense fallback={<div className="h-96 bg-background animate-pulse" />}>
-        <HowItWorksSection />
+        <WalletAwareHowItWorksSection />
       </Suspense>
 
       {/* Testimonials */}

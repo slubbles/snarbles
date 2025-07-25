@@ -12,22 +12,18 @@ export interface UserProfile {
 }
 
 // Credit transaction types
-export type CreditTransactionType = 'purchase' | 'spend' | 'refund' | 'bonus' | 'adjustment';
+export type CreditTransactionType = 'purchase' | 'spend' | 'refund' | 'bonus' | 'adjustment' | 'initial' | 'usage';
 
 // Credit transaction interface (updated for wallet-based auth)
 export interface CreditTransaction {
   id: string;
-  wallet_address: string;  // Foreign key (was user_id)
+  wallet_address: string;
   type: CreditTransactionType;
   amount: number;
-  description: string;
   timestamp: string;
-  reference_id?: string;
-  payment_method?: string;
-  payment_address?: string;
-  transaction_hash?: string;
-  status: 'pending' | 'completed' | 'failed' | 'refunded';
-  metadata?: any;
+  description?: string;
+  transaction_reference?: string;
+  network: string;
 }
 
 // Token creation history interface (updated for wallet-based auth)
@@ -186,15 +182,11 @@ export async function addCreditTransaction(
   try {
     const transaction: Partial<CreditTransaction> = {
       wallet_address: walletAddress,
-      type,
+      type: type === 'purchase' ? 'initial' : type === 'spend' ? 'usage' : type, // Map to schema values
       amount,
       description,
-      reference_id: options.referenceId,
-      payment_method: options.paymentMethod,
-      payment_address: options.paymentAddress,
-      transaction_hash: options.transactionHash,
-      status: options.status || 'completed',
-      metadata: options.metadata,
+      transaction_reference: options.transactionHash || options.referenceId,
+      network: 'mainnet', // Default to mainnet for real transactions
       timestamp: new Date().toISOString(),
     };
 

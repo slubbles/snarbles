@@ -1,0 +1,329 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { CreditCard, Wallet, AlertCircle, Info, CheckCircle, DollarSign, Zap, ArrowRight } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
+import { useToast } from '@/hooks/use-toast';
+import { usePaymentState, usePaymentSelectors } from '@/hooks/usePaymentState';
+import { getAlgorandClient } from '@/lib/algorand';
+import { getSolanaBalance } from '@/lib/solana-usdt-integration';
+
+export type WalletAwarePaymentMethod = 'credits' | 'native_direct';
+
+interface WalletAwarePaymentSelectorProps {
+  creditsRequired: number;
+  nativeRequired: number; // ALGO or SOL required
+  network: string;
+  className?: string;
+}
+
+export default function WalletAwarePaymentSelector({
+  creditsRequired,
+  nativeRequired,
+  network,
+  className = ''
+}: WalletAwarePaymentSelectorProps) {
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState<WalletAwarePaymentMethod>('credits');
+  
+  const { walletAddress, walletType } = useWalletAuth();
+  const { toast } = useToast();
+  
+  // Use centralized payment state
+  const {
+    userCredits,
+    walletBalance,
+    setSelectedMethod: setGlobalSelectedMethod,
+    setWalletBalance,
+    setUserCredits
+  } = usePaymentState();
+  
+  // Payment validations
+  const hasEnoughCredits = userCredits >= creditsRequired;
+  const hasEnoughNative = walletBalance !== null && walletBalance >= nativeRequired;
+  
+  const {
+    canPay,
+    currentStep,
+    progressPercentage,
+    needsConnection,
+    hasError
+  } = usePaymentSelectors();
+
+  useEffect(() => {
+    if (walletAddress && walletType) {
+      // Load native currency balance for validation
+      if (walletType === 'algorand') {
+        fetchRealAlgoBalance(walletAddress, network);
+      } else if (walletType === 'solana') {
+        fetchRealSolBalance(walletAddress, network);
+      }
+    }
+  }, [walletAddress, walletType, network]);
+
+  // Update global payment state when local selection changes
+  useEffect(() => {
+    setGlobalSelectedMethod(selectedMethod === 'native_direct' ? 'algo_direct' : 'credits');
+  }, [selectedMethod, setGlobalSelectedMethod]);
+
+  const getWalletInfo = () => {
+    if (walletType === 'algorand') {
+      return {
+        name: 'Pera Wallet',
+        nativeCurrency: 'ALGO',
+        stablecoin: 'USDt',
+        stablecoinFull: 'USDt (Algorand)',
+        icon: '🔺',
+        color: 'text-blue-500',
+        networkName: network.includes('mainnet') ? 'Mainnet' : 'Testnet'
+      };
+    } else if (walletType === 'solana') {
+      return {
+        name: 'Phantom Wallet',
+        nativeCurrency: 'SOL',
+        stablecoin: 'USDT',
+        stablecoinFull: 'SPL-USDT',
+        icon: '👻',
+        color: 'text-purple-500',
+        networkName: network.includes('mainnet') ? 'Mainnet' : 'Devnet'
+      };
+    }
+    return null;
+  };
+
+  const walletInfo = getWalletInfo();
+
+  const fetchRealAlgoBalance = async (address: string, networkName: string): Promise<number> => {
+    try {
+      if (!networkName.includes('algorand')) {
+        return 0;
+      }
+      
+      const algodClient = getAlgorandClient(networkName);
+      await algodClient.status().do();
+      
+      const accountInfo = await algodClient.accountInformation(address).do();
+      const algoBalance = Number(accountInfo.amount) / 1000000;
+      
+      setWalletBalance(algoBalance);
+      return algoBalance;
+    } catch (error) {
+      console.error('Error fetching ALGO balance:', error);
+      setWalletBalance(0);
+      return 0;
+    }
+  };
+
+  const fetchRealSolBalance = async (address: string, networkName: string): Promise<number> => {
+    try {
+      if (!networkName.includes('solana')) {
+        return 0;
+      }
+      
+      const isTestnet = networkName.includes('devnet');
+      const solBalance = await getSolanaBalance(address, isTestnet);
+      
+      setWalletBalance(solBalance);
+      return solBalance;
+    } catch (error) {
+      console.error('Error fetching SOL balance:', error);
+      setWalletBalance(0);
+      return 0;
+    }
+  };
+
+  const getPaymentMethodCard = (
+    method: WalletAwarePaymentMethod,
+    title: string,
+    description: string,
+    icon: React.ReactNode,
+    available: boolean,
+    balance?: number,
+    currency?: string,
+    warning?: string
+  ) => (
+    <div className={`relative p-4 border rounded-lg cursor-pointer transition-all ${
+      selectedMethod === method ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
+    }`} onClick={() => available && setSelectedMethod(method)}>
+      <div className="flex items-start gap-3">
+        <RadioGroupItem 
+          value={method} 
+          id={method}
+          disabled={!available}
+          className="mt-0.5"
+        />
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            {icon}
+            <Label htmlFor={method} className="font-semibold cursor-pointer">
+              {title}
+            </Label>
+            {!available && (
+              <Badge variant="destructive" className="text-xs">
+                Insufficient
+              </Badge>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground mb-2">{description}</p>
+          
+          {balance !== undefined && currency && (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Available:</span>
+              <span className={`font-semibold ${available ? 'text-green-600' : 'text-red-600'}`}>
+                {balance.toFixed(currency === 'Credits' ? 0 : 2)} {currency}
+              </span>
+            </div>
+          )}
+          
+          {warning && (
+            <Alert className="mt-2">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-xs">{warning}</AlertDescription>
+            </Alert>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (!walletInfo) {
+    return (
+      <Card className={className}>
+        <CardContent className="p-6">
+          <div className="text-center">
+            <Wallet className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-semibold mb-2">Connect Your Wallet</h3>
+            <p className="text-muted-foreground">
+              Connect your Pera or Phantom wallet to proceed
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className={className}>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <CreditCard className="w-5 h-5" />
+          Choose Payment Method
+        </CardTitle>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span className="text-lg">{walletInfo.icon}</span>
+          <span>{walletInfo.name}</span>
+          <Badge variant="outline" className="text-xs">
+            {walletInfo.networkName}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <RadioGroup value={selectedMethod} onValueChange={(value) => setSelectedMethod(value as WalletAwarePaymentMethod)}>
+          <div className="space-y-4">
+            {/* Credits Payment */}
+            {getPaymentMethodCard(
+              'credits',
+              'Use Credits',
+              `Use your existing credits balance. Requires ${creditsRequired} credits.`,
+              <CreditCard className="w-5 h-5 text-primary" />,
+              hasEnoughCredits,
+              userCredits,
+              'Credits'
+            )}
+
+            {/* Native Currency Direct Payment */}
+            {getPaymentMethodCard(
+              'native_direct',
+              `Pay with ${walletInfo.nativeCurrency}`,
+              `Pay directly with ${walletInfo.nativeCurrency} from your ${walletInfo.name}. Requires ${nativeRequired} ${walletInfo.nativeCurrency}.`,
+              <Wallet className={`w-5 h-5 ${walletInfo.color}`} />,
+              hasEnoughNative,
+              walletBalance || 0,
+              walletInfo.nativeCurrency
+            )}
+          </div>
+        </RadioGroup>
+
+        {/* Payment Summary */}
+        {selectedMethod && (
+          <>
+            <Separator className="my-6" />
+            <div className="space-y-3">
+              <h4 className="font-semibold flex items-center gap-2">
+                <Info className="w-4 h-4" />
+                Payment Summary
+              </h4>
+              <div className="bg-muted/20 p-4 rounded-lg space-y-2">
+                {selectedMethod === 'credits' && (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span>Credits Required:</span>
+                      <span className="font-semibold">{creditsRequired}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Your Balance:</span>
+                      <span className={hasEnoughCredits ? 'text-green-600' : 'text-red-600'}>
+                        {userCredits} credits
+                      </span>
+                    </div>
+                  </>
+                )}
+                
+                {selectedMethod === 'native_direct' && (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span>{walletInfo.nativeCurrency} Required:</span>
+                      <span className="font-semibold">{nativeRequired}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Your Balance:</span>
+                      <span className={hasEnoughNative ? 'text-green-600' : 'text-red-600'}>
+                        {(walletBalance || 0).toFixed(2)} {walletInfo.nativeCurrency}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Need more funds alert */}
+        {selectedMethod && !canPay && (
+          <Alert className="mt-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <div className="space-y-2">
+                <p>Insufficient funds for this payment method.</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => window.open('/credits', '_blank')}
+                  className="flex items-center gap-2"
+                >
+                  <Zap className="w-4 h-4" />
+                  Top Up {selectedMethod === 'credits' ? 'Credits' : walletInfo.nativeCurrency}
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Loading indicator */}
+        {isLoadingBalance && (
+          <div className="mt-4 text-center text-sm text-muted-foreground">
+            Loading wallet balances...
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

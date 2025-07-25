@@ -173,11 +173,11 @@ export default function CreditHistory() {
                   }`}>
                     {formatAmount(transaction.amount, transaction.type)} credits
                   </div>
-                  {getStatusBadge(transaction.status)}
+                  {getStatusBadge('completed')} {/* All transactions are completed in new schema */}
                 </div>
               </div>
               
-              {transaction.transaction_hash && (
+              {transaction.transaction_reference && (
                 <div className="mt-3 flex items-center gap-2">
                   <Button
                     variant="outline"
@@ -185,14 +185,14 @@ export default function CreditHistory() {
                     className="h-6 px-2 text-xs"
                     onClick={() => {
                       // Open blockchain explorer (placeholder)
-                      window.open(`https://algoexplorer.io/tx/${transaction.transaction_hash}`, '_blank');
+                      window.open(`https://algoexplorer.io/tx/${transaction.transaction_reference}`, '_blank');
                     }}
                   >
                     <ExternalLink className="w-3 h-3 mr-1" />
                     View on Explorer
                   </Button>
                   <span className="snarbles-body-small text-gray-500">
-                    {transaction.transaction_hash.slice(0, 8)}...{transaction.transaction_hash.slice(-8)}
+                    {transaction.transaction_reference.slice(0, 8)}...{transaction.transaction_reference.slice(-8)}
                   </span>
                 </div>
               )}

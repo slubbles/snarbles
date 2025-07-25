@@ -44,6 +44,27 @@ export interface SolanaUSDTTransferResult {
 }
 
 /**
+ * Check SOL balance for a Solana address
+ */
+export async function getSolanaBalance(
+  userAddress: string,
+  isTestnet: boolean = true
+): Promise<number> {
+  try {
+    const config = isTestnet ? SOLANA_USDT_CONFIG.DEVNET : SOLANA_USDT_CONFIG.MAINNET;
+    const connection = new Connection(config.rpcUrl);
+    const userPublicKey = new PublicKey(userAddress);
+    
+    const balance = await connection.getBalance(userPublicKey);
+    // Convert lamports to SOL (1 SOL = 1,000,000,000 lamports)
+    return balance / 1_000_000_000;
+  } catch (error) {
+    console.error('Error getting SOL balance:', error);
+    return 0;
+  }
+}
+
+/**
  * Check USDT balance for a Solana address
  */
 export async function getSolanaUSDTBalance(

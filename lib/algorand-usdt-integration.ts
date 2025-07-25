@@ -401,6 +401,107 @@ export async function getAlgorandTransactionStatus(
 }
 
 /**
+ * Execute USDT payment with automatic opt-in (if needed)
+ * Groups opt-in and payment transactions for seamless UX
+ */
+export async function executeUSDTPaymentWithAutoOptIn(
+  walletInterface: AlgorandWalletInterface,
+  usdtAmount: number,
+  isTestnet: boolean = true
+): Promise<{
+  success: boolean;
+  transactionHash?: string;
+  optInRequired?: boolean;
+  error?: string;
+}> {
+  try {
+    const { algodClient, config } = getAlgorandClients(isTestnet);
+    
+    // Check if user is already opted in
+    const optInCheck = await isOptedInToUSDT(walletInterface.address, isTestnet);
+    if (!optInCheck.success) {
+      return {
+        success: false,
+        error: 'Failed to check opt-in status'
+      };
+    }
+    
+    // Get suggested parameters
+    const suggestedParams = await algodClient.getTransactionParams().do();
+    
+    if (!optInCheck.optedIn) {
+      // User needs to opt-in - create grouped transaction
+      console.log('Creating grouped opt-in + payment transaction');
+      
+      // Create opt-in transaction
+      const optInTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+        sender: walletInterface.address,
+        receiver: walletInterface.address, // Send to self for opt-in
+        amount: 0,
+        assetIndex: config.usdtAssetId,
+        suggestedParams
+      });
+      
+      // Create payment transaction
+      const usdtAmountMicroUnits = Math.round(usdtAmount * 1_000_000); // Convert to micro-units
+      const paymentTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+        sender: walletInterface.address,
+        receiver: config.receiverAddress,
+        amount: usdtAmountMicroUnits,
+        assetIndex: config.usdtAssetId,
+        suggestedParams
+      });
+      
+      // Group transactions
+      const txnGroup = [optInTxn, paymentTxn];
+      algosdk.assignGroupID(txnGroup);
+      
+      // Sign grouped transactions
+      let signedTxns: Uint8Array[];
+      
+      if (walletInterface.signTransactions) {
+        // Wallet supports batch signing
+        signedTxns = await walletInterface.signTransactions(txnGroup);
+      } else {
+        // Fall back to individual signing
+        const signedOptIn = await walletInterface.signTransaction(optInTxn);
+        const signedPayment = await walletInterface.signTransaction(paymentTxn);
+        signedTxns = [signedOptIn, signedPayment];
+      }
+      
+      // Submit grouped transaction
+      const response = await algodClient.sendRawTransaction(signedTxns).do();
+      const txId = response.txid;
+      
+      if (!txId) {
+        throw new Error('Transaction ID not found in response');
+      }
+      
+      // Wait for confirmation
+      await algosdk.waitForConfirmation(algodClient, txId, 4);
+      
+      return {
+        success: true,
+        transactionHash: txId,
+        optInRequired: true
+      };
+      
+    } else {
+      // User is already opted in - use regular payment flow
+      console.log('User already opted in, executing regular payment');
+      return await executeAlgorandUSDTTransfer(walletInterface, usdtAmount, isTestnet);
+    }
+    
+  } catch (error) {
+    console.error('Error in auto opt-in payment:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Payment failed'
+    };
+  }
+}
+
+/**
  * Get transaction details from explorer
  */
 export function getAlgorandExplorerUrl(txId: string, isTestnet: boolean = true): string {

@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Sparkles, Shield, CheckCircle, AlertTriangle, CreditCard } from 'lucide-react';
 import Link from 'next/link';
-import TokenFormNew from '@/components/TokenFormNew';
-import TokenPreviewLive from '@/components/TokenPreviewLive';
+import TokenFormClean from '@/components/TokenFormClean';
+import TokenPreviewClean from '@/components/TokenPreviewClean';
 import MultiWalletConnectionManager from '@/components/MultiWalletConnectionManager';
 import { getCreditsBalance } from '@/lib/credit-system';
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
@@ -98,277 +98,205 @@ export default function CreateTokenPage() {
 
   return (
     <PeraWalletAppHandler>
-      <div className="min-h-screen snarbles-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header - Improved for user-friendliness */}
-        <div className="mb-8">
-          <Link 
-            href="/" 
-            className="inline-flex items-center gap-2 snarbles-body-muted hover:text-white transition-colors mb-6 snarbles-glass-subtle px-4 py-2 rounded-xl border-0"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Home
-          </Link>
+      <div className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-12">
           
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
-            <div>
-              <h1 className="snarbles-heading text-4xl font-bold mb-2 snarbles-gradient-text-multi">Create Your Token</h1>
-              <p className="snarbles-body text-xl max-w-2xl">
-                Turn your idea into a real token in minutes. Simple, secure, and professional.
-              </p>
-            </div>
+          {/* Mobile-Optimized Header */}
+          <div className="text-center mb-8 lg:mb-16">
+            <Link 
+              href="/" 
+              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6 lg:mb-8 px-3 py-2 rounded-lg border border-border/50 hover:border-border text-sm"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Home
+            </Link>
             
-            <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
-              {/* Multi-Wallet Connection Manager - Primary CTA */}
-              <div className="flex-1 sm:flex-initial">
-                <MultiWalletConnectionManager 
-                  className="w-full sm:w-auto snarbles-btn-primary"
-                  preferredNetwork={tokenData.network.startsWith('solana') ? 'solana' : 'algorand'}
-                  onConnectionChange={(connected, walletType, address) => {
-                    if (connected && walletType) {
-                      // Auto-switch network based on connected wallet
-                      if (walletType === 'solana' && !tokenData.network.startsWith('solana')) {
-                        setTokenData(prev => ({ ...prev, network: 'solana-devnet' }));
-                      } else if (walletType === 'algorand' && tokenData.network.startsWith('solana')) {
-                        setTokenData(prev => ({ ...prev, network: 'algorand-testnet' }));
-                      }
-                    }
-                  }}
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-bold text-foreground mb-4 lg:mb-6 leading-tight">
+              Create Your{' '}
+              <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+                Token
+              </span>
+            </h1>
+            
+            <p className="text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed px-4">
+              Transform your idea into a real token in 30 seconds. 
+              Simple, secure, and professional.
+            </p>
+            
+            {/* Responsive Progress Indicator */}
+            <div className="mt-6 lg:mt-8 max-w-sm lg:max-w-md mx-auto">
+              <div className="flex items-center justify-between mb-2 lg:mb-3">
+                <span className="text-xs lg:text-sm text-muted-foreground">Setup Progress</span>
+                <span className="text-xs lg:text-sm font-semibold text-primary">{progressPercentage}%</span>
+              </div>
+              <div className="w-full bg-muted/30 rounded-full h-1.5 lg:h-2">
+                <div 
+                  className="bg-gradient-to-r from-primary to-primary/80 h-1.5 lg:h-2 rounded-full transition-all duration-500"
+                  style={{ width: `${progressPercentage}%` }}
                 />
               </div>
-              
-              {/* Credits Display - Enhanced visibility */}
-              {!isLoading && (
-                <div className="snarbles-card-premium p-4 min-w-[200px] snarbles-glow-green">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl snarbles-gradient-green flex items-center justify-center">
-                      <CreditCard className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <div className="snarbles-body-small text-green-400">Your Credits</div>
-                      <div className="snarbles-heading text-xl font-bold text-white">
-                        {userCredits !== null ? formatCredits(userCredits) : 'Loading...'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
-          {/* Enhanced Progress Bar - More prominent and informative */}
-          <div className="snarbles-card-premium p-6 mb-8 snarbles-glow-green border-green-500/30">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
-              <div>
-                <h3 className="snarbles-heading text-xl font-bold text-green-400 mb-2">Token Setup Progress</h3>
-                <p className="snarbles-body-small text-gray-300">Complete all fields to create your token</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="text-right">
-                  <div className="snarbles-heading text-2xl font-bold text-green-400">{progressPercentage}%</div>
-                  <div className="snarbles-body-small text-gray-400">Complete</div>
-                </div>
-                <div className="w-16 h-16 relative">
-                  <svg className="w-16 h-16 transform -rotate-90" viewBox="0 0 36 36">
-                    <path
-                      className="text-gray-700"
-                      d="M18 2.0845a 15.9155 15.9155 0 0 1 0 31.831a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    />
-                    <path
-                      className="text-green-400"
-                      d="M18 2.0845a 15.9155 15.9155 0 0 1 0 31.831a 15.9155 15.9155 0 0 1 0 -31.831"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeDasharray={`${progressPercentage}, 100`}
-                    />
-                  </svg>
-                </div>
-              </div>
-            </div>
-            
-            <div className="w-full snarbles-glass-subtle rounded-full h-3 mb-6 overflow-hidden">
-              <div 
-                className="snarbles-gradient-green h-3 rounded-full transition-all duration-500 shadow-lg shadow-green-500/50"
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              <div className={`flex flex-col items-center gap-2 p-4 rounded-xl transition-all duration-300 ${tokenData.name?.length >= 3 ? 'snarbles-gradient-green text-white shadow-lg' : 'snarbles-glass-subtle text-gray-400 border border-gray-600/50'}`}>
-                <CheckCircle className="w-6 h-6" />
-                <span className="text-sm font-semibold">Name</span>
-                <span className="text-xs opacity-75">{tokenData.name?.length >= 3 ? 'Complete' : 'Required'}</span>
-              </div>
-              <div className={`flex flex-col items-center gap-2 p-4 rounded-xl transition-all duration-300 ${tokenData.symbol?.length >= 2 ? 'snarbles-gradient-blue text-white shadow-lg' : 'snarbles-glass-subtle text-gray-400 border border-gray-600/50'}`}>
-                <CheckCircle className="w-6 h-6" />
-                <span className="text-sm font-semibold">Symbol</span>
-                <span className="text-xs opacity-75">{tokenData.symbol?.length >= 2 ? 'Complete' : 'Required'}</span>
-              </div>
-              <div className={`flex flex-col items-center gap-2 p-4 rounded-xl transition-all duration-300 ${tokenData.description?.length >= 10 ? 'snarbles-gradient-purple text-white shadow-lg' : 'snarbles-glass-subtle text-gray-400 border border-gray-600/50'}`}>
-                <CheckCircle className="w-6 h-6" />
-                <span className="text-sm font-semibold">Description</span>
-                <span className="text-xs opacity-75">{tokenData.description?.length >= 10 ? 'Complete' : 'Min 10 chars'}</span>
-              </div>
-              <div className={`flex flex-col items-center gap-2 p-4 rounded-xl transition-all duration-300 ${tokenData.totalSupply && parseFloat(tokenData.totalSupply) > 0 ? 'snarbles-gradient-orange text-white shadow-lg' : 'snarbles-glass-subtle text-gray-400 border border-gray-600/50'}`}>
-                <CheckCircle className="w-6 h-6" />
-                <span className="text-sm font-semibold">Supply</span>
-                <span className="text-xs opacity-75">{tokenData.totalSupply && parseFloat(tokenData.totalSupply) > 0 ? 'Complete' : 'Required'}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Wallet Connection Alert - Enhanced with better design */}
-        {!isAuthenticated && isMobileDevice && (
-          <div className="mb-8">
-            <div className="snarbles-card-premium p-6 snarbles-glow-blue border-blue-500/30">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl snarbles-gradient-blue flex items-center justify-center flex-shrink-0">
-                  <CreditCard className="w-6 h-6 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="snarbles-heading text-xl font-bold text-blue-400 mb-2">
-                    Connect Your Mobile Wallet
-                  </h3>
-                  <p className="snarbles-body text-gray-300 mb-4">
-                    To create tokens on mobile, connect your wallet first. We support Phantom (Solana) and Pera (Algorand) mobile apps.
-                  </p>
-                  <button
-                    onClick={() => setShowMobileWalletModal(true)}
-                    className="snarbles-btn-primary text-white px-6 py-3 rounded-xl font-semibold"
-                  >
-                    Connect Mobile Wallet
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Enhanced Solana Mobile Wallet Manager - Show for Solana networks */}
-        {isMobileDevice && tokenData.network.startsWith('solana') && (
-          <div className="mb-8">
-            <SolanaMobileWalletManager 
-              onConnectionChange={(connected) => {
-                if (connected) {
-                  toast({
-                    title: "Solana Wallet Connected",
-                    description: "Ready to create tokens on Solana!",
-                    duration: 3000,
-                  });
+          {/* Mobile-Optimized Wallet Connection */}
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-3 lg:gap-4 mb-8 lg:mb-12">
+            <MultiWalletConnectionManager 
+              className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground px-6 lg:px-8 py-2.5 lg:py-3 rounded-lg font-semibold transition-colors text-sm lg:text-base"
+              preferredNetwork={tokenData.network.startsWith('solana') ? 'solana' : 'algorand'}
+              onConnectionChange={(connected, walletType, address) => {
+                if (connected && walletType) {
+                  if (walletType === 'solana' && !tokenData.network.startsWith('solana')) {
+                    setTokenData(prev => ({ ...prev, network: 'solana-devnet' }));
+                  } else if (walletType === 'algorand' && tokenData.network.startsWith('solana')) {
+                    setTokenData(prev => ({ ...prev, network: 'algorand-testnet' }));
+                  }
                 }
               }}
-              showInstructions={!isAuthenticated}
             />
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Sidebar - Order first on mobile for better UX, last on desktop */}
-          <div className="space-y-6 order-1 lg:order-2">
-            {/* Live Preview - Most important for user feedback */}
-            <TokenPreviewLive tokenData={tokenData} />
             
-            {/* Safety Features - Build trust */}
-            <div className="snarbles-card-premium p-6 snarbles-glow-green border-green-500/30">
-              <h3 className="snarbles-heading text-xl font-bold mb-6 flex items-center gap-2">
-                <Shield className="w-6 h-6 text-green-400" />
-                Why Choose Snarbles?
-              </h3>
+            {/* Responsive Credits Display */}
+            {!isLoading && userCredits !== null && (
+              <div className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-muted/30 rounded-lg border border-border text-sm">
+                <CreditCard className="w-3 h-3 lg:w-4 lg:h-4 text-muted-foreground" />
+                <span className="text-foreground font-medium">
+                  {formatCredits(userCredits)} credits
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile-First Optimized Layout */}
+          <div className="max-w-7xl mx-auto">
+            {/* Mobile: Stack vertically, Desktop: Side by side */}
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
               
-              <div className="space-y-4">
-                {safetyFeatures.map((feature, index) => {
-                  const Icon = feature.icon;
-                  return (
-                    <div key={index} className="flex items-start gap-3 p-4 rounded-xl snarbles-glass-subtle hover:border-green-500/30 transition-all duration-300 border border-transparent">
-                      <div className="flex-shrink-0 w-10 h-10 rounded-xl snarbles-gradient-green flex items-center justify-center">
-                        <Icon className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <h4 className="snarbles-heading font-semibold mb-1 text-green-400">{feature.title}</h4>
-                        <p className="snarbles-body-small text-gray-300">{feature.description}</p>
-                      </div>
+              {/* Main Form - Takes priority on mobile */}
+              <div className="xl:col-span-3 order-1">
+                <TokenFormClean 
+                  tokenData={tokenData}
+                  setTokenData={setTokenData}
+                />
+              </div>
+
+              {/* Sidebar - Responsive stacking */}
+              <div className="xl:col-span-1 order-2 space-y-6">
+                
+                {/* Mobile-optimized Preview */}
+                <div className="lg:sticky lg:top-8">
+                  <TokenPreviewClean tokenData={tokenData} />
+                </div>
+                
+                {/* Collapsible Trust Indicators on Mobile */}
+                <div className="bg-card border border-border rounded-lg p-4 lg:p-6">
+                  <h3 className="text-base lg:text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <Shield className="w-4 h-4 lg:w-5 lg:h-5 text-primary" />
+                    Why Snarbles?
+                  </h3>
+                  
+                  <div className="space-y-3">
+                    {safetyFeatures.map((feature, index) => {
+                      const Icon = feature.icon;
+                      return (
+                        <div key={index} className="flex items-start gap-3 p-2 lg:p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                          <Icon className="w-4 h-4 lg:w-5 lg:h-5 text-primary flex-shrink-0 mt-0.5" />
+                          <div>
+                            <h4 className="font-medium text-foreground text-xs lg:text-sm">{feature.title}</h4>
+                            <p className="text-xs text-muted-foreground hidden sm:block lg:text-xs">{feature.description}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Simple Pricing */}
+                <div className="bg-card border border-border rounded-lg p-4 lg:p-6">
+                  <h3 className="text-base lg:text-lg font-semibold text-foreground mb-4">
+                    Pricing
+                  </h3>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-sm text-muted-foreground">Testnet</span>
+                      <span className="text-sm font-semibold text-green-500">Free</span>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Pricing Info - Transparent pricing */}
-            <div className="snarbles-card p-6 border-orange-500/30">
-              <h3 className="snarbles-heading-4 mb-4 flex items-center gap-2">
-                <CreditCard className="w-6 h-6 text-orange-400" />
-                Transparent Pricing
-              </h3>
-              
-              <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 rounded-xl snarbles-glass-subtle">
-                  <span className="snarbles-body text-gray-300">Testnet (Free)</span>
-                  <span className="snarbles-status-live font-bold text-green-400">FREE</span>
-                </div>
-                <div className="flex justify-between items-center p-3 rounded-xl snarbles-glass-subtle">
-                  <span className="snarbles-body text-gray-300">Algorand Mainnet</span>
-                  <span className="snarbles-body font-semibold text-orange-400">5 credits</span>
-                </div>
-                <div className="pt-3 border-t border-gray-600/50">
-                  <p className="snarbles-body-small text-gray-400">
-                    Start with testnet to experiment, then deploy to mainnet when ready.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Need Help - Support section */}
-            <div className="snarbles-card p-6 bg-blue-500/5 border-blue-500/20">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-6 h-6 text-blue-400 flex-shrink-0 mt-1" />
-                <div>
-                  <h4 className="snarbles-heading-5 mb-2 text-blue-400">Need Help?</h4>
-                  <p className="snarbles-body-small text-gray-300 mb-3">
-                    First time creating a token? Check out our guide or join our community.
-                  </p>
-                  <div className="flex flex-col gap-2">
-                    <Link href="/support" className="snarbles-btn-secondary text-sm py-2 px-4">
-                      View Guide
+                    <div className="flex justify-between items-center py-2 border-t border-border/50 pt-2">
+                      <span className="text-sm text-muted-foreground">Mainnet</span>
+                      <span className="text-sm font-semibold text-primary">5 credits</span>
+                    </div>
+                  </div>
+                  
+                  {/* Mobile Help Link */}
+                  <div className="mt-4 pt-4 border-t border-border/50">
+                    <Link 
+                      href="/credits" 
+                      className="text-xs text-primary hover:text-primary/80 transition-colors"
+                    >
+                      Need more credits? →
                     </Link>
-                    <Link href="/support" className="text-blue-400 hover:text-blue-300 text-sm">
-                      Join Discord →
-                    </Link>
+                  </div>
+                </div>
+                
+                {/* Mobile-only Quick Actions */}
+                <div className="xl:hidden bg-muted/30 rounded-lg p-4">
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Ready to deploy your token?
+                    </p>
+                    <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                      <CheckCircle className="w-3 h-3 text-green-500" />
+                      <span>Form validation complete</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Main Form - Order last on mobile, first on desktop */}
-          <div className="lg:col-span-2 order-2 lg:order-1">
-            <TokenFormNew 
-              tokenData={tokenData}
-              setTokenData={setTokenData}
-            />
-          </div>
+          {/* Mobile-specific Help Section */}
+          {isMobileDevice && (
+            <div className="mt-12 bg-card/50 border border-border/50 rounded-lg p-6 max-w-3xl mx-auto">
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-foreground mb-2">
+                  Creating on Mobile
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Make sure your wallet app is installed for seamless token creation
+                </p>
+                <div className="flex justify-center gap-4">
+                  <button
+                    onClick={() => setShowMobileWalletModal(true)}
+                    className="bg-primary/10 text-primary px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/20 transition-colors"
+                  >
+                    Wallet Help
+                  </button>
+                  <Link 
+                    href="/support" 
+                    className="bg-muted/50 text-muted-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+                  >
+                    Support
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
+        
+        {/* Mobile Wallet Modal */}
+        <MobileWalletModal
+          isOpen={showMobileWalletModal}
+          onClose={() => setShowMobileWalletModal(false)}
+          onWalletConnect={(walletType, connected) => {
+            if (connected) {
+              toast({
+                title: "Wallet Connected",
+                description: `Successfully connected to ${walletType === 'phantom' ? 'Phantom' : 'Pera'} wallet`,
+                duration: 3000,
+              });
+            }
+          }}
+        />
       </div>
-      
-      {/* Mobile Wallet Modal */}
-      <MobileWalletModal
-        isOpen={showMobileWalletModal}
-        onClose={() => setShowMobileWalletModal(false)}
-        onWalletConnect={(walletType, connected) => {
-          if (connected) {
-            toast({
-              title: "Wallet Connected",
-              description: `Successfully connected to ${walletType === 'phantom' ? 'Phantom' : 'Pera'} wallet`,
-              duration: 3000,
-            });
-          }
-        }}
-      />
-    </div>
     </PeraWalletAppHandler>
   );
 }
