@@ -32,8 +32,10 @@ import {
   generatePaymentInstructions,
   USDTNetwork,
   USDTPaymentTransaction,
-  USDT_RECEIVER_ADDRESS
-} from '@/lib/usdt-payment-system';
+  USDT_PRICING,
+  getNetworksByWalletType,
+  getAvailableNetworks
+} from '@/lib/multi-wallet-usdt-system';
 
 interface USDTTopUpProps {
   walletAddress: string;
@@ -70,13 +72,14 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
   const loadPaymentOptions = async () => {
     setIsLoading(true);
     try {
-      const result = await getUSDTPaymentOptions();
-      if (result.success && result.options) {
-        setNetworks(result.options.networks);
-        // Default to most popular network (Polygon)
-        const defaultNetwork = result.options.networks.find(n => n.name === 'polygon') || result.options.networks[0];
-        setSelectedNetwork(defaultNetwork);
-      }
+      // Use legacy EVM-only networks for backward compatibility
+      // For multi-wallet support, use MultiWalletUSDTTopUp component instead
+      const networks = await getUSDTPaymentOptions({ metamask: true });
+      setNetworks(networks);
+      
+      // Default to most popular network (Polygon)
+      const defaultNetwork = networks.find(n => n.name === 'polygon') || networks[0];
+      setSelectedNetwork(defaultNetwork);
     } catch (error) {
       console.error('Error loading payment options:', error);
       toast({
@@ -92,9 +95,7 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
   const loadPaymentHistory = async () => {
     try {
       const result = await getUSDTPaymentHistory(walletAddress);
-      if (result.success) {
-        setPaymentHistory(result.payments || []);
-      }
+      setPaymentHistory(result);
     } catch (error) {
       console.error('Error loading payment history:', error);
     }
@@ -130,20 +131,20 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
 
     setIsProcessing(true);
     try {
-      const result = await initiateUSDTPayment(
-        walletAddress,
-        selectedNetwork.name,
-        parseFloat(usdtAmount),
-        walletAddress // Assuming same wallet for simplicity
+      // For EVM networks, generate manual payment instructions
+      const paymentInstructions = generatePaymentInstructions(
+        selectedNetwork,
+        parseFloat(usdtAmount)
       );
-
-      if (result.success && result.paymentDetails) {
-        setPaymentDetails(result.paymentDetails);
-        setShowPaymentDialog(true);
-        await loadPaymentHistory(); // Refresh history
-      } else {
-        throw new Error(result.error || 'Failed to initiate payment');
-      }
+      
+      setPaymentDetails(paymentInstructions);
+      setShowPaymentDialog(true);
+      
+      toast({
+        title: "Payment Instructions Generated",
+        description: "Follow the instructions to complete your USDT payment",
+        variant: "default"
+      });
     } catch (error) {
       console.error('Error initiating payment:', error);
       toast({
@@ -426,9 +427,9 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
                           💰
                         </div>
                         <div>
-                          <div className="font-medium">{payment.amount} USDT</div>
+                          <div className="font-medium">{payment.usdtAmount} USDT</div>
                           <div className="text-sm text-muted-foreground">
-                            {networks.find(n => n.name === payment.networkName)?.displayName || payment.networkName}
+                            {networks.find(n => n.id === payment.networkId)?.displayName || payment.networkId}
                           </div>
                         </div>
                       </div>
@@ -441,7 +442,7 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
                               variant="ghost"
                               size="sm"
                               onClick={() => {
-                                const network = networks.find(n => n.name === payment.networkName);
+                                const network = networks.find(n => n.id === payment.networkId);
                                 if (network) {
                                   window.open(`${network.explorerUrl}/tx/${payment.transactionHash}`, '_blank');
                                 }
@@ -528,10 +529,12 @@ export default function USDTTopUp({ walletAddress, onCreditsUpdated }: USDTTopUp
                 <Label className="text-sm font-medium">Instructions:</Label>
                 <div className="mt-1 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <div className="text-sm space-y-1">
-                    {generatePaymentInstructions(
-                      paymentDetails.network,
-                      paymentDetails.amount
-                    ).steps.map((instruction, index) => (
+                    {[
+                      `1. Send exactly ${paymentDetails.amount} USDT to the receiver address`,
+                      `2. Use the correct contract address: ${paymentDetails.contractAddress}`,
+                      `3. Ensure you have enough network tokens for gas fees`,
+                      `4. Transaction will be confirmed automatically`
+                    ].map((instruction: string, index: number) => (
                       <div key={index}>{instruction}</div>
                     ))}
                   </div>

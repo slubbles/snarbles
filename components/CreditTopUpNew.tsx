@@ -21,7 +21,7 @@ import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
 import { useAlgorandWallet } from '@/components/providers/AlgorandWalletProvider';
 import { getCreditsBalance } from '@/lib/credit-system';
 import { purchaseCreditsWithAlgo, PRICING } from '@/lib/enhanced-payment-system';
-import USDTTopUp from '@/components/USDTTopUp';
+import MultiWalletUSDTTopUp from '@/components/MultiWalletUSDTTopUp';
 
 export default function CreditTopUp() {
   const [userBalance, setUserBalance] = useState<number>(0);
@@ -188,8 +188,8 @@ export default function CreditTopUp() {
               </p>
             </CardHeader>
             <CardContent>
-              <USDTTopUp 
-                walletAddress={walletAddress || ''} 
+              <MultiWalletUSDTTopUp 
+                userAddress={walletAddress || ''} 
                 onCreditsUpdated={loadUserBalance}
               />
             </CardContent>
