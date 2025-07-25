@@ -1,7 +1,7 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import Footer from '@/components/layout/Footer';
-import Navbar from '@/components/layout/Navbar';
+import NavbarOptimized from '@/components/layout/Navbar';
 import BoltBadge from '@/components/BoltBadge';
 import { Toaster } from '@/components/ui/toaster';
 import { WalletAuthProvider } from '@/components/providers/WalletAuthProvider';
@@ -99,7 +99,7 @@ function ServiceWorkerRegistration() {
             <ClientWalletProvider>
               <WalletAuthProvider>
                 <div className="relative min-h-screen">
-                  <Navbar />
+                  <NavbarOptimized />
                   <BoltBadge />
                   <main id="main-content" className="pt-16" role="main">
                     {children}
