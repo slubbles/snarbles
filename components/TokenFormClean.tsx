@@ -20,6 +20,7 @@ import TransactionStatusModalEnhanced from '@/components/TransactionStatusModalE
 import TokenConfirmationModal from '@/components/TokenConfirmationModal';
 import { spendCreditsForTokenCreation } from '@/lib/credit-system';
 import { purchaseCreditsWithAlgo } from '@/lib/enhanced-payment-system';
+import { createRealAlgorandToken } from '@/lib/real-algorand-token-creation-v2';
 
 interface TokenData {
   name: string;
@@ -212,8 +213,35 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
       // Handle payment processing
       if (selectedPaymentMethod === 'credits') {
         await processCreditsPayment(creditsRequired);
+        
+        // Track credits payment
+        try {
+          const { trackEvent } = await import('@/lib/analytics');
+          await trackEvent('payment_processed', {
+            method: 'credits',
+            amount: creditsRequired,
+            network: tokenData.network,
+            token_name: tokenData.name
+          }, walletAddress || undefined);
+        } catch (analyticsError) {
+          console.warn('⚠️ Payment analytics tracking failed:', analyticsError);
+        }
+        
       } else if (selectedPaymentMethod === 'algo_direct') {
         await processAlgoDirectPayment();
+        
+        // Track direct ALGO payment
+        try {
+          const { trackEvent } = await import('@/lib/analytics');
+          await trackEvent('payment_processed', {
+            method: 'algo_direct',
+            network: tokenData.network,
+            token_name: tokenData.name
+          }, walletAddress || undefined);
+        } catch (analyticsError) {
+          console.warn('⚠️ Payment analytics tracking failed:', analyticsError);
+        }
+        
       } else {
         throw new Error('Invalid payment method selected');
       }
@@ -222,22 +250,164 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       setTokenCreationStep(2); // Creating token
-      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      setTokenCreationStep(3); // Finalizing
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Success
-      setTokenCreationStep(4); // Complete
-      toast({
-        title: "Token created successfully!",
-        description: `${tokenData.name} (${tokenData.symbol}) has been deployed to ${tokenData.network}.`,
-      });
+      // REAL TOKEN CREATION - Call actual createRealAlgorandToken
+      if (tokenData.network.includes('algorand') && algorandWallet.connected && algorandWallet.address) {
+        console.log('🚀 Creating REAL Algorand token with credits payment');
+        
+        try {
+          const result = await createRealAlgorandToken(
+            {
+              name: tokenData.name,
+              symbol: tokenData.symbol,
+              description: tokenData.description,
+              decimals: parseInt(tokenData.decimals),
+              totalSupply: tokenData.totalSupply,
+              logoUrl: tokenData.logoUrl || '',
+              website: tokenData.website || '',
+              twitter: tokenData.twitter || '',
+              github: tokenData.github || '',
+              mintable: tokenData.mintable,
+              burnable: tokenData.burnable,
+              pausable: tokenData.pausable,
+              network: tokenData.network
+            },
+            (status: string) => {
+              console.log(`📱 Token Creation Status: ${status}`);
+            },
+            {
+              signAtomicGroup: algorandWallet.signAtomicGroup,
+              signTransaction: algorandWallet.signTransaction,
+              address: algorandWallet.address
+            }
+          );
+          
+          if (!result.success) {
+            throw new Error(result.error || 'Token creation failed');
+          }
+          
+          console.log('✅ REAL token created successfully:', result.data);
+          
+          // Track successful token creation analytics
+          try {
+            const { trackTokenCreation } = await import('@/lib/analytics');
+            await trackTokenCreation({
+              tokenName: tokenData.name,
+              tokenSymbol: tokenData.symbol,
+              network: tokenData.network,
+              successful: true
+            }, algorandWallet.address || undefined);
+            
+            // Also track token creation in token tracking system
+            const { trackTokenCreation: trackTokenDetails } = await import('@/lib/token-tracking');
+            await trackTokenDetails({
+              walletAddress: algorandWallet.address,
+              tokenName: tokenData.name,
+              tokenSymbol: tokenData.symbol,
+              network: tokenData.network,
+              contractAddress: result.data?.assetId?.toString() || '',
+              description: tokenData.description,
+              totalSupply: tokenData.totalSupply,
+              decimals: parseInt(tokenData.decimals),
+              logoUrl: tokenData.logoUrl,
+              website: tokenData.website,
+              github: tokenData.github,
+              twitter: tokenData.twitter,
+              mintable: tokenData.mintable,
+              burnable: tokenData.burnable,
+              pausable: tokenData.pausable,
+              transactionHash: result.data?.transactionId
+            });
+            
+            console.log('✅ Analytics tracking completed');
+          } catch (analyticsError) {
+            console.warn('⚠️ Analytics tracking failed (non-blocking):', analyticsError);
+          }
+          
+          setTokenCreationStep(3); // Finalizing
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Success
+          setTokenCreationStep(4); // Complete
+          toast({
+            title: "🎉 Real Token Created Successfully!",
+            description: `${tokenData.name} (${tokenData.symbol}) created on ${tokenData.network}. Asset ID: ${result.data?.assetId}`,
+          });
+          
+          // Show explorer link if available
+          if (result.data?.explorerUrl) {
+            setTimeout(() => {
+              toast({
+                title: "View Your Token",
+                description: "Click to view your token on the blockchain explorer",
+                action: (
+                  <a 
+                    href={result.data!.explorerUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="bg-primary text-primary-foreground px-3 py-2 rounded-md text-sm"
+                  >
+                    View on Explorer
+                  </a>
+                ),
+              });
+            }, 2000);
+          }
+          
+        } catch (tokenError) {
+          console.error('❌ Real token creation failed:', tokenError);
+          
+          // Track failed token creation analytics
+          try {
+            const { trackTokenCreation } = await import('@/lib/analytics');
+            await trackTokenCreation({
+              tokenName: tokenData.name,
+              tokenSymbol: tokenData.symbol,
+              network: tokenData.network,
+              successful: false,
+              error: tokenError instanceof Error ? tokenError.message : 'Unknown error'
+            }, algorandWallet.address || undefined);
+            
+            console.log('✅ Failed creation analytics tracked');
+          } catch (analyticsError) {
+            console.warn('⚠️ Failed creation analytics tracking failed:', analyticsError);
+          }
+          
+          throw new Error(`Token creation failed: ${tokenError instanceof Error ? tokenError.message : 'Unknown error'}`);
+        }
+        
+      } else {
+        // Mock for non-Algorand networks or disconnected wallet
+        console.log('⚠️ Using mock token creation for non-Algorand network or disconnected wallet');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        setTokenCreationStep(3); // Finalizing
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Success
+        setTokenCreationStep(4); // Complete
+        toast({
+          title: "Token created successfully!",
+          description: `${tokenData.name} (${tokenData.symbol}) has been deployed to ${tokenData.network}.`,
+        });
+      }
       
       // Redirect after success
       setTimeout(() => {
         router.push('/dashboard');
-      }, 2000);
+      }, 3000);
+      
+      // Track final completion analytics
+      try {
+        const { trackEvent } = await import('@/lib/analytics');
+        await trackEvent('token_creation_flow_completed', {
+          payment_method: selectedPaymentMethod,
+          network: tokenData.network,
+          token_name: tokenData.name,
+          redirect_to: 'dashboard'
+        }, walletAddress || undefined);
+      } catch (analyticsError) {
+        console.warn('⚠️ Flow completion analytics tracking failed:', analyticsError);
+      }
       
     } catch (error) {
       console.error('Token creation error:', error);

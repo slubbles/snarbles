@@ -6,7 +6,6 @@ import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import {
   PhantomWalletAdapter,
-  SolflareWalletAdapter,
 } from '@solana/wallet-adapter-wallets';
 import { SOLANA_NETWORKS, CURRENT_SOLANA_NETWORK } from '@/lib/solana-data';
 import { AlgorandWalletProvider } from './AlgorandWalletProvider';
@@ -115,15 +114,17 @@ function SolanaWalletProviderInner({ children }: { children: React.ReactNode }) 
   const endpoint = useMemo(() => currentNetwork.rpcUrl, [currentNetwork.rpcUrl]);
 
   // Enhanced wallet configuration with error handling and duplicate prevention
+  // Limited to Phantom and OKX wallets only
   const wallets = useMemo(() => {
     console.log(`🔧 Configuring wallets for ${currentNetwork.name} (${network})`);
     
     try {
       // Create wallet adapters with explicit network configuration
+      // Only Phantom is configured through standard adapter
+      // OKX will be handled through custom detection
       const phantomAdapter = new PhantomWalletAdapter();
-      const solflareAdapter = new SolflareWalletAdapter({ network });
       
-      const adapters = [phantomAdapter, solflareAdapter];
+      const adapters = [phantomAdapter];
       
       // Add unique identifiers to prevent React key conflicts
       adapters.forEach((adapter, index) => {
@@ -131,7 +132,8 @@ function SolanaWalletProviderInner({ children }: { children: React.ReactNode }) 
         (adapter as any)._uniqueId = `${adapter.name}_${network}_${index}`;
       });
       
-      console.log(`✅ Configured ${adapters.length} unique Solana wallet adapters`);
+      console.log(`✅ Configured ${adapters.length} Solana wallet adapters`);
+      console.log(`📝 Supported wallets: Phantom (standard), OKX (custom detection)`);
       adapters.forEach((adapter, index) => {
         console.log(`  ${index + 1}. ${adapter.name} (${(adapter as any)._uniqueId})`);
       });
@@ -215,7 +217,7 @@ function SolanaWalletProviderInner({ children }: { children: React.ReactNode }) 
     >
       <SolanaWalletProvider 
         wallets={wallets} 
-        autoConnect={false} // Disable auto-connect to prevent issues, we'll handle this manually
+        autoConnect={true} // Enable auto-connect for seamless persistence across pages
         onError={handleError}
         localStorageKey={localStorageKey}
       >

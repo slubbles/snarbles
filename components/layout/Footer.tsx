@@ -15,7 +15,7 @@ export default function Footer() {
     {
       title: 'Resources',
       links: [
-        { name: 'Documentation', href: 'https://docs.snarbles.xyz', icon: BookOpen },
+        { name: 'Whitepaper', href: '/docs', icon: BookOpen },
         { name: 'API Reference', href: 'https://api.snarbles.xyz', icon: Code },
         { name: 'Guides & Tutorials', href: 'https://learn.snarbles.xyz', icon: HelpCircle },
         { name: 'Community Forum', href: 'https://community.snarbles.xyz', icon: MessageCircle },
@@ -48,7 +48,8 @@ export default function Footer() {
               </span>
             </div>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              The decentralized way to create and manage your own tokens. Empowering creators worldwide with professional-grade blockchain tools.
+              The future of no-code blockchain development. Multi-chain token creation, NFT generation, 
+              and decentralized ecosystem building—all without writing a single line of code.
             </p>
             <div className="flex space-x-4">
               <a 
@@ -110,6 +111,13 @@ export default function Footer() {
               © 2025 Snarbles. All rights reserved. Built with ❤️ for the decentralized future. <a href="https://bolt.new/" target="_blank" rel="noopener noreferrer" className="text-red-500 hover:underline">Powered by Bolt.new</a>
             </p>
             <div className="flex items-center space-x-6">
+              <Link 
+                href="/docs" 
+                className="text-muted-foreground hover:text-primary transition-colors text-sm font-medium flex items-center space-x-1 group"
+              >
+                <BookOpen className="w-4 h-4 group-hover:text-primary transition-colors" />
+                <span>Whitepaper</span>
+              </Link>
               <Link 
                 href="/about" 
                 className="text-muted-foreground hover:text-foreground transition-colors text-sm"

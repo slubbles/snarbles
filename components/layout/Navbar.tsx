@@ -90,6 +90,7 @@ export default function Navbar() {
     { name: 'Tokenomics Simulator', href: '/tokenomics' },
     { name: 'Verify Token', href: '/verify' },
     { name: 'Dashboard', href: '/dashboard' },
+    { name: 'Analytics', href: '/analytics' },
   ];
 
   // Check if user is admin (supports both Algorand and Solana)

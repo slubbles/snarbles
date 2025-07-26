@@ -52,51 +52,6 @@ export function EnhancedSolanaWalletButton({
   const [showWalletSelector, setShowWalletSelector] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
 
-  // Custom persistence for OKX wallet (since it's not handled by standard adapter)
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const tryAutoReconnectOKX = async () => {
-      const lastConnectedWallet = localStorage.getItem('snarbles_last_wallet');
-      if (lastConnectedWallet === 'OKX' && !connected) {
-        const okxWallet = (window as any).okxwallet?.solana;
-        if (okxWallet && !isReconnecting) {
-          setIsReconnecting(true);
-          console.log('🔄 Attempting to auto-reconnect OKX wallet...');
-          
-          try {
-            const response = await okxWallet.connect({ onlyIfTrusted: true });
-            if (response && response.publicKey) {
-              console.log('✅ OKX wallet auto-reconnected successfully');
-              toast({
-                title: "🎉 Wallet Reconnected",
-                description: "OKX wallet automatically reconnected",
-                duration: 3000,
-              });
-            }
-          } catch (error) {
-            console.log('ℹ️ OKX auto-reconnection skipped (user approval required)');
-            localStorage.removeItem('snarbles_last_wallet'); // Clear invalid stored connection
-          } finally {
-            setIsReconnecting(false);
-          }
-        }
-      }
-    };
-
-    // Small delay to ensure wallets are initialized
-    const timeoutId = setTimeout(tryAutoReconnectOKX, 1000);
-    return () => clearTimeout(timeoutId);
-  }, [connected, isReconnecting, toast]);
-
-  // Track Phantom wallet connections for persistence
-  useEffect(() => {
-    if (connected && wallet?.adapter?.name === 'Phantom') {
-      localStorage.setItem('snarbles_last_wallet', 'Phantom');
-      console.log('✅ Phantom wallet preference stored for persistence');
-    }
-  }, [connected, wallet]);
-
   // Detect available wallets (LIMITED TO PHANTOM AND OKX ONLY)
   const detectWallets = useCallback(() => {
     const wallets: WalletInfo[] = [];
@@ -155,9 +110,6 @@ export function EnhancedSolanaWalletButton({
       const response = await okxWallet.connect();
       
       if (response?.publicKey) {
-        // Store wallet preference for persistence
-        localStorage.setItem('snarbles_last_wallet', 'OKX');
-        
         toast({
           title: "🎉 OKX Wallet Connected",
           description: `Connected to ${response.publicKey.slice(0, 8)}...${response.publicKey.slice(-8)}`,
@@ -183,10 +135,6 @@ export function EnhancedSolanaWalletButton({
   const handleDisconnect = async () => {
     try {
       setIsReconnecting(true);
-      
-      // Clear wallet preference to prevent auto-reconnection
-      localStorage.removeItem('snarbles_last_wallet');
-      
       await disconnect();
       toast({
         title: "🔌 Wallet Disconnected",

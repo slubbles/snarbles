@@ -55,6 +55,7 @@ import { getAlgorandAssetInfo, getAlgorandNetwork } from '@/lib/algorand';
 import { getTokenMetadata, getEnhancedTokenInfo, TokenMetadata as SolanaTokenMetadata } from '@/lib/solana-data';
 import { getAlgorandEnhancedTokenInfo } from '@/lib/algorand-data';
 import { supabase } from '@/lib/supabase-client';
+import { mcpAnalytics } from '@/lib/supabase-mcp-analytics';
 
 type NetworkType = 'solana-devnet' | 'algorand-mainnet' | 'algorand-testnet';
 
@@ -143,28 +144,28 @@ const VerificationResultDisplay = memo(({
       {/* Main Results */}
       <div className="lg:col-span-8 space-y-8">
         {/* Status Overview */}
-        <Card className={`snarbles-card ${result.verified ? 'snarbles-glow-green' : 'snarbles-glow-red'}`}>
+        <Card className={`glass-card ${result.verified ? 'border-green-500/30 bg-green-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
           <CardContent className="p-8">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center space-x-6">
                 {getStatusIcon(result.status)}
                 <div>
-                  <h2 className="snarbles-heading-4 mb-2">
+                  <h2 className="text-2xl font-bold text-foreground mb-2">
                     {result.verified ? 'Token Verified ✓' : 'Verification Issues Found'}
                   </h2>
-                  <p className="snarbles-body text-muted-foreground">
-                    Security Score: <span className={`font-bold snarbles-heading-5 ${getScoreColor(result.score)}`}>
+                  <p className="text-muted-foreground">
+                    Security Score: <span className={`font-bold text-xl ${getScoreColor(result.score)}`}>
                       {result.score}/100
                     </span>
                   </p>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <Button onClick={onShare} className="snarbles-button-ghost">
+                <Button onClick={onShare} variant="outline" className="border-border hover:bg-muted">
                   <Share2 className="w-4 h-4 mr-2" />
                   Share
                 </Button>
-                <Button onClick={() => onCopy(result.tokenId, 'Token ID')} className="snarbles-button-ghost">
+                <Button onClick={() => onCopy(result.tokenId, 'Token ID')} variant="outline" className="border-border hover:bg-muted">
                   <Copy className="w-4 h-4 mr-2" />
                   Copy ID
                 </Button>
@@ -174,15 +175,15 @@ const VerificationResultDisplay = memo(({
             {/* Enhanced Progress Bar */}
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="snarbles-body text-muted-foreground font-medium">Comprehensive Security Assessment</span>
-                <Badge variant={getScoreBadgeVariant(result.score)} className="snarbles-body px-4 py-2">
+                <span className="text-muted-foreground font-medium">Comprehensive Security Assessment</span>
+                <Badge variant={getScoreBadgeVariant(result.score)} className="px-4 py-2">
                   {result.score >= 80 ? 'SAFE' : 
                    result.score >= 60 ? 'CAUTION' : 
                    result.score >= 40 ? 'RISKY' : 'DANGER'}
                 </Badge>
               </div>
               <Progress value={result.score} className="h-6" />
-              <div className="flex justify-between text-sm text-gray-400">
+              <div className="flex justify-between text-sm text-muted-foreground">
                 <span>0</span>
                 <span>Danger</span>
                 <span>Risky</span>
@@ -195,10 +196,10 @@ const VerificationResultDisplay = memo(({
         </Card>
 
         {/* Security Checks */}
-        <Card className="snarbles-card snarbles-border-glow">
+        <Card className="glass-card border-border">
           <CardHeader>
-            <CardTitle className="snarbles-heading-4 flex items-center space-x-3">
-              <Shield className="w-6 h-6 text-red-400" />
+            <CardTitle className="text-xl font-bold text-foreground flex items-center space-x-3">
+              <Shield className="w-6 h-6 text-primary" />
               <span>Comprehensive Security Analysis</span>
             </CardTitle>
           </CardHeader>
@@ -225,11 +226,11 @@ const VerificationResultDisplay = memo(({
                       <CheckCircle className="w-6 h-6 text-green-400" /> : 
                       <AlertTriangle className="w-6 h-6 text-red-400" />
                     }
-                    <span className="snarbles-body text-muted-foreground font-medium">
+                    <span className="text-muted-foreground font-medium">
                       {checkLabels[key as keyof typeof checkLabels] || key}
                     </span>
                   </div>
-                  <Badge variant={passed ? 'default' : 'destructive'} className="snarbles-body-small px-4 py-2">
+                  <Badge variant={passed ? 'default' : 'destructive'} className="px-4 py-2">
                     {passed ? 'PASSED' : 'FAILED'}
                   </Badge>
                 </div>
@@ -240,9 +241,9 @@ const VerificationResultDisplay = memo(({
 
         {/* Warnings */}
         {result.warnings.length > 0 && (
-          <Card className="snarbles-card snarbles-glow-red">
+          <Card className="glass-card border-red-500/30 bg-red-500/5">
             <CardHeader>
-              <CardTitle className="snarbles-heading-4 flex items-center space-x-3 text-red-400">
+              <CardTitle className="text-xl font-bold text-red-400 flex items-center space-x-3">
                 <AlertTriangle className="w-6 h-6" />
                 <span>Security Warnings & Recommendations</span>
               </CardTitle>
@@ -251,7 +252,7 @@ const VerificationResultDisplay = memo(({
               {result.warnings.map((warning, index) => (
                 <div key={index} className="flex items-start space-x-4 p-4 bg-red-500/10 border border-red-500/30 rounded-xl hover:bg-red-500/15 transition-colors">
                   <AlertTriangle className="w-5 h-5 text-red-400 mt-1 flex-shrink-0" />
-                  <p className="snarbles-body text-red-400">{warning}</p>
+                  <p className="text-red-400">{warning}</p>
                 </div>
               ))}
             </CardContent>
@@ -262,9 +263,9 @@ const VerificationResultDisplay = memo(({
       {/* Sidebar Info */}
       <div className="lg:col-span-4 space-y-8">
         {/* Token Information */}
-        <Card className="snarbles-card snarbles-border-glow">
+        <Card className="glass-card border-border">
           <CardHeader>
-            <CardTitle className="snarbles-heading-5 flex items-center space-x-2">
+            <CardTitle className="text-lg font-semibold text-foreground flex items-center space-x-2">
               <Hash className="w-5 h-5 text-blue-400" />
               <span>Token Information</span>
             </CardTitle>
@@ -273,28 +274,28 @@ const VerificationResultDisplay = memo(({
             {result.metadata && (
               <div className="space-y-4">
                 <div>
-                  <Label className="snarbles-body-small font-medium text-gray-400">Name</Label>
-                  <p className="snarbles-body font-bold mt-1 text-foreground">{result.metadata.name}</p>
+                  <Label className="text-sm font-medium text-muted-foreground">Name</Label>
+                  <p className="font-bold mt-1 text-foreground">{result.metadata.name}</p>
                 </div>
                 <div>
-                  <Label className="snarbles-body-small font-medium text-gray-400">Symbol</Label>
-                  <p className="snarbles-body font-bold mt-1 text-foreground">{result.metadata.symbol}</p>
+                  <Label className="text-sm font-medium text-muted-foreground">Symbol</Label>
+                  <p className="font-bold mt-1 text-foreground">{result.metadata.symbol}</p>
                 </div>
                 <div>
-                  <Label className="snarbles-body-small font-medium text-gray-400">Network</Label>
-                  <p className="snarbles-body font-bold mt-1 text-foreground capitalize">
+                  <Label className="text-sm font-medium text-muted-foreground">Network</Label>
+                  <p className="font-bold mt-1 text-foreground capitalize">
                     {result.network.replace('-', ' ')}
                   </p>
                 </div>
                 <div>
-                  <Label className="snarbles-body-small font-medium text-gray-400">Total Supply</Label>
-                  <p className="snarbles-body font-bold mt-1 text-foreground">
+                  <Label className="text-sm font-medium text-muted-foreground">Total Supply</Label>
+                  <p className="font-bold mt-1 text-foreground">
                     {result.metadata.totalSupply?.toLocaleString() || 'Unknown'}
                   </p>
                 </div>
                 <div>
-                  <Label className="snarbles-body-small font-medium text-gray-400">Decimals</Label>
-                  <p className="snarbles-body font-bold mt-1 text-foreground">{result.metadata.decimals}</p>
+                  <Label className="text-sm font-medium text-muted-foreground">Decimals</Label>
+                  <p className="font-bold mt-1 text-foreground">{result.metadata.decimals}</p>
                 </div>
               </div>
             )}
@@ -355,9 +356,113 @@ export default function VerifyPage() {
   const [searchFilter, setSearchFilter] = useState('');
   const [networkFilter, setNetworkFilter] = useState<string>('all');
 
+  // Enhanced search tracking
+  const handleSearchChange = (searchTerm: string) => {
+    setSearchFilter(searchTerm);
+    
+    // Track search usage with debounced analytics
+    if (searchTerm.length > 2) {
+      trackAnalyticsEvent('token_search_performed', {
+        search_term_length: searchTerm.length,
+        search_term_type: /^[a-fA-F0-9]+$/.test(searchTerm) ? 'address_like' : 'text',
+        network_filter: networkFilter,
+        available_tokens: userTokens.length,
+        current_tab: activeTab
+      });
+    }
+  };
+
+  // Network filter tracking
+  const handleNetworkFilterChange = (newFilter: string) => {
+    const oldFilter = networkFilter;
+    setNetworkFilter(newFilter);
+    
+    trackAnalyticsEvent('network_filter_changed', {
+      from_filter: oldFilter,
+      to_filter: newFilter,
+      tokens_before_filter: userTokens.length,
+      tokens_after_filter: userTokens.filter(token => 
+        newFilter === 'all' || token.network === newFilter
+      ).length,
+      has_search_term: searchFilter.length > 0
+    });
+  };
+
+  // Analytics tracking function
+  const trackAnalyticsEvent = async (eventType: string, eventData: any, silent = true) => {
+    try {
+      await supabase.from('analytics_events').insert({
+        wallet_address: walletAddress || 'anonymous',
+        event_type: eventType,
+        event_data: {
+          ...eventData,
+          timestamp: new Date().toISOString(),
+          user_agent: navigator.userAgent,
+          authenticated: isAuthenticated,
+          wallet_type: walletType || 'none'
+        },
+        network: network,
+        timestamp: new Date().toISOString()
+      });
+      if (!silent) console.log(`📊 Event tracked: ${eventType}`);
+    } catch (error) {
+      if (!silent) console.warn(`Failed to track ${eventType}:`, error);
+    }
+  };
+
+  // Handle tab changes with analytics
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab);
+    trackAnalyticsEvent('tab_switch', {
+      from_tab: activeTab,
+      to_tab: newTab,
+      user_tokens_count: userTokens.length,
+      recent_verifications_count: recentVerifications.length
+    });
+  };
+
+  // Handle network changes with analytics
+  const handleNetworkChange = (newNetwork: NetworkType) => {
+    const oldNetwork = network;
+    setNetwork(newNetwork);
+    trackAnalyticsEvent('network_switch', {
+      from_network: oldNetwork,
+      to_network: newNetwork,
+      has_token_input: !!tokenId,
+      current_tab: activeTab
+    });
+  };
+
   useEffect(() => {
     setMounted(true);
     loadRecentVerifications();
+    
+    // Track page view analytics
+    const trackPageView = async () => {
+      try {
+        await supabase.from('analytics_events').insert({
+          wallet_address: walletAddress || 'anonymous',
+          event_type: 'page_view',
+          event_data: {
+            page: 'verify',
+            user_agent: navigator.userAgent,
+            timestamp: new Date().toISOString(),
+            authenticated: isAuthenticated,
+            wallet_type: walletType || 'none',
+            initial_network: network,
+            has_recent_verifications: recentVerifications.length > 0,
+            session_start: Date.now()
+          },
+          network: network,
+          timestamp: new Date().toISOString()
+        });
+        console.log('📊 Page view tracked');
+      } catch (error) {
+        console.warn('Failed to track page view:', error);
+      }
+    };
+
+    trackPageView();
     
     const urlTokenId = searchParams?.get('id');
     const urlNetwork = searchParams?.get('network') as NetworkType;
@@ -631,11 +736,28 @@ export default function VerifyPage() {
   const handleVerification = async (id?: string, selectedNetwork?: NetworkType) => {
     const tokenToVerify = id || tokenId;
     const networkToUse = selectedNetwork || network;
+    const verificationStartTime = Date.now();
     
     if (!validateTokenId(tokenToVerify, networkToUse)) {
       setError(`Invalid ${networkToUse.includes('solana') ? 'token address' : 'asset ID'} format`);
+      
+      // Track validation error
+      trackAnalyticsEvent('verification_error', {
+        error_type: 'invalid_format',
+        token_id: tokenToVerify,
+        network: networkToUse,
+        error_message: 'Invalid format'
+      });
       return;
     }
+
+    // Track verification start
+    trackAnalyticsEvent('verification_started', {
+      token_id: tokenToVerify,
+      network: networkToUse,
+      input_method: id ? 'programmatic' : 'manual',
+      user_tokens_count: userTokens.length
+    });
 
     setIsVerifying(true);
     setProgress(0);
@@ -663,11 +785,16 @@ export default function VerifyPage() {
       }, 500);
 
       let result: Partial<VerificationResult>;
+      let apiResponseTimes: number[] = [];
       
       if (networkToUse === 'solana-devnet') {
+        const solanaStartTime = Date.now();
         result = await fetchSolanaTokenData(tokenToVerify);
+        apiResponseTimes.push(Date.now() - solanaStartTime);
       } else {
+        const algorandStartTime = Date.now();
         result = await fetchAlgorandTokenData(tokenToVerify, networkToUse);
+        apiResponseTimes.push(Date.now() - algorandStartTime);
       }
 
       clearInterval(progressInterval);
@@ -682,25 +809,68 @@ export default function VerifyPage() {
         ...result
       } as VerificationResult;
 
+      const verificationDuration = Date.now() - verificationStartTime;
+
       setVerificationResult(finalResult);
       saveRecentVerification(tokenToVerify, networkToUse, finalResult);
       
-      // Track verification event
+      // Enhanced verification tracking with performance metrics
       try {
-        await supabase.from('analytics_events').insert({
-          wallet_address: walletAddress,
-          event_type: 'token_verification',
-          event_data: {
-            tokenId: tokenToVerify,
+        await Promise.all([
+          // Original verification event
+          supabase.from('analytics_events').insert({
+            wallet_address: walletAddress,
+            event_type: 'token_verification',
+            event_data: {
+              tokenId: tokenToVerify,
+              network: networkToUse,
+              score: finalResult.score,
+              verified: finalResult.verified
+            },
+            network: networkToUse,
+            timestamp: new Date().toISOString()
+          }),
+          
+          // Enhanced verification analytics
+          trackAnalyticsEvent('verification_completed', {
+            token_id: tokenToVerify,
             network: networkToUse,
             score: finalResult.score,
-            verified: finalResult.verified
-          },
-          network: networkToUse,
-          timestamp: new Date().toISOString()
-        });
+            verified: finalResult.verified,
+            status: finalResult.status,
+            duration_ms: verificationDuration,
+            api_response_times: apiResponseTimes,
+            checks_passed: Object.values(finalResult.checks).filter(Boolean).length,
+            warnings_count: finalResult.warnings.length,
+            metadata_quality: finalResult.metadata ? 'complete' : 'partial'
+          }),
+
+          // Security score distribution tracking
+          trackAnalyticsEvent('security_score_recorded', {
+            score: finalResult.score,
+            score_category: finalResult.score >= 80 ? 'safe' : 
+                           finalResult.score >= 60 ? 'caution' : 
+                           finalResult.score >= 40 ? 'risky' : 'danger',
+            network: networkToUse,
+            token_metadata: finalResult.metadata ? {
+              has_name: !!finalResult.metadata.name,
+              has_symbol: !!finalResult.metadata.symbol,
+              has_website: !!finalResult.metadata.website,
+              has_social: !!(finalResult.metadata.twitter || finalResult.metadata.telegram)
+            } : null
+          }),
+
+          // Performance tracking
+          trackAnalyticsEvent('verification_performance', {
+            duration_ms: verificationDuration,
+            network: networkToUse,
+            api_response_avg: apiResponseTimes.reduce((a, b) => a + b, 0) / apiResponseTimes.length,
+            performance_grade: verificationDuration < 3000 ? 'fast' : 
+                              verificationDuration < 10000 ? 'normal' : 'slow'
+          })
+        ]);
       } catch (analyticsError) {
-        console.warn('Failed to track verification event:', analyticsError);
+        console.warn('Failed to track verification analytics:', analyticsError);
       }
       
       toast({
@@ -711,9 +881,21 @@ export default function VerifyPage() {
       
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Verification failed';
+      const verificationDuration = Date.now() - verificationStartTime;
+      
       setError(errorMessage);
       setProgress(0);
       setCurrentStep('');
+
+      // Track verification failure
+      trackAnalyticsEvent('verification_failed', {
+        token_id: tokenToVerify,
+        network: networkToUse,
+        error_message: errorMessage,
+        duration_ms: verificationDuration,
+        failure_point: currentStep
+      });
+      
       toast({
         title: "Verification Failed",
         description: errorMessage,
@@ -727,8 +909,16 @@ export default function VerifyPage() {
   const handleBulkVerification = async () => {
     if (selectedTokens.length === 0) return;
     
+    const bulkStartTime = Date.now();
     setBulkVerifying(true);
     const results: VerificationResult[] = [];
+    
+    // Track bulk verification start
+    trackAnalyticsEvent('bulk_verification_started', {
+      tokens_selected: selectedTokens.length,
+      networks: [...new Set(userTokens.filter(t => selectedTokens.includes(t.contractAddress)).map(t => t.network))],
+      user_total_tokens: userTokens.length
+    });
     
     for (const tokenAddress of selectedTokens) {
       try {
@@ -740,8 +930,22 @@ export default function VerifyPage() {
         }
       } catch (error) {
         console.error(`Bulk verification failed for ${tokenAddress}:`, error);
+        trackAnalyticsEvent('bulk_verification_item_failed', {
+          token_address: tokenAddress,
+          error_message: error instanceof Error ? error.message : 'Unknown error'
+        });
       }
     }
+    
+    const bulkDuration = Date.now() - bulkStartTime;
+    
+    // Track bulk verification completion
+    trackAnalyticsEvent('bulk_verification_completed', {
+      tokens_processed: selectedTokens.length,
+      duration_ms: bulkDuration,
+      average_time_per_token: bulkDuration / selectedTokens.length,
+      success_rate: results.length / selectedTokens.length
+    });
     
     setBulkVerifying(false);
     setSelectedTokens([]);
@@ -753,6 +957,15 @@ export default function VerifyPage() {
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
+    
+    // Track copy action
+    trackAnalyticsEvent('content_copied', {
+      content_type: label.toLowerCase().replace(' ', '_'),
+      content_length: text.length,
+      current_tab: activeTab,
+      has_verification_result: !!verificationResult
+    });
+    
     toast({
       title: "Copied",
       description: `${label} copied to clipboard`,
@@ -762,6 +975,17 @@ export default function VerifyPage() {
   const shareVerification = () => {
     if (verificationResult?.shareUrl) {
       navigator.clipboard.writeText(verificationResult.shareUrl);
+      
+      // Track share action with detailed analytics
+      trackAnalyticsEvent('verification_shared', {
+        token_id: verificationResult.tokenId,
+        network: verificationResult.network,
+        score: verificationResult.score,
+        verified: verificationResult.verified,
+        share_method: 'copy_link',
+        warnings_count: verificationResult.warnings.length
+      });
+      
       toast({
         title: "Share Link Copied",
         description: "Verification link copied to clipboard",
@@ -836,18 +1060,18 @@ export default function VerifyPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative z-10 space-y-12">
         {/* Enhanced Header */}
         <div className="text-center mb-20 space-y-8">
-          <div className="inline-flex items-center space-x-3 glass-card px-6 py-3 rounded-full">
+          <div className="inline-flex items-center space-x-3 glass-card px-6 py-3 rounded-full border border-primary/20">
             <Shield className="w-5 h-5 text-primary animate-pulse" />
-            <span className="snarbles-body-small uppercase tracking-wider text-primary font-bold">Professional Token Verification</span>
+            <span className="text-sm uppercase tracking-wider text-primary font-bold">Professional Token Verification</span>
             <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
           </div>
           
-          <h1 className="snarbles-heading-1 text-foreground leading-tight">
+          <h1 className="text-5xl md:text-6xl font-bold text-foreground leading-tight">
             Verify Token 
             <span className="bg-gradient-to-r from-primary via-blue-500 to-green-500 bg-clip-text text-transparent"> Safety & Authenticity</span>
           </h1>
           
-          <p className="snarbles-body-large text-muted-foreground max-w-4xl mx-auto leading-relaxed">
+          <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
             Advanced blockchain verification with 
             <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent font-semibold"> real-time security analysis</span>, 
             cross-network detection, and comprehensive scoring for Solana and Algorand tokens.
@@ -856,34 +1080,34 @@ export default function VerifyPage() {
 
         {/* Enhanced Network Status */}
         <div className="flex justify-center mb-12">
-          <div className="glass-card-premium p-6 snarbles-glow-green">
+          <div className="glass-card p-6 border border-green-500/30 bg-green-500/5">
             <div className="flex items-center space-x-4">
-              <div className={`w-6 h-6 rounded-full ${networkStatus.color} shadow-lg snarbles-animate-pulse`}></div>
+              <div className={`w-6 h-6 rounded-full ${networkStatus.color} shadow-lg animate-pulse`}></div>
               <networkStatus.icon className="w-7 h-7 text-green-400" />
-              <span className="snarbles-heading-4 font-bold snarbles-gradient-text-green">{networkStatus.label}</span>
+              <span className="text-xl font-bold bg-gradient-to-r from-green-400 to-green-500 bg-clip-text text-transparent">{networkStatus.label}</span>
               <div className="flex items-center space-x-2 text-green-400">
-                <div className="w-2 h-2 bg-green-400 rounded-full snarbles-animate-pulse"></div>
-                <span className="snarbles-body-small font-medium">Live Network</span>
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium">Live Network</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Enhanced Tabbed Interface */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-8">
           <div className="flex justify-center">
-            <TabsList className="glass-card snarbles-border-glow p-2">
-              <TabsTrigger value="search" className="snarbles-tab-trigger">
+            <TabsList className="glass-card border border-border p-2">
+              <TabsTrigger value="search" className="data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Search className="w-4 h-4 mr-2" />
                 Search & Verify
               </TabsTrigger>
               {isAuthenticated && (
-                <TabsTrigger value="my-tokens" className="snarbles-tab-trigger">
+                <TabsTrigger value="my-tokens" className="data-[state=active]:bg-primary data-[state=active]:text-white">
                   <Wallet className="w-4 h-4 mr-2" />
                   My Tokens ({userTokens.length})
                 </TabsTrigger>
               )}
-              <TabsTrigger value="recent" className="snarbles-tab-trigger">
+              <TabsTrigger value="recent" className="data-[state=active]:bg-primary data-[state=active]:text-white">
                 <History className="w-4 h-4 mr-2" />
                 Recent ({recentVerifications.length})
               </TabsTrigger>
@@ -892,13 +1116,13 @@ export default function VerifyPage() {
 
           {/* Search & Verify Tab */}
           <TabsContent value="search">
-            <Card className="glass-card-premium snarbles-border-glow shadow-2xl">
-              <CardHeader className="snarbles-gradient-red text-white rounded-t-2xl p-8">
+            <Card className="glass-card border border-primary/30 bg-primary/5 shadow-2xl">
+              <CardHeader className="bg-gradient-to-r from-primary to-primary/80 text-white rounded-t-xl p-8">
                 <CardTitle className="flex items-center space-x-3 text-2xl">
                   <Search className="w-7 h-7" />
                   <span>Advanced Token Verification</span>
                 </CardTitle>
-                <CardDescription className="text-red-100 text-lg mt-3">
+                <CardDescription className="text-white/90 text-lg mt-3">
                   Enter token address or asset ID for comprehensive blockchain verification with security analysis
                 </CardDescription>
               </CardHeader>
@@ -906,28 +1130,28 @@ export default function VerifyPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Network Selection */}
                   <div className="space-y-3">
-                    <Label htmlFor="network" className="snarbles-heading-5 font-bold snarbles-gradient-text-red">Network</Label>
-                    <Select value={network} onValueChange={(value) => setNetwork(value as NetworkType)}>
-                      <SelectTrigger className="h-14 snarbles-card snarbles-border-glow text-foreground snarbles-body">
+                    <Label htmlFor="network" className="text-lg font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">Network</Label>
+                    <Select value={network} onValueChange={handleNetworkChange}>
+                      <SelectTrigger className="h-14 glass-card border border-border text-foreground">
                         <SelectValue placeholder="Select network" />
                       </SelectTrigger>
-                      <SelectContent className="snarbles-glass border-gray-700">
-                        <SelectItem value="solana-devnet" className="text-foreground hover:bg-gray-700 py-4">
+                      <SelectContent className="glass-card border-border">
+                        <SelectItem value="solana-devnet" className="text-foreground hover:bg-muted py-4">
                           <div className="flex items-center space-x-3">
-                            <div className="w-4 h-4 bg-purple-500 rounded-full snarbles-animate-pulse"></div>
-                            <span className="snarbles-body">Solana Devnet</span>
+                            <div className="w-4 h-4 bg-purple-500 rounded-full animate-pulse"></div>
+                            <span>Solana Devnet</span>
                           </div>
                         </SelectItem>
-                        <SelectItem value="algorand-mainnet" className="text-foreground hover:bg-gray-700 py-4">
+                        <SelectItem value="algorand-mainnet" className="text-foreground hover:bg-muted py-4">
                           <div className="flex items-center space-x-3">
-                            <div className="w-4 h-4 bg-green-500 rounded-full snarbles-animate-pulse"></div>
-                            <span className="snarbles-body">Algorand Mainnet</span>
+                            <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
+                            <span>Algorand Mainnet</span>
                           </div>
                         </SelectItem>
-                        <SelectItem value="algorand-testnet" className="text-foreground hover:bg-gray-700 py-4">
+                        <SelectItem value="algorand-testnet" className="text-foreground hover:bg-muted py-4">
                           <div className="flex items-center space-x-3">
                             <div className="w-4 h-4 bg-orange-500 rounded-full"></div>
-                            <span className="snarbles-body">Algorand Testnet</span>
+                            <span>Algorand Testnet</span>
                           </div>
                         </SelectItem>
                       </SelectContent>
@@ -936,7 +1160,7 @@ export default function VerifyPage() {
 
                   {/* Token ID Input */}
                   <div className="lg:col-span-2 space-y-3">
-                    <Label htmlFor="token-id" className="snarbles-heading-5 font-bold snarbles-gradient-text-red">
+                    <Label htmlFor="token-id" className="text-lg font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
                       {network.includes('solana') ? 'Token Address' : 'Asset ID'}
                     </Label>
                     <div className="flex gap-4">
@@ -946,12 +1170,12 @@ export default function VerifyPage() {
                         value={tokenId}
                         onChange={(e) => setTokenId(e.target.value)}
                         disabled={isVerifying}
-                        className="flex-1 h-14 snarbles-card snarbles-border-glow text-foreground placeholder-gray-400 snarbles-body"
+                        className="flex-1 h-14 glass-card border border-border text-foreground placeholder:text-muted-foreground"
                       />
                       <Button 
                         onClick={() => handleVerification()}
                         disabled={!tokenId || isVerifying || !validateTokenId(tokenId, network)}
-                        className="px-8 h-14 snarbles-btn-primary snarbles-body font-bold shadow-xl"
+                        className="px-8 h-14 bg-primary hover:bg-primary/90 text-white font-bold shadow-xl"
                       >
                         {isVerifying ? (
                           <div className="flex items-center space-x-3">
@@ -971,9 +1195,9 @@ export default function VerifyPage() {
 
                 {/* Error Display */}
                 {error && (
-                  <Alert className="snarbles-card snarbles-glow-red p-6">
+                  <Alert className="glass-card border border-red-500/30 bg-red-500/5 p-6">
                     <AlertCircle className="h-7 w-7 text-red-400" />
-                    <AlertDescription className="text-red-400 snarbles-body ml-4">
+                    <AlertDescription className="text-red-400 ml-4">
                       {error}
                     </AlertDescription>
                   </Alert>
@@ -985,8 +1209,8 @@ export default function VerifyPage() {
           {/* My Tokens Tab */}
           {isAuthenticated && (
             <TabsContent value="my-tokens">
-              <Card className="glass-card-premium snarbles-border-glow">
-                <CardHeader className="snarbles-gradient-blue text-white rounded-t-2xl p-8">
+              <Card className="glass-card border border-blue-500/30 bg-blue-500/5">
+                <CardHeader className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-xl p-8">
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="flex items-center space-x-3 text-2xl">
@@ -1030,19 +1254,19 @@ export default function VerifyPage() {
                       <Input
                         placeholder="Search tokens by name, symbol, or address..."
                         value={searchFilter}
-                        onChange={(e) => setSearchFilter(e.target.value)}
-                        className="h-12 glass-card snarbles-border-glow text-white placeholder-gray-400"
+                        onChange={(e) => handleSearchChange(e.target.value)}
+                        className="h-12 glass-card border border-border text-foreground placeholder:text-muted-foreground"
                       />
                     </div>
-                    <Select value={networkFilter} onValueChange={setNetworkFilter}>
-                      <SelectTrigger className="w-48 h-12 glass-card snarbles-border-glow text-white">
+                    <Select value={networkFilter} onValueChange={handleNetworkFilterChange}>
+                      <SelectTrigger className="w-48 h-12 glass-card border border-border text-foreground">
                         <SelectValue placeholder="Filter by network" />
                       </SelectTrigger>
-                      <SelectContent className="snarbles-glass border-gray-700">
-                        <SelectItem value="all" className="text-white hover:bg-gray-700">All Networks</SelectItem>
-                        <SelectItem value="solana-devnet" className="text-white hover:bg-gray-700">Solana Devnet</SelectItem>
-                        <SelectItem value="algorand-mainnet" className="text-white hover:bg-gray-700">Algorand Mainnet</SelectItem>
-                        <SelectItem value="algorand-testnet" className="text-white hover:bg-gray-700">Algorand Testnet</SelectItem>
+                      <SelectContent className="glass-card border-border">
+                        <SelectItem value="all" className="text-foreground hover:bg-muted">All Networks</SelectItem>
+                        <SelectItem value="solana-devnet" className="text-foreground hover:bg-muted">Solana Devnet</SelectItem>
+                        <SelectItem value="algorand-mainnet" className="text-foreground hover:bg-muted">Algorand Mainnet</SelectItem>
+                        <SelectItem value="algorand-testnet" className="text-foreground hover:bg-muted">Algorand Testnet</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1051,7 +1275,7 @@ export default function VerifyPage() {
                   {loadingUserTokens ? (
                     <div className="space-y-4">
                       {[1, 2, 3].map((i) => (
-                        <Skeleton key={i} className="h-20 w-full bg-gray-700" />
+                        <Skeleton key={i} className="h-20 w-full bg-muted" />
                       ))}
                     </div>
                   ) : filteredUserTokens.length > 0 ? (
@@ -1061,11 +1285,25 @@ export default function VerifyPage() {
                           key={token.id}
                           className={`p-6 rounded-xl border transition-all duration-200 cursor-pointer ${
                             selectedTokens.includes(token.contractAddress)
-                              ? 'border-red-500 bg-red-500/10 snarbles-glow-red'
-                              : 'border-gray-600/50 hover:border-gray-500/50 snarbles-glass-subtle'
+                              ? 'border-red-500 bg-red-500/10 shadow-[0_0_0_1px_rgb(239_68_68_/_0.3)]'
+                              : 'border-border hover:border-border/70 glass-card'
                           }`}
                           onClick={() => {
-                            if (selectedTokens.includes(token.contractAddress)) {
+                            const isCurrentlySelected = selectedTokens.includes(token.contractAddress);
+                            
+                            // Track token selection analytics
+                            trackAnalyticsEvent('user_token_selected', {
+                              token_id: token.contractAddress,
+                              token_name: token.tokenName,
+                              token_symbol: token.tokenSymbol,
+                              network: token.network,
+                              action: isCurrentlySelected ? 'deselected' : 'selected',
+                              total_selected_after: isCurrentlySelected ? 
+                                selectedTokens.length - 1 : selectedTokens.length + 1,
+                              created_days_ago: Math.floor((Date.now() - new Date(token.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+                            });
+                            
+                            if (isCurrentlySelected) {
                               setSelectedTokens(prev => prev.filter(t => t !== token.contractAddress));
                             } else {
                               setSelectedTokens(prev => [...prev, token.contractAddress]);
@@ -1080,29 +1318,40 @@ export default function VerifyPage() {
                                 </span>
                               </div>
                               <div>
-                                <h3 className="text-xl font-bold snarbles-gradient-text-white">{token.tokenName}</h3>
-                                <p className="text-gray-400">{token.tokenSymbol} • {token.network}</p>
-                                <p className="text-sm text-gray-500 font-mono">
+                                <h3 className="text-xl font-bold text-foreground">{token.tokenName}</h3>
+                                <p className="text-muted-foreground">{token.tokenSymbol} • {token.network}</p>
+                                <p className="text-sm text-muted-foreground font-mono">
                                   {token.contractAddress.slice(0, 8)}...{token.contractAddress.slice(-8)}
                                 </p>
                               </div>
                             </div>
                             <div className="flex items-center space-x-4">
                               <div className="text-right">
-                                <p className="text-sm text-gray-400">Created</p>
-                                <p className="text-white font-medium">
+                                <p className="text-sm text-muted-foreground">Created</p>
+                                <p className="text-foreground font-medium">
                                   {new Date(token.createdAt).toLocaleDateString()}
                                 </p>
                               </div>
                               <Button
                                 onClick={(e) => {
                                   e.stopPropagation();
+                                  
+                                  // Track individual token verification
+                                  trackAnalyticsEvent('individual_token_verify_clicked', {
+                                    token_id: token.contractAddress,
+                                    token_name: token.tokenName,
+                                    network: token.network,
+                                    source: 'my_tokens_list',
+                                    created_days_ago: Math.floor((Date.now() - new Date(token.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+                                  });
+                                  
                                   setTokenId(token.contractAddress);
                                   setNetwork(token.network as NetworkType);
                                   setActiveTab('search');
                                   handleVerification(token.contractAddress, token.network as NetworkType);
                                 }}
-                                className="snarbles-button-ghost"
+                                variant="ghost"
+                                className="hover:bg-muted"
                               >
                                 <Shield className="w-4 h-4 mr-2" />
                                 Verify
@@ -1114,11 +1363,11 @@ export default function VerifyPage() {
                     </div>
                   ) : (
                     <div className="text-center py-16">
-                      <div className="w-24 h-24 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <Database className="w-12 h-12 text-gray-400" />
+                      <div className="w-24 h-24 bg-gradient-to-br from-muted/50 to-muted rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Database className="w-12 h-12 text-muted-foreground" />
                       </div>
-                      <h3 className="text-2xl font-bold snarbles-gradient-text-white mb-4">No Tokens Found</h3>
-                      <p className="text-gray-400 text-lg mb-8">
+                      <h3 className="text-2xl font-bold text-foreground mb-4">No Tokens Found</h3>
+                      <p className="text-muted-foreground text-lg mb-8">
                         {searchFilter || networkFilter !== 'all' 
                           ? 'No tokens match your current filters'
                           : 'You haven\'t created any tokens yet'
@@ -1142,8 +1391,8 @@ export default function VerifyPage() {
 
           {/* Recent Verifications Tab */}
           <TabsContent value="recent">
-            <Card className="glass-card-premium snarbles-border-glow">
-              <CardHeader className="snarbles-gradient-purple text-white rounded-t-2xl p-8">
+            <Card className="glass-card border border-purple-500/30 bg-purple-500/5">
+              <CardHeader className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-t-xl p-8">
                 <CardTitle className="flex items-center space-x-3 text-2xl">
                   <History className="w-7 h-7" />
                   <span>Recent Verifications</span>
@@ -1158,8 +1407,17 @@ export default function VerifyPage() {
                     {recentVerifications.map((verification, index) => (
                       <div
                         key={`${verification.tokenId}-${verification.network}-${index}`}
-                        className="p-6 rounded-xl snarbles-glass-subtle hover:border-gray-500/50 transition-all duration-200 cursor-pointer"
+                        className="p-6 rounded-xl glass-card border border-border hover:border-border/70 transition-all duration-200 cursor-pointer"
                         onClick={() => {
+                          // Track recent verification click
+                          trackAnalyticsEvent('recent_verification_clicked', {
+                            token_id: verification.tokenId,
+                            network: verification.network,
+                            score: verification.result.score,
+                            age_hours: (Date.now() - verification.timestamp) / (1000 * 60 * 60),
+                            position_in_list: index
+                          });
+                          
                           setTokenId(verification.tokenId);
                           setNetwork(verification.network);
                           setVerificationResult(verification.result);
@@ -1171,7 +1429,7 @@ export default function VerifyPage() {
                             {getStatusIcon(verification.result.status)}
                             <div>
                               <div className="flex items-center space-x-3 mb-2">
-                                <h3 className="text-lg font-bold snarbles-gradient-text-white">
+                                <h3 className="text-lg font-bold text-foreground">
                                   {verification.result.metadata?.name || `Token ${verification.tokenId.slice(0, 8)}...`}
                                 </h3>
                                 <Badge 
@@ -1181,20 +1439,20 @@ export default function VerifyPage() {
                                   {verification.result.score}/100
                                 </Badge>
                               </div>
-                              <p className="text-gray-400">
+                              <p className="text-muted-foreground">
                                 {verification.result.metadata?.symbol || 'UNK'} • {verification.network}
                               </p>
-                              <p className="text-sm text-gray-500 font-mono">
+                              <p className="text-sm text-muted-foreground font-mono">
                                 {verification.tokenId.slice(0, 12)}...{verification.tokenId.slice(-8)}
                               </p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm text-gray-400">Verified</p>
-                            <p className="text-white font-medium">
+                            <p className="text-sm text-muted-foreground">Verified</p>
+                            <p className="text-foreground font-medium">
                               {new Date(verification.timestamp).toLocaleDateString()}
                             </p>
-                            <ChevronRight className="w-5 h-5 text-gray-400 mt-2" />
+                            <ChevronRight className="w-5 h-5 text-muted-foreground mt-2" />
                           </div>
                         </div>
                       </div>
@@ -1202,11 +1460,11 @@ export default function VerifyPage() {
                   </div>
                 ) : (
                   <div className="text-center py-16">
-                    <div className="w-24 h-24 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full flex items-center justify-center mx-auto mb-6">
-                      <History className="w-12 h-12 text-gray-400" />
+                    <div className="w-24 h-24 bg-gradient-to-br from-muted/50 to-muted rounded-full flex items-center justify-center mx-auto mb-6">
+                      <History className="w-12 h-12 text-muted-foreground" />
                     </div>
-                    <h3 className="text-2xl font-bold snarbles-gradient-text-white mb-4">No Recent Verifications</h3>
-                    <p className="text-gray-400 text-lg">
+                    <h3 className="text-2xl font-bold text-foreground mb-4">No Recent Verifications</h3>
+                    <p className="text-muted-foreground text-lg">
                       Your recent verification history will appear here
                     </p>
                   </div>
@@ -1218,7 +1476,7 @@ export default function VerifyPage() {
 
         {/* Enhanced Verification Progress */}
         {isVerifying && (
-          <Card className="glass-card-premium snarbles-border-glow">
+          <Card className="glass-card border border-red-500/30 bg-red-500/5">
             <CardContent className="pt-8 p-8">
               <div className="space-y-8">
                 <div className="flex justify-between items-center text-xl">
@@ -1226,12 +1484,12 @@ export default function VerifyPage() {
                     <RefreshCw className="w-7 h-7 animate-spin text-red-400" />
                     <span className="text-muted-foreground">Advanced Verification in Progress</span>
                   </div>
-                  <span className="font-bold snarbles-gradient-text-red text-2xl">{Math.round(progress)}%</span>
+                  <span className="font-bold text-red-500 text-2xl">{Math.round(progress)}%</span>
                 </div>
-                <Progress value={progress} className="h-6 snarbles-glass-subtle" />
+                <Progress value={progress} className="h-6" />
                 <div className="text-center">
-                  <p className="snarbles-body text-muted-foreground text-lg">{currentStep}</p>
-                  <p className="snarbles-body-small text-gray-300 mt-2">Analyzing security, metadata, and market data...</p>
+                  <p className="text-muted-foreground text-lg">{currentStep}</p>
+                  <p className="text-muted-foreground/70 mt-2">Analyzing security, metadata, and market data...</p>
                 </div>
               </div>
             </CardContent>

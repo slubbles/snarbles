@@ -1,0 +1,136 @@
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { WalletAdapter, WalletReadyState, WalletName } from '@solana/wallet-adapter-base';
+import { PublicKey } from '@solana/web3.js';
+
+// OKX Wallet Adapter
+class OKXWalletAdapter implements WalletAdapter {
+  name: WalletName<'OKX Wallet'> = 'OKX Wallet' as WalletName<'OKX Wallet'>;
+  url = 'https://www.okx.com/web3';
+  icon = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAyNCIgaGVpZ2h0PSIxMDI0IiB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cGF0aCBkPSJNMzg0IDBIMTY0MEMxNjQwIDAgMTAyNCAwIDEwMjQgMTY0VjM4NEMxMDI0IDM4NCAxMDI0IDY0MCA2NDAgMTAyNEgzODRDMzg0IDEwMjQgMCAxMDI0IDAgNjQwVjE2NEMwIDE2NCAwIDAgMzg0IDBaIiBmaWxsPSIjRkZGRkZGIi8+CjxwYXRoIGQ9Ik01MTIgNzY4QzY0Ni41MjkgNzY4IDc1NiA2NTguNTI5IDc1NiA1MjRDNzU2IDM4OS40NzEgNjQ2LjUyOSAyODAgNTEyIDI4MEM0MjAuNTI5IDI4MCAzMzYgMzM2IDMzNiA0MjBDMzM2IDQ3Ni41MTcgMzgwLjQ4MyA1MjEgNDM3IDUyMUM0NzYuMjU3IDUyMSA1MDkgNDg4LjI1NyA1MDkgNDQ5QzUwOSA0MTAuNzQzIDQ3Ni4yNTcgMzc4IDQzNyAzNzhDNDEyLjkwOSAzNzggMzkyLjg0NSAzOTguMDY0IDM5Mi44NDUgNDIyLjE1NUMzOTIuODQ1IDQ0Ni4yNDYgNDEyLjkwOSA0NjYuMzEgNDM3IDQ2Ni4zMUMzOTAuMzg3IDQ2Ni4zMSAzNTIuNzYgNDI4LjY4MyAzNTIuNzYgMzgyLjA3QzM1Mi43NiAzMzUuNDU3IDM5MC4zODcgMjk3LjgzIDQzNyAyOTcuODNDNDkwLjYxMyAyOTcuODMgNTM0LjQzIDM0MS42NDcgNTM0LjQzIDM5NS4yNkM1MzQuNDMgNDE3LjIzIDUyMS45MDcgNDM2LjEyNCA1MDMuMzc2IDQ0Ny4yOTVMNDYzLjA2MiA0NjguNjJDNDE1Ljg4OSA0OTUuNjg4IDM4NCA1NDYuMDc4IDM4NCA2MDBDMzg0IDY5Mi4wNjYgNDU3LjkzNCA3NjYgNTUwIDc2Nkg1NTRDNTU0LjQxOCA3NjYgNTU0LjgzNiA3NjYgNTU1LjI1MyA3NjZINTEyWiIgZmlsbD0iIzAwMCIvPgo8L3N2Zz4K';
+  readonly supportedTransactionVersions = null;
+
+  private _connecting: boolean;
+  private _connected: boolean;
+  private _publicKey: PublicKey | null;
+  private _readyState: WalletReadyState;
+
+  constructor() {
+    this._connecting = false;
+    this._connected = false;
+    this._publicKey = null;
+    this._readyState = typeof window !== 'undefined' && 'okxwallet' in window 
+      ? WalletReadyState.Installed 
+      : WalletReadyState.NotDetected;
+  }
+
+  get connecting() {
+    return this._connecting;
+  }
+
+  get connected() {
+    return this._connected;
+  }
+
+  get publicKey() {
+    return this._publicKey;
+  }
+
+  get readyState() {
+    return this._readyState;
+  }
+
+  async connect(): Promise<void> {
+    try {
+      this._connecting = true;
+      
+      if (typeof window === 'undefined' || !('okxwallet' in window)) {
+        throw new Error('OKX Wallet not detected. Please install the OKX Wallet extension.');
+      }
+
+      const okxWallet = (window as any).okxwallet?.solana;
+      if (!okxWallet) {
+        throw new Error('OKX Wallet Solana provider not found.');
+      }
+
+      const response = await okxWallet.connect();
+      if (response?.publicKey) {
+        this._publicKey = new PublicKey(response.publicKey);
+        this._connected = true;
+        this.emit('connect', this._publicKey);
+      } else {
+        throw new Error('Failed to connect to OKX Wallet');
+      }
+    } catch (error) {
+      this.emit('error', error);
+      throw error;
+    } finally {
+      this._connecting = false;
+    }
+  }
+
+  async disconnect(): Promise<void> {
+    try {
+      if (typeof window !== 'undefined' && 'okxwallet' in window) {
+        const okxWallet = (window as any).okxwallet?.solana;
+        if (okxWallet?.disconnect) {
+          await okxWallet.disconnect();
+        }
+      }
+    } catch (error) {
+      console.warn('Error disconnecting from OKX Wallet:', error);
+    } finally {
+      this._connected = false;
+      this._publicKey = null;
+      this.emit('disconnect');
+    }
+  }
+
+  async sendTransaction(): Promise<never> {
+    throw new Error('sendTransaction not implemented for OKX Wallet adapter');
+  }
+
+  async signTransaction(): Promise<never> {
+    throw new Error('signTransaction not implemented for OKX Wallet adapter');
+  }
+
+  async signAllTransactions(): Promise<never> {
+    throw new Error('signAllTransactions not implemented for OKX Wallet adapter');
+  }
+
+  async signMessage(): Promise<never> {
+    throw new Error('signMessage not implemented for OKX Wallet adapter');
+  }
+
+  // Event emitter functionality
+  private _listeners: Record<string, Function[]> = {};
+
+  emit(event: string, ...args: any[]) {
+    const listeners = this._listeners[event] || [];
+    listeners.forEach(listener => {
+      try {
+        listener(...args);
+      } catch (error) {
+        console.error('Error in wallet event listener:', error);
+      }
+    });
+  }
+
+  on(event: string, listener: Function) {
+    if (!this._listeners[event]) {
+      this._listeners[event] = [];
+    }
+    this._listeners[event].push(listener);
+  }
+
+  off(event: string, listener: Function) {
+    if (!this._listeners[event]) return;
+    const index = this._listeners[event].indexOf(listener);
+    if (index > -1) {
+      this._listeners[event].splice(index, 1);
+    }
+  }
+}
+
+export default OKXWalletAdapter;
