@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import algosdk from 'algosdk';
+import * as algosdk from 'algosdk';
 import { getAlgorandNetwork, ALGORAND_NETWORKS } from '@/lib/algorand';
 
 // Import the actual PeraWalletConnect type

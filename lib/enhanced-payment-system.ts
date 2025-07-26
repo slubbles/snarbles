@@ -2,7 +2,7 @@ import { supabase, isSupabaseAvailable } from './supabase-client';
 import { getCreditsBalance, spendCreditsForTokenCreation, addCreditTransaction } from './credit-system';
 import { getAlgorandClient } from './algorand';
 import { getAdminConfig } from './admin-config';
-import algosdk from 'algosdk';
+import * as algosdk from 'algosdk';
 
 export type PaymentMethod = 'credits' | 'algo_direct';
 
@@ -225,13 +225,21 @@ export async function purchaseCreditsWithAlgo(
     // Calculate amount in microALGOs
     const amountMicroAlgos = Math.floor(algoAmount * 1_000_000);
     
-    // Create payment transaction
+    // Create payment transaction - makePaymentTxnWithSuggestedParamsFromObject already returns a Transaction instance
     const paymentTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
       sender: walletAddress,
       receiver: config.receiverAddress,
       amount: amountMicroAlgos,
       suggestedParams,
       note: new Uint8Array(Buffer.from(`Snarbles Credits Purchase: ${creditsToReceive} credits`))
+    });
+
+    // Debug transaction object to ensure it's the right type
+    console.log('🔍 Transaction object debug:', {
+      type: typeof paymentTxn,
+      constructor: paymentTxn?.constructor?.name,
+      isTransaction: paymentTxn instanceof algosdk.Transaction,
+      hasToStringMethod: typeof paymentTxn.toString === 'function'
     });
 
     console.log('🔐 Requesting wallet signature for REAL ALGO transaction...');

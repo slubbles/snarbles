@@ -1,4 +1,4 @@
-import algosdk from 'algosdk';
+import * as algosdk from 'algosdk';
 import { supabaseHelpers } from '@/lib/supabase';
 import { retryWithBackoff } from '@/lib/error-handling';
 import { safeStringify } from '@/lib/utils';

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
-import algosdk from 'algosdk';
+import * as algosdk from 'algosdk';
 
 /**
  * Custom hook for Algorand wallet transaction signing

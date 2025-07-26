@@ -114,18 +114,28 @@ function SolanaWalletProviderInner({ children }: { children: React.ReactNode }) 
   const network = getWalletAdapterNetwork();
   const endpoint = useMemo(() => currentNetwork.rpcUrl, [currentNetwork.rpcUrl]);
 
-  // Enhanced wallet configuration with error handling
+  // Enhanced wallet configuration with error handling and duplicate prevention
   const wallets = useMemo(() => {
     console.log(`🔧 Configuring wallets for ${currentNetwork.name} (${network})`);
     
     try {
-      const adapters = [
-        new PhantomWalletAdapter(),
-        new SolflareWalletAdapter({ network }),
-        // Note: BackpackWalletAdapter will be added when available in the package
-      ];
+      // Create wallet adapters with explicit network configuration
+      const phantomAdapter = new PhantomWalletAdapter();
+      const solflareAdapter = new SolflareWalletAdapter({ network });
       
-      console.log(`✅ Configured ${adapters.length} wallet adapters`);
+      const adapters = [phantomAdapter, solflareAdapter];
+      
+      // Add unique identifiers to prevent React key conflicts
+      adapters.forEach((adapter, index) => {
+        // Ensure each adapter has a unique identifier
+        (adapter as any)._uniqueId = `${adapter.name}_${network}_${index}`;
+      });
+      
+      console.log(`✅ Configured ${adapters.length} unique Solana wallet adapters`);
+      adapters.forEach((adapter, index) => {
+        console.log(`  ${index + 1}. ${adapter.name} (${(adapter as any)._uniqueId})`);
+      });
+      
       return adapters;
     } catch (error) {
       console.error('Error configuring wallet adapters:', error);
