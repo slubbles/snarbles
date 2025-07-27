@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { ADMIN_WALLET } from '@/lib/solana';
 import { DashboardLayout } from '@/components/dashboard/shared/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Wallet, ArrowRight } from 'lucide-react';
@@ -16,6 +17,9 @@ export default function SolanaDashboardPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Check if user is admin
+  const isUserAdmin = !!(solanaConnected && publicKey && publicKey.toString() === ADMIN_WALLET.toString());
 
   // Don't render until mounted to avoid hydration issues
   if (!mounted) {
@@ -38,6 +42,7 @@ export default function SolanaDashboardPage() {
         network="solana" 
         walletAddress={undefined}
         isConnected={false}
+        isAdmin={false}
       >
         <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="max-w-md mx-auto text-center">
@@ -90,6 +95,7 @@ export default function SolanaDashboardPage() {
       network="solana" 
       walletAddress={publicKey?.toBase58()}
       isConnected={solanaConnected}
+      isAdmin={isUserAdmin}
       stats={{
         totalTokens: 0, // Will be populated by the dashboard
         totalTransactions: 0,

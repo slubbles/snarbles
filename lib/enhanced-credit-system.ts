@@ -3,21 +3,21 @@
  * 
  * Supports two payment methods:
  * 1. Direct ALGO payment (10 ALGO)
- * 2. Credits system (5 credits)
+ * 2. Credits system (10 credits)
  */
 
 import { supabase, isSupabaseAvailable } from './supabase-client';
 import { getAlgorandClient } from './algorand';
 import { getCreditsBalance, updateCreditsBalance, addCreditTransaction } from './credit-system';
 import { getAdminConfig } from './admin-config';
-import algosdk from 'algosdk';
+import * as algosdk from 'algosdk';
 
 // Enhanced pricing configuration
 export const PRICING_CONFIG = {
   // Mainnet token creation costs
   mainnet: {
     direct_algo: 10,      // 10 ALGO for direct payment
-    credits: 5,           // 5 credits for credit system
+    credits: 10,          // 10 credits for credit system
     credits_to_algo: 2    // 1 credit = 2 ALGO value
   },
   // Testnet remains free

@@ -25,6 +25,7 @@ interface DashboardLayoutProps {
   network: 'solana' | 'algorand';
   walletAddress?: string;
   isConnected: boolean;
+  isAdmin?: boolean;
   onRefresh?: () => void;
   stats?: {
     totalTokens: number;
@@ -45,6 +46,7 @@ export function DashboardLayout({
   network, 
   walletAddress, 
   isConnected,
+  isAdmin = false,
   onRefresh,
   stats 
 }: DashboardLayoutProps) {
@@ -88,11 +90,12 @@ export function DashboardLayout({
       icon: Coins,
       badge: stats?.totalTokens?.toString()
     },
-    {
+    // Analytics only for admins
+    ...(isAdmin ? [{
       label: 'Analytics',
       href: `${config.basePath}/analytics`,
       icon: BarChart3
-    },
+    }] : []),
     {
       label: 'Transactions',
       href: `${config.basePath}/transactions`,

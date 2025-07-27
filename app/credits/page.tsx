@@ -44,52 +44,46 @@ export default function CreditsPage() {
   const creditBenefits = [
     {
       icon: <Zap className="w-5 h-5 text-yellow-400" />,
-      title: "Instant Deployment",
-      description: "Deploy tokens immediately without waiting for blockchain confirmations",
-      highlight: "Lightning Fast"
+      title: "Instant",
+      description: "Deploy tokens immediately",
+      highlight: "Fast"
     },
     {
       icon: <Shield className="w-5 h-5 text-green-400" />,
       title: "Cost Effective",
-      description: "Save up to 50% compared to direct payments with bulk purchases",
+      description: "Save with bulk purchases",
       highlight: "Save 50%"
-    },
-    {
-      icon: <Sparkles className="w-5 h-5 text-purple-400" />,
-      title: "Never Expire",
-      description: "Your credits remain in your account permanently with no time limits",
-      highlight: "Permanent"
     },
     {
       icon: <Gift className="w-5 h-5 text-blue-400" />,
       title: "Bonus Credits",
-      description: "Get bonus credits with larger purchases - more value for your investment",
-      highlight: "Bonus Included"
+      description: "Get bonus with larger packages",
+      highlight: "Bonus"
     }
   ];
 
   const useCases = [
     {
       title: "Single Token",
-      cost: "5 credits",
-      description: "Perfect for testing or single project",
-      example: "Create one token on Algorand mainnet",
+      cost: "10 credits",
+      description: "Perfect for testing",
+      example: "1 token on mainnet",
       recommended: false,
       icon: <Coins className="w-5 h-5 text-blue-400" />
     },
     {
       title: "Small Business",
       cost: "25-50 credits",
-      description: "Ideal for multiple projects or iterations",
-      example: "5-10 tokens with room for testing",
+      description: "Multiple projects",
+      example: "5-10 tokens",
       recommended: true,
       icon: <TrendingUp className="w-5 h-5 text-green-400" />
     },
     {
       title: "Enterprise",
       cost: "100+ credits",
-      description: "Bulk token creation with maximum savings",
-      example: "20+ tokens with bonus credits included",
+      description: "Bulk creation",
+      example: "20+ tokens",
       recommended: false,
       icon: <Star className="w-5 h-5 text-purple-400" />
     }
@@ -183,34 +177,32 @@ export default function CreditsPage() {
             <div className="xl:col-span-1 space-y-6">
               {/* Credit Benefits */}
               <Card className="glass-card border-primary/10">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Star className="w-4 h-4 text-primary" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Star className="w-3 h-3 text-primary" />
                     </div>
                     Why Use Credits?
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-3">
                   {creditBenefits.map((benefit, index) => (
-                    <div key={index} className="relative group">
-                      <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/20 transition-colors">
-                        <div className="w-10 h-10 rounded-full bg-muted/30 flex items-center justify-center flex-shrink-0">
-                          {benefit.icon}
+                    <div key={index} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/20 transition-colors">
+                      <div className="w-8 h-8 rounded-full bg-muted/30 flex items-center justify-center flex-shrink-0">
+                        {benefit.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium text-foreground text-sm">
+                            {benefit.title}
+                          </h4>
+                          <Badge variant="secondary" className="text-xs px-1 py-0">
+                            {benefit.highlight}
+                          </Badge>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-semibold text-foreground text-sm">
-                              {benefit.title}
-                            </h4>
-                            <Badge variant="secondary" className="text-xs">
-                              {benefit.highlight}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground leading-relaxed">
-                            {benefit.description}
-                          </p>
-                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {benefit.description}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -219,29 +211,29 @@ export default function CreditsPage() {
 
               {/* Use Cases */}
               <Card className="glass-card border-green-500/10">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center">
-                      <TrendingUp className="w-4 h-4 text-green-400" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-green-500/10 flex items-center justify-center">
+                      <TrendingUp className="w-3 h-3 text-green-400" />
                     </div>
                     Credit Use Cases
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3">
                   {useCases.map((useCase, index) => (
-                    <div key={index} className={`relative p-4 rounded-lg border transition-all hover:scale-[1.02] ${
+                    <div key={index} className={`p-3 rounded-lg border transition-all ${
                       useCase.recommended 
                         ? 'border-primary/30 bg-primary/5' 
                         : 'border-border bg-muted/10'
                     }`}>
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           {useCase.icon}
-                          <h4 className="font-semibold text-foreground text-sm">
+                          <h4 className="font-medium text-foreground text-sm">
                             {useCase.title}
                           </h4>
                         </div>
-                        <div className="flex flex-col items-end gap-1">
+                        <div className="flex items-center gap-1">
                           <Badge 
                             variant={useCase.recommended ? "default" : "secondary"}
                             className="text-xs"
@@ -255,11 +247,8 @@ export default function CreditsPage() {
                           )}
                         </div>
                       </div>
-                      <p className="text-xs text-muted-foreground mb-2 leading-relaxed">
-                        {useCase.description}
-                      </p>
-                      <p className="text-xs text-muted-foreground/80 italic">
-                        Example: {useCase.example}
+                      <p className="text-xs text-muted-foreground">
+                        {useCase.description} • {useCase.example}
                       </p>
                     </div>
                   ))}
@@ -268,32 +257,32 @@ export default function CreditsPage() {
 
               {/* Pricing Info */}
               <Card className="glass-card border-blue-500/10">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center">
-                      <CreditCard className="w-4 h-4 text-blue-400" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-blue-500/10 flex items-center justify-center">
+                      <CreditCard className="w-3 h-3 text-blue-400" />
                     </div>
                     Pricing Info
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-muted/10">
-                      <span className="text-sm text-muted-foreground">Exchange Rate:</span>
-                      <span className="font-semibold text-foreground">1 USDT = 1 credit</span>
+                <CardContent className="space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center p-2 rounded-lg bg-muted/10">
+                      <span className="text-xs text-muted-foreground">Exchange Rate:</span>
+                      <span className="font-medium text-foreground text-sm">1 USDT = 1 credit</span>
                     </div>
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-green-500/5">
-                      <span className="text-sm text-muted-foreground">Mainnet Token:</span>
-                      <span className="font-semibold text-green-400">5 credits</span>
+                    <div className="flex justify-between items-center p-2 rounded-lg bg-green-500/5">
+                      <span className="text-xs text-muted-foreground">Mainnet Token:</span>
+                      <span className="font-medium text-green-400 text-sm">10 credits</span>
                     </div>
-                    <div className="flex justify-between items-center p-3 rounded-lg bg-blue-500/5">
-                      <span className="text-sm text-muted-foreground">Testnet Token:</span>
-                      <span className="font-semibold text-blue-400">FREE</span>
+                    <div className="flex justify-between items-center p-2 rounded-lg bg-blue-500/5">
+                      <span className="text-xs text-muted-foreground">Testnet Token:</span>
+                      <span className="font-medium text-blue-400 text-sm">FREE</span>
                     </div>
                   </div>
-                  <div className="pt-3 border-t border-border">
-                    <div className="flex items-center gap-2 text-sm text-green-400">
-                      <CheckCircle className="w-4 h-4" />
+                  <div className="pt-2 border-t border-border">
+                    <div className="flex items-center gap-2 text-xs text-green-400">
+                      <CheckCircle className="w-3 h-3" />
                       <span>Credits never expire</span>
                     </div>
                   </div>
@@ -302,23 +291,23 @@ export default function CreditsPage() {
 
               {/* Help & Support */}
               <Card className="glass-card border-purple-500/10">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center">
-                      <AlertCircle className="w-4 h-4 text-purple-400" />
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-purple-500/10 flex items-center justify-center">
+                      <AlertCircle className="w-3 h-3 text-purple-400" />
                     </div>
                     Need Help?
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Having trouble with credit purchases or token creation?
+                <CardContent className="space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    Having trouble with credit purchases?
                   </p>
                   <div className="space-y-2">
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="w-full justify-start text-left"
+                      className="w-full justify-start text-left h-8"
                       onClick={() => router.push('/support')}
                     >
                       📚 Documentation
@@ -326,7 +315,7 @@ export default function CreditsPage() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="w-full justify-start text-left"
+                      className="w-full justify-start text-left h-8"
                       onClick={() => router.push('/contact')}
                     >
                       💬 Contact Support

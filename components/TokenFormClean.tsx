@@ -76,9 +76,7 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
       errors.symbol = 'Symbol must be at least 2 characters';
     }
     
-    if (!tokenData.description || tokenData.description.length < 10) {
-      errors.description = 'Description must be at least 10 characters';
-    }
+    // Description is now optional - no validation required
     
     if (!tokenData.totalSupply || parseFloat(tokenData.totalSupply) <= 0) {
       errors.totalSupply = 'Supply must be greater than 0';
@@ -142,7 +140,7 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
       case 'algorand-mainnet':
         return { 
           name: 'Algorand Mainnet', 
-          cost: '5 credits', 
+          cost: '10 credits', 
           description: 'Production network for real tokens',
           icon: '🔺',
           color: 'text-blue-500'
@@ -208,7 +206,7 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
 
     try {
       const isMainnet = tokenData.network.includes('mainnet');
-      const creditsRequired = isMainnet ? 5 : 0;
+      const creditsRequired = isMainnet ? 10 : 0;
       
       // Handle payment processing
       if (selectedPaymentMethod === 'credits') {
@@ -246,10 +244,10 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
         throw new Error('Invalid payment method selected');
       }
       
-      setTokenCreationStep(1); // Processing payment
+      setTokenCreationStep(1); // Confirming transaction
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      setTokenCreationStep(2); // Creating token
+      setTokenCreationStep(2); // Sign transaction on Pera Wallet app
       
       // REAL TOKEN CREATION - Call actual createRealAlgorandToken
       if (tokenData.network.includes('algorand') && algorandWallet.connected && algorandWallet.address) {
@@ -324,11 +322,11 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
             console.warn('⚠️ Analytics tracking failed (non-blocking):', analyticsError);
           }
           
-          setTokenCreationStep(3); // Finalizing
+          setTokenCreationStep(3); // Processing
           await new Promise(resolve => setTimeout(resolve, 1000));
           
           // Success
-          setTokenCreationStep(4); // Complete
+          setTokenCreationStep(4); // Success
           toast({
             title: "🎉 Real Token Created Successfully!",
             description: `${tokenData.name} (${tokenData.symbol}) created on ${tokenData.network}. Asset ID: ${result.data?.assetId}`,
@@ -380,21 +378,16 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
         // Mock for non-Algorand networks or disconnected wallet
         console.log('⚠️ Using mock token creation for non-Algorand network or disconnected wallet');
         await new Promise(resolve => setTimeout(resolve, 2000));
-        setTokenCreationStep(3); // Finalizing
+        setTokenCreationStep(3); // Processing
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Success
-        setTokenCreationStep(4); // Complete
+        setTokenCreationStep(4); // Success
         toast({
           title: "Token created successfully!",
           description: `${tokenData.name} (${tokenData.symbol}) has been deployed to ${tokenData.network}.`,
         });
       }
-      
-      // Redirect after success
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 3000);
       
       // Track final completion analytics
       try {
@@ -403,7 +396,7 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
           payment_method: selectedPaymentMethod,
           network: tokenData.network,
           token_name: tokenData.name,
-          redirect_to: 'dashboard'
+          staying_on_confirmation: true
         }, walletAddress || undefined);
       } catch (analyticsError) {
         console.warn('⚠️ Flow completion analytics tracking failed:', analyticsError);
@@ -505,7 +498,6 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
     const basicValidation = isAuthenticated && 
            tokenData.name.length >= 3 && 
            tokenData.symbol.length >= 2 && 
-           tokenData.description.length >= 10 && 
            parseFloat(tokenData.totalSupply) > 0 && 
            tokenData.network;
     
@@ -515,7 +507,7 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
     const isMainnet = tokenData.network.includes('mainnet');
     if (!isMainnet) return true; // Testnet is free
     
-    const creditsRequired = 5;
+        const creditsRequired = 10;
     const algoRequired = 0.1;
     
     if (selectedPaymentMethod === 'credits') {
@@ -609,7 +601,7 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
             {/* Description - Full width moved above network selection */}
             <div className="space-y-2 lg:col-span-2">
               <Label htmlFor="description" className="text-sm font-medium text-foreground">
-                Description *
+                Description (optional)
               </Label>
               <Textarea
                 id="description"
@@ -633,7 +625,7 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
                   { value: 'algorand-testnet', name: 'Algorand Testnet', cost: 'Free', icon: '🔸', description: 'Test network for development' },
-                  { value: 'algorand-mainnet', name: 'Algorand Mainnet', cost: '5 credits', icon: '🔺', description: 'Production network for real tokens' },
+                  { value: 'algorand-mainnet', name: 'Algorand Mainnet', cost: '10 credits', icon: '🔺', description: 'Production network for real tokens' },
                   { value: 'solana-devnet', name: 'Solana Devnet', cost: 'Free', icon: '🟣', description: 'Test network for development' }
                 ].map((network) => (
                   <div
@@ -695,7 +687,7 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
           </h2>
           
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 lg:p-4 rounded-lg bg-muted/30">
+            <div className="flex items-center justify-between p-3 lg:p-4 rounded-lg border border-border hover:border-border/80 transition-colors">
               <div className="flex-1">
                 <Label className="text-sm font-medium text-foreground">Mintable</Label>
                 <p className="text-xs text-muted-foreground mt-1">Allow creating new tokens after deployment</p>
@@ -706,7 +698,7 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
               />
             </div>
             
-            <div className="flex items-center justify-between p-3 lg:p-4 rounded-lg bg-muted/30">
+            <div className="flex items-center justify-between p-3 lg:p-4 rounded-lg border border-border hover:border-border/80 transition-colors">
               <div className="flex-1">
                 <Label className="text-sm font-medium text-foreground">Burnable</Label>
                 <p className="text-xs text-muted-foreground mt-1">Allow permanently destroying tokens</p>
@@ -717,7 +709,7 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
               />
             </div>
             
-            <div className="flex items-center justify-between p-3 lg:p-4 rounded-lg bg-muted/30">
+            <div className="flex items-center justify-between p-3 lg:p-4 rounded-lg border border-border hover:border-border/80 transition-colors">
               <div className="flex-1">
                 <Label className="text-sm font-medium text-foreground">Pausable</Label>
                 <p className="text-xs text-muted-foreground mt-1">Allow pausing all token transfers</p>
@@ -878,8 +870,8 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
           
           <WalletAwarePaymentSelector 
             network={tokenData.network}
-            creditsRequired={tokenData.network.includes('mainnet') ? 5 : 0}
-            nativeRequired={tokenData.network === 'algorand-mainnet' ? 0.1 : 0}
+            creditsRequired={tokenData.network.includes('mainnet') ? 10 : 0}
+            nativeRequired={tokenData.network.includes('mainnet') ? 0.1 : 0}
           />
         </div>
 

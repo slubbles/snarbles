@@ -84,11 +84,11 @@ export default function TransactionStatusModalEnhanced({
       return steps.map((stepTitle: string, index: number) => ({
         id: `step-${index}`,
         title: stepTitle,
-        description: index === 0 ? 'Validating parameters and preparing transaction' :
-                    index === 1 ? 'Please connect and confirm in your wallet' :
-                    index === 2 ? 'Signing the transaction in your wallet' :
-                    index === 3 ? 'Broadcasting transaction to the network' :
-                    index === 4 ? 'Waiting for network confirmation' : 'Processing...',
+        description: index === 0 ? 'Validating parameters and preparing payment' :
+                    index === 1 ? 'Building transaction for your wallet' :
+                    index === 2 ? '⭐ Please open your Pera Wallet app and sign the transaction' :
+                    index === 3 ? 'Processing your token creation on the blockchain' :
+                    index === 4 ? 'Token created successfully!' : 'Processing...',
         status: index < tokenCreationStep ? 'completed' : 
                index === tokenCreationStep ? 'active' : 'pending',
         estimatedTime: index === 0 ? '10s' : 

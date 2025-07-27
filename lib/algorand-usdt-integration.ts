@@ -5,7 +5,7 @@
  * Compatible with Pera Wallet and other Algorand wallet adapters
  */
 
-import algosdk from 'algosdk';
+import * as algosdk from 'algosdk';
 
 // Algorand USDT configuration
 export const ALGORAND_USDT_CONFIG = {

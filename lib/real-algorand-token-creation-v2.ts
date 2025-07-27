@@ -49,7 +49,7 @@ function calculateTokenSupplyFallback(supply: number, decimals: number): {
  * Real Algorand Token Creation with Actual Wallet Integration
  * This creates actual tokens on the Algorand blockchain using real wallet signing
  */
-import algosdk from 'algosdk';
+import * as algosdk from 'algosdk';
 import { getFeeConfigForNetwork } from './admin-config';
 
 export interface TokenCreationParams {

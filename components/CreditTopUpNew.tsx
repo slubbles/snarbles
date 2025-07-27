@@ -29,6 +29,7 @@ export default function CreditTopUp() {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const { toast } = useToast();
   const { walletAddress, walletType, isAuthenticated } = useWalletAuth();
+  const { signTransaction } = useAlgorandWallet();
 
   useEffect(() => {
     if (walletAddress) {
@@ -65,8 +66,6 @@ export default function CreditTopUp() {
     setIsPurchasing(true);
     try {
       // Use real wallet signing from provider
-      const { signTransaction } = useAlgorandWallet();
-      
       if (!signTransaction) {
         throw new Error('Wallet signing function not available');
       }

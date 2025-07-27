@@ -1,4 +1,4 @@
-import algosdk from 'algosdk';
+import * as algosdk from 'algosdk';
 import { supabaseHelpers } from '@/lib/supabase';
 import { getAlgorandClient, getAlgorandNetwork, waitForConfirmationWithRetry, getAlgorandAssetInfo } from './algorand';
 import { getDashboardWebSocket } from './websocket-client';

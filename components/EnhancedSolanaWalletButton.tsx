@@ -40,10 +40,13 @@ export function EnhancedSolanaWalletButton({
 }: EnhancedSolanaWalletButtonProps) {
   const { 
     wallet, 
+    wallets,
     publicKey, 
     connected, 
     connecting, 
-    disconnect 
+    disconnect,
+    select,
+    connect
   } = useWallet();
   
   const { setVisible } = useWalletModal();
@@ -97,6 +100,36 @@ export function EnhancedSolanaWalletButton({
     }
   }, [connected, wallet]);
 
+  // Direct wallet connection without modal
+  const connectWalletDirectly = useCallback(async (walletName: string) => {
+    try {
+      // Find the wallet adapter
+      const walletAdapter = wallets.find(w => w.adapter.name.toLowerCase().includes(walletName.toLowerCase()));
+      
+      if (walletAdapter) {
+        console.log(`🔄 Connecting directly to ${walletName} wallet...`);
+        await select(walletAdapter.adapter.name);
+        await connect();
+        
+        toast({
+          title: `🎉 ${walletName} Connected`,
+          description: `Successfully connected to ${walletName} wallet`,
+          duration: 3000,
+        });
+      } else {
+        throw new Error(`${walletName} wallet adapter not found`);
+      }
+    } catch (error) {
+      console.error(`${walletName} connection error:`, error);
+      toast({
+        title: "❌ Connection Failed",
+        description: `Failed to connect to ${walletName} wallet. Please try again.`,
+        variant: "destructive",
+        duration: 4000,
+      });
+    }
+  }, [wallets, select, connect, toast]);
+
   // Detect available wallets (LIMITED TO PHANTOM AND OKX ONLY)
   const detectWallets = useCallback(() => {
     const wallets: WalletInfo[] = [];
@@ -112,7 +145,7 @@ export function EnhancedSolanaWalletButton({
       isConnected: connected && wallet?.adapter?.name === 'Phantom',
       connect: async () => {
         if (isPhantomInstalled) {
-          setVisible(true); // Use the standard wallet modal for Phantom
+          await connectWalletDirectly('Phantom'); // Direct connection without modal
         } else {
           window.open('https://phantom.app/', '_blank');
         }
@@ -132,7 +165,8 @@ export function EnhancedSolanaWalletButton({
       isConnected: false, // OKX connection handled separately for now
       connect: async () => {
         if (isOKXInstalled) {
-          await connectOKXWallet();
+          // Use the connectWalletDirectly function which already handles OKX
+          await connectWalletDirectly('OKX');
         } else {
           window.open('https://www.okx.com/web3', '_blank');
         }

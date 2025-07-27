@@ -39,7 +39,7 @@ export interface PaymentResult {
 
 // Current pricing structure
 export const PRICING = {
-  CREDITS_REQUIRED: 5,
+  CREDITS_REQUIRED: 10,
   ALGO_REQUIRED: 10,
   CREDIT_TO_ALGO_RATE: 0.5, // 1 credit = 0.5 ALGO
   ALGO_TO_CREDIT_RATE: 2,    // 1 ALGO = 2 credits
@@ -239,8 +239,18 @@ export async function purchaseCreditsWithAlgo(
       type: typeof paymentTxn,
       constructor: paymentTxn?.constructor?.name,
       isTransaction: paymentTxn instanceof algosdk.Transaction,
-      hasToStringMethod: typeof paymentTxn.toString === 'function'
+      hasToStringMethod: typeof paymentTxn.toString === 'function',
+      hasGetTxIDMethod: typeof paymentTxn.txID === 'function'
     });
+
+    // Ensure the transaction object is properly typed
+    if (!(paymentTxn instanceof algosdk.Transaction)) {
+      console.error('❌ Transaction object validation failed');
+      console.error('paymentTxn:', paymentTxn);
+      console.error('algosdk.Transaction:', algosdk.Transaction);
+      console.error('Transaction prototype:', algosdk.Transaction.prototype);
+      throw new Error('Transaction object creation failed - invalid type');
+    }
 
     console.log('🔐 Requesting wallet signature for REAL ALGO transaction...');
     

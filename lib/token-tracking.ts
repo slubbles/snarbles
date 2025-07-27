@@ -111,7 +111,7 @@ export async function trackTokenCreation({
  */
 function getNetworkCost(network: string): number {
   const costs: Record<string, number> = {
-    'algorand-mainnet': 5,
+    'algorand-mainnet': 10,
     'algorand-testnet': 0,
     'solana-devnet': 0,
     'solana-mainnet': 3,

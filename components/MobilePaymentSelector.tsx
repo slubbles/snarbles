@@ -30,6 +30,7 @@ export default function MobilePaymentSelector({
 }: MobilePaymentSelectorProps) {
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+  const [isLoadingCredits, setIsLoadingCredits] = useState(false);
   const { walletAddress } = useWalletAuth();
   const { toast } = useToast();
   
@@ -118,6 +119,7 @@ export default function MobilePaymentSelector({
         return;
       }
       
+      setIsLoadingCredits(true);
       try {
         const { getCreditsBalance } = await import('@/lib/credit-system');
         const result = await getCreditsBalance(walletAddress);
@@ -126,12 +128,17 @@ export default function MobilePaymentSelector({
           const credits = result.balance || 0;
           const finalCredits = credits === 0 ? 10 : credits;
           setUserCredits(finalCredits);
+          console.log(`🔄 [Mobile] Loaded user credits: ${finalCredits} (original: ${credits})`);
         } else {
           setUserCredits(10);
+          console.log('🔄 [Mobile] Credit system unavailable, using demo credits: 10');
         }
       } catch (error) {
-        console.error('Failed to load user credits:', error);
+        console.error('❌ [Mobile] Failed to load user credits:', error);
         setUserCredits(10);
+        console.log('🔄 [Mobile] Credit system error, using demo credits: 10');
+      } finally {
+        setIsLoadingCredits(false);
       }
     };
 
@@ -255,7 +262,14 @@ export default function MobilePaymentSelector({
                 <div className="flex items-center justify-between p-2 glass-card border border-border">
                   <span className="text-sm font-medium">Available:</span>
                   <span className={`text-sm font-bold ${hasEnoughCredits ? 'text-primary' : 'text-red-500'}`}>
-                    {userCredits.toLocaleString()} credits
+                    {isLoadingCredits ? (
+                      <span className="flex items-center gap-1">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Loading...
+                      </span>
+                    ) : (
+                      `${userCredits.toLocaleString()} credits`
+                    )}
                   </span>
                 </div>
                 
@@ -340,7 +354,7 @@ export default function MobilePaymentSelector({
                           Loading...
                         </>
                       ) : walletBalance !== null ? (
-                        `${walletBalance.toFixed(3)} ALGO`
+                        `${walletBalance.toFixed(6)} ALGO`
                       ) : (
                         'Failed to load'
                       )}
@@ -350,7 +364,7 @@ export default function MobilePaymentSelector({
                   <div className="flex items-center justify-between p-2 bg-muted rounded-lg">
                     <span className="text-sm font-medium">Required:</span>
                     <span className="text-sm font-bold text-foreground">
-                      {algoRequired.toFixed(3)} ALGO
+                      {algoRequired.toFixed(6)} ALGO
                     </span>
                   </div>
                 </div>
@@ -358,7 +372,7 @@ export default function MobilePaymentSelector({
                 {walletAddress && walletBalance !== null && !hasEnoughAlgo && (
                   <div className="mt-3 p-3 glass-card border border-red-500/30">
                     <p className="text-sm text-red-500 font-medium">
-                      Need {(algoRequired - walletBalance).toFixed(3)} more ALGO
+                      Need {(algoRequired - walletBalance).toFixed(6)} more ALGO
                     </p>
                   </div>
                 )}

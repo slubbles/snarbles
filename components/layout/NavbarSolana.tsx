@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Sun, Moon, Wallet } from 'lucide-react';
+import { Menu, X, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -10,23 +10,11 @@ import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 
 export default function NavbarSolana() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [theme, setTheme] = useState('dark');
   const router = useRouter();
   
   // Solana wallet hooks
   const { connected, publicKey, disconnect } = useWallet();
   const { setVisible } = useWalletModal();
-
-  useEffect(() => {
-    // Set initial theme
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-    document.documentElement.setAttribute('data-theme', newTheme);
-  };
 
   const navLinks = [
     { name: 'Create Token', href: '/create' },
@@ -62,8 +50,8 @@ export default function NavbarSolana() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-sm border-b transition-all duration-300" 
          style={{
-           backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.95)' : 'rgba(254, 253, 224, 0.95)',
-           borderColor: theme === 'dark' ? 'rgb(31, 41, 55)' : 'rgb(229, 231, 235)'
+           backgroundColor: 'rgba(0, 0, 0, 0.95)',
+           borderColor: 'rgb(31, 41, 55)'
          }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
@@ -87,15 +75,6 @@ export default function NavbarSolana() {
 
           {/* User Controls */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={toggleTheme}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
-            
             {connected && publicKey ? (
               <div className="flex items-center space-x-3">
                 <span className="text-muted-foreground text-sm">{formatAddress(publicKey.toBase58())}</span>
@@ -137,8 +116,8 @@ export default function NavbarSolana() {
       {isMenuOpen && (
         <div className="md:hidden backdrop-blur-sm border-t transition-all duration-300"
              style={{
-               backgroundColor: theme === 'dark' ? 'rgba(0, 0, 0, 0.95)' : 'rgba(254, 253, 224, 0.95)',
-               borderColor: theme === 'dark' ? 'rgb(31, 41, 55)' : 'rgb(229, 231, 235)'
+               backgroundColor: 'rgba(0, 0, 0, 0.95)',
+               borderColor: 'rgb(31, 41, 55)'
              }}>
           <div className="px-4 py-4 space-y-4">
             {navLinks.map((link) => (
@@ -153,18 +132,6 @@ export default function NavbarSolana() {
             ))}
             
             <div className="pt-4 border-t border-border">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-sm text-muted-foreground">Theme</span>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={toggleTheme}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                </Button>
-              </div>
-              
               {connected && publicKey ? (
                 <div className="space-y-3">
                   <span className="text-muted-foreground text-sm block">{formatAddress(publicKey.toBase58())}</span>

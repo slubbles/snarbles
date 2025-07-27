@@ -318,13 +318,7 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
       errors.symbol = 'Token symbol must contain only uppercase letters and numbers';
     }
 
-    if (!tokenData.description.trim()) {
-      errors.description = 'Token description is required';
-    } else if (tokenData.description.length < 10) {
-      errors.description = 'Description must be at least 10 characters';
-    } else if (tokenData.description.length > 500) {
-      errors.description = 'Description must be less than 500 characters';
-    }
+    // Description is now optional - no validation required
 
     if (!tokenData.totalSupply.trim()) {
       errors.totalSupply = 'Total supply is required';
@@ -420,7 +414,7 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
   const getNetworkCost = (network: string): number => {
     switch (network) {
       case 'algorand-mainnet':
-        return 5; // 5 credits for mainnet
+        return 10; // 10 credits for mainnet
       case 'algorand-testnet':
       case 'solana-devnet':
       case 'solana-testnet':
@@ -871,7 +865,7 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
 
           {/* Description */}
           <div>
-            <Label htmlFor="description" className="snarbles-body font-semibold">Description *</Label>
+            <Label htmlFor="description" className="snarbles-body font-semibold">Description (optional)</Label>
             <Textarea
               id="description"
               className="snarbles-input mt-2 min-h-[100px]"
@@ -1085,7 +1079,7 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
                   <div className="space-y-1 text-sm">
                     <div className="flex justify-between items-center">
                       <span className="snarbles-body-small text-gray-400">Cost:</span>
-                      <span className="snarbles-heading font-semibold text-blue-400">5 Credits</span>
+                      <span className="snarbles-heading font-semibold text-blue-400">10 Credits</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="snarbles-body-small text-gray-400">Speed:</span>
@@ -1266,7 +1260,7 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
             <h4 className="snarbles-heading-5">Advanced Features</h4>
             
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 snarbles-glass-subtle rounded-lg border-0">
+              <div className="flex items-center justify-between p-3 rounded-lg border border-border hover:border-border/80 transition-colors">
                 <div>
                   <Label htmlFor="mintable" className="snarbles-body font-semibold">Mintable</Label>
                   <p className="snarbles-body-small text-gray-400">Allow creating more tokens after deployment</p>
@@ -1278,7 +1272,7 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
                 />
               </div>
 
-              <div className="flex items-center justify-between p-3 snarbles-glass-subtle rounded-lg border-0">
+              <div className="flex items-center justify-between p-3 rounded-lg border border-border hover:border-border/80 transition-colors">
                 <div>
                   <Label htmlFor="burnable" className="snarbles-body font-semibold">Burnable</Label>
                   <p className="text-sm text-gray-400">Allow permanent destruction of tokens</p>
@@ -1290,7 +1284,7 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
                 />
               </div>
 
-              <div className="flex items-center justify-between p-3 snarbles-glass-subtle rounded-lg border-0">
+              <div className="flex items-center justify-between p-3 rounded-lg border border-border hover:border-border/80 transition-colors">
                 <div>
                   <Label htmlFor="pausable" className="snarbles-body font-semibold">Pausable</Label>
                   <p className="snarbles-body-small text-gray-400">Allow pausing all token transfers</p>

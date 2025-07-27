@@ -40,10 +40,10 @@ const initialState: PaymentState = {
   tokenCreationStep: 0,
   steps: [
     'Preparing payment',
-    'Connecting wallet',
     'Confirming transaction',
-    'Processing payment',
-    'Finalizing'
+    'Sign transaction on Pera Wallet app',
+    'Processing',
+    'Success'
   ],
   userCredits: 0,
   walletBalance: null,
@@ -129,7 +129,7 @@ export const usePaymentSelectors = () => {
   
   return {
     canPay: state.selectedMethod !== null && state.isConnected && !state.isProcessing,
-    hasEnoughCredits: state.userCredits >= 5, // Check credits regardless of selection
+    hasEnoughCredits: state.userCredits >= 10, // Check credits regardless of selection
     hasEnoughAlgo: state.walletBalance !== null && state.walletBalance >= 10, // Check ALGO regardless of selection
     currentStep: state.steps[state.tokenCreationStep] || 'Preparing',
     progressPercentage: (state.tokenCreationStep / (state.steps.length - 1)) * 100,

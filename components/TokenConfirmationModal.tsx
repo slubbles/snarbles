@@ -76,7 +76,7 @@ export default function TokenConfirmationModal({
   const getNetworkInfo = (network: string) => {
     switch (network) {
       case 'algorand-mainnet':
-        return { name: 'Algorand Mainnet', cost: '5 credits + 0.1 ALGO', icon: '🔺' };
+        return { name: 'Algorand Mainnet', cost: '10 credits + 0.1 ALGO', icon: '🔺' };
       case 'algorand-testnet':
         return { name: 'Algorand Testnet', cost: 'Free', icon: '🔸' };
       case 'solana-devnet':

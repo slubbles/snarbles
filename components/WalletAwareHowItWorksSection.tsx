@@ -28,7 +28,7 @@ export default function WalletAwareHowItWorksSection() {
           icon: Settings,
           title: 'Create Algorand Token',
           description: 'Design your ASA token with custom properties and metadata.',
-          detail: 'Mainnet: 5 credits | Testnet: Free'
+          detail: 'Mainnet: 10 credits | Testnet: Free'
         },
         {
           number: '04',
@@ -59,7 +59,7 @@ export default function WalletAwareHowItWorksSection() {
           icon: Settings,
           title: 'Create SPL Token',
           description: 'Design your SPL token with advanced features and metadata.',
-          detail: 'Mainnet: 5 credits | Devnet: Free'
+          detail: 'Mainnet: 10 credits | Devnet: Free'
         },
         {
           number: '04',

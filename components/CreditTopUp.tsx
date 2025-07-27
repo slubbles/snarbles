@@ -312,7 +312,7 @@ export default function CreditTopUp() {
                 <li>• All payments processed on-chain</li>
                 <li>• Credits never expire</li>
                 <li>• 1 ALGO = 0.5 credits conversion rate</li>
-                <li>• Mainnet token creation costs 5 credits</li>
+                <li>• Mainnet token creation costs 10 credits</li>
                 <li>• Testnet token creation is free</li>
               </ul>
             </div>

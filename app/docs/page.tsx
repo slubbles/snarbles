@@ -455,12 +455,6 @@ export default function DocsPage() {
                   Create Your First Token
                 </Button>
               </Link>
-              <Link href="/analytics">
-                <Button variant="outline" size="lg">
-                  <TrendingUp className="w-5 h-5 mr-2" />
-                  View Analytics
-                </Button>
-              </Link>
               <Link href="https://github.com/snarbles" target="_blank">
                 <Button variant="outline" size="lg">
                   <ExternalLink className="w-5 h-5 mr-2" />

@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useAlgorandWallet } from '@/components/providers/AlgorandWalletProvider';
+import { isAdmin as checkIsAdmin } from '@/lib/admin-config';
 import { DashboardLayout } from '@/components/dashboard/shared/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BarChart3, TrendingUp, Coins, Activity, ArrowLeft, Shield } from 'lucide-react';
 import Link from 'next/link';
 
@@ -26,6 +28,39 @@ export default function AlgorandAnalyticsPage() {
           </div>
         </div>
       </div>
+    );
+  }
+
+  // Check if user is admin
+  const isUserAdmin = algorandConnected && address && checkIsAdmin(address);
+
+  // Show access denied if not admin
+  if (!isUserAdmin) {
+    return (
+      <DashboardLayout 
+        network="algorand" 
+        walletAddress={address || undefined}
+        isConnected={algorandConnected}
+      >
+        <div className="max-w-4xl mx-auto px-4 py-12">
+          <Card className="glass-card border-red-500/30 bg-red-500/5">
+            <CardContent className="text-center p-12">
+              <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-foreground mb-2">Access Denied</h2>
+              <p className="text-muted-foreground mb-6">
+                Analytics are restricted to administrators only.
+              </p>
+              <Link 
+                href="/dashboard/algorand"
+                className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Dashboard
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      </DashboardLayout>
     );
   }
 

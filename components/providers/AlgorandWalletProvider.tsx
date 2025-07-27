@@ -313,11 +313,22 @@ export function AlgorandWalletProvider({ children }: AlgorandWalletProviderProps
         constructor: txn?.constructor?.name,
         isTransaction: txn instanceof algosdk.Transaction,
         network: selectedNetwork,
-        chainId: networkConfig.chainId
+        chainId: networkConfig.chainId,
+        hasGetTxIDMethod: typeof txn.txID === 'function',
+        stringified: typeof txn.toString === 'function' ? txn.toString().substring(0, 100) : 'no toString'
       });
+      
+      // Additional debug - check algosdk module consistency
+      console.log('algosdk.Transaction constructor:', algosdk.Transaction);
+      console.log('txn constructor:', txn?.constructor);
+      console.log('Constructors match:', txn?.constructor === algosdk.Transaction);
       
       // Validate that we have a proper algosdk.Transaction object
       if (!(txn instanceof algosdk.Transaction)) {
+        console.error('❌ Transaction instanceof check failed');
+        console.error('Transaction object:', txn);
+        console.error('Expected algosdk.Transaction:', algosdk.Transaction);
+        console.error('Transaction constructor chain:', txn?.constructor?.prototype);
         throw new Error('Invalid transaction object - must be algosdk.Transaction instance');
       }
       

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAlgorandWallet } from '@/components/providers/AlgorandWalletProvider';
+import { isAdmin as checkIsAdmin } from '@/lib/admin-config';
 import { DashboardLayout } from '@/components/dashboard/shared/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +36,9 @@ export default function AlgorandDashboardPage() {
     setMounted(true);
   }, []);
 
+  // Check if user is admin
+  const isUserAdmin = !!(algorandConnected && address && checkIsAdmin(address));
+
   // Don't render until mounted to avoid hydration issues
   if (!mounted) {
     return (
@@ -56,6 +60,7 @@ export default function AlgorandDashboardPage() {
         network="algorand" 
         walletAddress={undefined}
         isConnected={false}
+        isAdmin={false}
       >
         <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="max-w-md mx-auto text-center">
@@ -108,6 +113,7 @@ export default function AlgorandDashboardPage() {
       network="algorand" 
       walletAddress={address || undefined}
       isConnected={algorandConnected}
+      isAdmin={isUserAdmin}
       stats={{
         totalTokens: 0, // Will be populated by the dashboard
         totalTransactions: 0,

@@ -1,4 +1,4 @@
-import algosdk from 'algosdk';
+import * as algosdk from 'algosdk';
 
 interface TokenOperation {
   assetId: number;

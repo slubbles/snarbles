@@ -1,4 +1,4 @@
-import algosdk from 'algosdk';
+import * as algosdk from 'algosdk';
 import { useAlgorandWallet } from '@/components/providers/AlgorandWalletProvider';
 
 export interface TokenCreationResult {

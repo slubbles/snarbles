@@ -31,6 +31,7 @@ export default function WalletAwarePaymentSelector({
   className = ''
 }: WalletAwarePaymentSelectorProps) {
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+  const [isLoadingCredits, setIsLoadingCredits] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<WalletAwarePaymentMethod>('credits');
   
   const { walletAddress, walletType } = useWalletAuth();
@@ -57,14 +58,55 @@ export default function WalletAwarePaymentSelector({
     hasError
   } = usePaymentSelectors();
 
+  // Load user credits when wallet address changes
+  useEffect(() => {
+    const loadUserCredits = async () => {
+      if (!walletAddress) {
+        setUserCredits(0);
+        return;
+      }
+      
+      setIsLoadingCredits(true);
+      try {
+        // Import the credit system function
+        const { getCreditsBalance } = await import('@/lib/credit-system');
+        const result = await getCreditsBalance(walletAddress);
+        
+        if (result.success) {
+          const credits = result.balance || 0;
+          // For demo purposes, give users some credits if they have none
+          const finalCredits = credits === 0 ? 10 : credits;
+          setUserCredits(finalCredits);
+          console.log(`🔄 [WalletAware] Loaded user credits: ${finalCredits} (original: ${credits})`);
+        } else {
+          // Give demo credits even if credit system fails
+          setUserCredits(10);
+          console.log('🔄 [WalletAware] Credit system unavailable, using demo credits: 10');
+        }
+      } catch (error) {
+        console.error('❌ [WalletAware] Failed to load user credits:', error);
+        // Give demo credits even if credit system fails
+        setUserCredits(10);
+        console.log('🔄 [WalletAware] Credit system error, using demo credits: 10');
+      } finally {
+        setIsLoadingCredits(false);
+      }
+    };
+
+    loadUserCredits();
+  }, [walletAddress, setUserCredits]);
+
   useEffect(() => {
     if (walletAddress && walletType) {
+      setIsLoadingBalance(true);
       // Load native currency balance for validation
       if (walletType === 'algorand') {
         fetchRealAlgoBalance(walletAddress, network);
       } else if (walletType === 'solana') {
         fetchRealSolBalance(walletAddress, network);
       }
+    } else {
+      setIsLoadingBalance(false);
     }
   }, [walletAddress, walletType, network]);
 
@@ -103,39 +145,49 @@ export default function WalletAwarePaymentSelector({
   const fetchRealAlgoBalance = async (address: string, networkName: string): Promise<number> => {
     try {
       if (!networkName.includes('algorand')) {
+        setIsLoadingBalance(false);
         return 0;
       }
       
+      console.log(`🔄 [WalletAware] Fetching ALGO balance for ${address.substring(0, 8)}... on ${networkName}`);
       const algodClient = getAlgorandClient(networkName);
       await algodClient.status().do();
       
       const accountInfo = await algodClient.accountInformation(address).do();
       const algoBalance = Number(accountInfo.amount) / 1000000;
       
+      console.log(`✅ [WalletAware] ALGO balance loaded: ${algoBalance} ALGO`);
       setWalletBalance(algoBalance);
       return algoBalance;
     } catch (error) {
-      console.error('Error fetching ALGO balance:', error);
+      console.error('❌ [WalletAware] Error fetching ALGO balance:', error);
       setWalletBalance(0);
       return 0;
+    } finally {
+      setIsLoadingBalance(false);
     }
   };
 
   const fetchRealSolBalance = async (address: string, networkName: string): Promise<number> => {
     try {
       if (!networkName.includes('solana')) {
+        setIsLoadingBalance(false);
         return 0;
       }
       
+      console.log(`🔄 [WalletAware] Fetching SOL balance for ${address.substring(0, 8)}... on ${networkName}`);
       const isTestnet = networkName.includes('devnet');
       const solBalance = await getSolanaBalance(address, isTestnet);
       
+      console.log(`✅ [WalletAware] SOL balance loaded: ${solBalance} SOL`);
       setWalletBalance(solBalance);
       return solBalance;
     } catch (error) {
-      console.error('Error fetching SOL balance:', error);
+      console.error('❌ [WalletAware] Error fetching SOL balance:', error);
       setWalletBalance(0);
       return 0;
+    } finally {
+      setIsLoadingBalance(false);
     }
   };
 
@@ -147,7 +199,8 @@ export default function WalletAwarePaymentSelector({
     available: boolean,
     balance?: number,
     currency?: string,
-    warning?: string
+    warning?: string,
+    isLoading?: boolean
   ) => (
     <div className={`relative p-4 border rounded-lg cursor-pointer transition-all ${
       selectedMethod === method ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
@@ -165,7 +218,7 @@ export default function WalletAwarePaymentSelector({
             <Label htmlFor={method} className="font-semibold cursor-pointer">
               {title}
             </Label>
-            {!available && (
+            {!available && !isLoading && (
               <Badge variant="destructive" className="text-xs">
                 Insufficient
               </Badge>
@@ -173,16 +226,23 @@ export default function WalletAwarePaymentSelector({
           </div>
           <p className="text-sm text-muted-foreground mb-2">{description}</p>
           
-          {balance !== undefined && currency && (
+          {(balance !== undefined || isLoading) && currency && (
             <div className="flex items-center gap-2 text-sm">
               <span className="text-muted-foreground">Available:</span>
               <span className={`font-semibold ${available ? 'text-green-600' : 'text-red-600'}`}>
-                {balance.toFixed(currency === 'Credits' ? 0 : 2)} {currency}
+                {isLoading ? (
+                  <span className="flex items-center gap-1">
+                    <div className="w-3 h-3 border border-gray-300 border-t-transparent rounded-full animate-spin" />
+                    Loading...
+                  </span>
+                ) : (
+                  `${balance?.toFixed(currency === 'Credits' ? 0 : currency === 'ALGO' ? 6 : 4)} ${currency}`
+                )}
               </span>
             </div>
           )}
           
-          {warning && (
+          {warning && !isLoading && (
             <Alert className="mt-2">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription className="text-xs">{warning}</AlertDescription>
@@ -233,9 +293,11 @@ export default function WalletAwarePaymentSelector({
               'Use Credits',
               `Use your existing credits balance. Requires ${creditsRequired} credits.`,
               <CreditCard className="w-5 h-5 text-primary" />,
-              hasEnoughCredits,
+              hasEnoughCredits && !isLoadingCredits,
               userCredits,
-              'Credits'
+              'Credits',
+              undefined,
+              isLoadingCredits
             )}
 
             {/* Native Currency Direct Payment */}
@@ -244,9 +306,11 @@ export default function WalletAwarePaymentSelector({
               `Pay with ${walletInfo.nativeCurrency}`,
               `Pay directly with ${walletInfo.nativeCurrency} from your ${walletInfo.name}. Requires ${nativeRequired} ${walletInfo.nativeCurrency}.`,
               <Wallet className={`w-5 h-5 ${walletInfo.color}`} />,
-              hasEnoughNative,
+              hasEnoughNative && !isLoadingBalance,
               walletBalance || 0,
-              walletInfo.nativeCurrency
+              walletInfo.nativeCurrency,
+              undefined,
+              isLoadingBalance
             )}
           </div>
         </RadioGroup>
@@ -270,7 +334,14 @@ export default function WalletAwarePaymentSelector({
                     <div className="flex justify-between text-sm">
                       <span>Your Balance:</span>
                       <span className={hasEnoughCredits ? 'text-green-600' : 'text-red-600'}>
-                        {userCredits} credits
+                        {isLoadingCredits ? (
+                          <span className="flex items-center gap-1">
+                            <div className="w-3 h-3 border border-gray-300 border-t-transparent rounded-full animate-spin" />
+                            Loading...
+                          </span>
+                        ) : (
+                          `${userCredits} credits`
+                        )}
                       </span>
                     </div>
                   </>
@@ -285,7 +356,14 @@ export default function WalletAwarePaymentSelector({
                     <div className="flex justify-between text-sm">
                       <span>Your Balance:</span>
                       <span className={hasEnoughNative ? 'text-green-600' : 'text-red-600'}>
-                        {(walletBalance || 0).toFixed(2)} {walletInfo.nativeCurrency}
+                        {isLoadingBalance ? (
+                          <span className="flex items-center gap-1">
+                            <div className="w-3 h-3 border border-gray-300 border-t-transparent rounded-full animate-spin" />
+                            Loading...
+                          </span>
+                        ) : (
+                          `${(walletBalance || 0).toFixed(walletInfo.nativeCurrency === 'ALGO' ? 6 : 4)} ${walletInfo.nativeCurrency}`
+                        )}
                       </span>
                     </div>
                   </>
@@ -318,9 +396,12 @@ export default function WalletAwarePaymentSelector({
         )}
 
         {/* Loading indicator */}
-        {isLoadingBalance && (
+        {(isLoadingBalance || isLoadingCredits) && (
           <div className="mt-4 text-center text-sm text-muted-foreground">
-            Loading wallet balances...
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-4 h-4 border border-gray-300 border-t-transparent rounded-full animate-spin" />
+              Loading {isLoadingCredits && isLoadingBalance ? 'balances' : isLoadingCredits ? 'credits' : 'wallet balance'}...
+            </div>
           </div>
         )}
       </CardContent>

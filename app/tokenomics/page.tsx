@@ -13,8 +13,6 @@ import {
   Calculator, 
   Download, 
   PieChart as PieChartIcon,
-  Clock, 
-  Lock, 
   ChevronRight, 
   Check, 
   X, 
@@ -42,83 +40,12 @@ const defaultDistribution = {
   reserve: { label: 'Reserve', value: 10, color: '#3A86FF' }
 };
 
-// Define vesting schedules
-const defaultVesting = {
-  enabled: true,
-  team: { period: 24, initialRelease: 10 },
-  investors: { period: 12, initialRelease: 20 },
-  advisors: { period: 18, initialRelease: 15 }
-};
-
-// Define template data
-const templates = {
-  defi: {
-    name: 'DeFi Protocol',
-    totalSupply: 100000000,
-    distribution: {
-      team: { label: 'Team', value: 15, color: '#FF6B6B' },
-      investors: { label: 'Investors', value: 15, color: '#4ECDC4' },
-      community: { label: 'Community', value: 40, color: '#FFD166' },
-      liquidity: { label: 'Liquidity', value: 20, color: '#6A0572' },
-      marketing: { label: 'Marketing', value: 10, color: '#1A535C' },
-      reserve: { label: 'Treasury', value: 0, color: '#3A86FF' }
-    },
-    vestingSchedule: {
-      enabled: true,
-      team: { period: 24, initialRelease: 10 },
-      investors: { period: 12, initialRelease: 20 },
-      advisors: { period: 18, initialRelease: 15 }
-    },
-    supplyType: 'fixed'
-  },
-  dao: {
-    name: 'DAO Governance',
-    totalSupply: 50000000,
-    distribution: {
-      team: { label: 'Team', value: 10, color: '#FF6B6B' },
-      investors: { label: 'Investors', value: 15, color: '#4ECDC4' },
-      community: { label: 'Community', value: 60, color: '#FFD166' },
-      liquidity: { label: 'Liquidity', value: 5, color: '#6A0572' },
-      marketing: { label: 'Marketing', value: 5, color: '#1A535C' },
-      reserve: { label: 'Treasury', value: 5, color: '#3A86FF' }
-    },
-    vestingSchedule: {
-      enabled: true,
-      team: { period: 36, initialRelease: 0 },
-      investors: { period: 24, initialRelease: 10 },
-      advisors: { period: 12, initialRelease: 20 }
-    },
-    supplyType: 'inflationary'
-  },
-  gamefi: {
-    name: 'GameFi Project',
-    totalSupply: 200000000,
-    distribution: {
-      team: { label: 'Team', value: 18, color: '#FF6B6B' },
-      investors: { label: 'Investors', value: 22, color: '#4ECDC4' },
-      community: { label: 'Players & Rewards', value: 35, color: '#FFD166' },
-      liquidity: { label: 'Liquidity', value: 0, color: '#6A0572' },
-      marketing: { label: 'Marketing', value: 25, color: '#1A535C' },
-      reserve: { label: 'Reserve', value: 0, color: '#3A86FF' }
-    },
-    vestingSchedule: {
-      enabled: true,
-      team: { period: 30, initialRelease: 5 },
-      investors: { period: 18, initialRelease: 15 },
-      advisors: { period: 12, initialRelease: 20 }
-    },
-    supplyType: 'deflationary'
-  }
-};
-
 export default function TokenomicsPage() {
   // State for token supply and distribution
   const [totalSupply, setTotalSupply] = useState(100000000);
   const [distribution, setDistribution] = useState(defaultDistribution);
-  const [vestingSchedule, setVestingSchedule] = useState(defaultVesting);
   const [activeTab, setActiveTab] = useState('distribution');
   const [supplyType, setSupplyType] = useState('fixed');
-  const [vestingEnabled, setVestingEnabled] = useState(true);
   const [healthScore, setHealthScore] = useState(78);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -152,7 +79,6 @@ export default function TokenomicsPage() {
           
           if (data.totalSupply) setTotalSupply(data.totalSupply);
           if (data.distribution) setDistribution(data.distribution);
-          if (data.vestingSchedule) setVestingSchedule(data.vestingSchedule);
           if (data.supplyType) setSupplyType(data.supplyType);
           if (data.healthScore) setHealthScore(data.healthScore);
           
@@ -180,16 +106,13 @@ export default function TokenomicsPage() {
     const teamScore = 100 - Math.abs(teamPercent - 15) * 3; // Ideal around 15%
     const investorScore = 100 - Math.max(0, investorsPercent - 25) * 2; // Penalize if over 25%
     
-    // Vesting increases score
-    const vestingBonus = vestingEnabled ? 10 : 0;
-    
     // Total score
-    const calculatedScore = Math.round((communityScore * 0.4 + teamScore * 0.3 + investorScore * 0.3) + vestingBonus);
+    const calculatedScore = Math.round((communityScore * 0.4 + teamScore * 0.3 + investorScore * 0.3));
     // Clamp between 0-100
     const finalScore = Math.max(0, Math.min(100, calculatedScore));
     
     setHealthScore(finalScore);
-  }, [distribution, vestingEnabled]);
+  }, [distribution]);
   
   // Format large numbers with commas
   const formatNumber = (num: number) => {
@@ -285,7 +208,6 @@ export default function TokenomicsPage() {
       name: 'Custom',
       totalSupply,
       distribution,
-      vestingSchedule,
       supplyType,
       healthScore,
       timestamp: new Date().toISOString()
@@ -352,7 +274,6 @@ export default function TokenomicsPage() {
       doc.text(`Total Supply: ${formatNumber(totalSupply)} tokens`, 20, 55);
       doc.text(`Supply Type: ${supplyType.charAt(0).toUpperCase() + supplyType.slice(1)}`, 20, 65);
       doc.text(`Health Score: ${healthScore}/100`, 20, 75);
-      doc.text(`Vesting Enabled: ${vestingEnabled ? 'Yes' : 'No'}`, 20, 85);
       
       // Distribution table
       doc.setFontSize(16);
@@ -373,18 +294,6 @@ export default function TokenomicsPage() {
         doc.text(formatNumber(item.amount), 150, yPosition);
         yPosition += 10;
       });
-      
-      // Vesting details if enabled
-      if (vestingEnabled) {
-        doc.setFontSize(16);
-        doc.text("Vesting Schedule", 20, yPosition + 20);
-        
-        doc.setFontSize(12);
-        yPosition += 30;
-        doc.text("Team vesting period: " + vestingSchedule.team.period + " months", 20, yPosition);
-        yPosition += 10;
-        doc.text("Investors vesting period: " + vestingSchedule.investors.period + " months", 20, yPosition);
-      }
       
       // Health score analysis
       doc.setFontSize(16);
@@ -456,23 +365,6 @@ export default function TokenomicsPage() {
         glow: 'snarbles-glow-red'
       };
     }
-  };
-  
-  // Apply template
-  const applyTemplate = (templateKey: string) => {
-    const template = templates[templateKey as keyof typeof templates];
-    if (!template) return;
-    
-    setTotalSupply(template.totalSupply);
-    setDistribution(template.distribution);
-    setVestingSchedule(template.vestingSchedule);
-    setVestingEnabled(template.vestingSchedule.enabled);
-    setSupplyType(template.supplyType);
-    
-    toast({
-      title: `${template.name} Template Applied`,
-      description: "Distribution and vesting schedule have been updated"
-    });
   };
   
   const healthIndicator = getHealthIndicator();
@@ -600,70 +492,6 @@ export default function TokenomicsPage() {
                       </Button>
                     </div>
                   </div>
-                </div>
-                
-                <div className="pt-4 border-t border-border">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-2">
-                      <Lock className="w-4 h-4 text-blue-500" />
-                      <span className="font-medium text-foreground">Vesting Schedule</span>
-                    </div>
-                    <Switch 
-                      checked={vestingEnabled}
-                      onCheckedChange={setVestingEnabled}
-                    />
-                  </div>
-                  
-                  {vestingEnabled && (
-                    <div className="space-y-4 pl-6 border-l-2 border-blue-500/20">
-                      <div className="space-y-2">
-                        <Label>Team Vesting Period (months)</Label>
-                        <div className="flex items-center space-x-4">
-                          <Slider
-                            value={[vestingSchedule.team.period]}
-                            min={6}
-                            max={48}
-                            step={3}
-                            onValueChange={(values) => setVestingSchedule({
-                              ...vestingSchedule,
-                              team: { ...vestingSchedule.team, period: values[0] }
-                            })}
-                            className="flex-1 glass-card snarbles-border-glow"
-                          />
-                          <span className="w-10 text-center font-mono glass-card snarbles-border-glow">
-                            {vestingSchedule.team.period}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label>Investor Vesting Period (months)</Label>
-                        <div className="flex items-center space-x-4">
-                          <Slider
-                            value={[vestingSchedule.investors.period]}
-                            min={3}
-                            max={24}
-                            step={3}
-                            onValueChange={(values) => setVestingSchedule({
-                              ...vestingSchedule,
-                              investors: { ...vestingSchedule.investors, period: values[0] }
-                            })}
-                            className="flex-1 glass-card snarbles-border-glow"
-                          />
-                          <span className="w-10 text-center font-mono glass-card snarbles-border-glow">
-                            {vestingSchedule.investors.period}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-4 mt-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg glass-card snarbles-border-glow">
-                        <Clock className="w-5 h-5 text-blue-500 flex-shrink-0" />
-                        <p className="text-sm text-blue-600 text-muted-foreground">
-                          Vesting schedules increase investor confidence by demonstrating long-term commitment
-                        </p>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </CardContent>
             </Card>
@@ -871,10 +699,8 @@ export default function TokenomicsPage() {
                   <div className="lg:hidden space-y-3">
                     {Object.keys(distribution).map(key => {
                       const tokenAmount = totalSupply * (distribution[key as keyof typeof distribution].value / 100);
-                      const hasVesting = vestingEnabled && 
-                        (key === 'team' || key === 'investors' || key === 'advisors');
                       
-                                              return (
+                      return (
                           <div key={key} className="p-4 glass-card rounded-lg border border-border/20">
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center space-x-2">
@@ -888,9 +714,6 @@ export default function TokenomicsPage() {
                             </div>
                             <div className="flex justify-between text-sm text-muted-foreground-muted">
                               <span>Tokens: {formatNumber(Math.round(tokenAmount))}</span>
-                              {hasVesting && vestingSchedule[key as keyof typeof vestingSchedule] && typeof vestingSchedule[key as keyof typeof vestingSchedule] === 'object' && (
-                                <span>Vesting: {(vestingSchedule[key as keyof typeof vestingSchedule] as any).period} months</span>
-                              )}
                             </div>
                           </div>
                         );
@@ -905,14 +728,11 @@ export default function TokenomicsPage() {
                           <th className="text-left py-3 px-4 text-muted-foreground-muted font-medium">Category</th>
                           <th className="text-center py-3 px-4 text-muted-foreground-muted font-medium">Percentage</th>
                           <th className="text-right py-3 px-4 text-muted-foreground-muted font-medium">Token Amount</th>
-                          {vestingEnabled && <th className="text-right py-3 px-4 text-muted-foreground-muted font-medium">Vesting</th>}
                         </tr>
                       </thead>
                       <tbody>
                         {Object.keys(distribution).map(key => {
                           const tokenAmount = totalSupply * (distribution[key as keyof typeof distribution].value / 100);
-                          const hasVesting = vestingEnabled && 
-                            (key === 'team' || key === 'investors' || key === 'advisors');
                           
                           return (
                             <tr key={key} className="border-b border-border/50 hover:bg-white/5 transition-colors">
@@ -931,17 +751,6 @@ export default function TokenomicsPage() {
                               <td className="py-4 px-4 text-right">
                                 <span className="font-mono text-muted-foreground">{formatNumber(Math.round(tokenAmount))}</span>
                               </td>
-                              {vestingEnabled && (
-                                <td className="py-4 px-4 text-right text-muted-foreground">
-                                  {hasVesting && vestingSchedule[key as keyof typeof vestingSchedule] && typeof vestingSchedule[key as keyof typeof vestingSchedule] === 'object' ? (
-                                    <span className="text-sm text-muted-foreground">
-                                      {(vestingSchedule[key as keyof typeof vestingSchedule] as any).period} months
-                                    </span>
-                                  ) : (
-                                    <span className="text-sm text-muted-foreground text-muted-foreground">None</span>
-                                  )}
-                                </td>
-                              )}
                             </tr>
                           );
                         })}
@@ -994,18 +803,6 @@ export default function TokenomicsPage() {
                     </div>
                   )}
                   
-                  {vestingEnabled && (
-                    <div className="flex items-start space-x-3 p-4 bg-green-500/5 rounded-lg border border-green-500/20 glass-card snarbles-border-glow">
-                      <Check className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium text-green-700 text-muted-foreground">Vesting schedule</p>
-                        <p className="text-sm text-green-600 text-muted-foreground">
-                          Your vesting schedules demonstrate long-term commitment and reduces selling pressure after launch.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  
                   <div className="flex items-start space-x-3 p-4 glass-card rounded-lg border border-border/20 mt-4">
                     <Shield className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0 snarbles-animate-pulse" />
                     <div>
@@ -1052,106 +849,6 @@ export default function TokenomicsPage() {
                 Apply to Token Creation
               </Button>
             </div>
-          </div>
-        </div>
-        
-        {/* Template Gallery */}
-        <div className="mt-16 space-y-6 snarbles-animate-fade-in">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold snarbles-subheading">Tokenomics Templates Gallery</h2>
-            <p className="text-muted-foreground-muted">Start with a proven template based on your project's needs</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="glass-card-premium hover:border-primary/40 transition-all duration-300 cursor-pointer">
-              <CardHeader>
-                <CardTitle className="snarbles-subheading">DeFi Protocol</CardTitle>
-                <CardDescription className="text-muted-foreground">Optimized for decentralized finance applications</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground-muted">Community</span>
-                  <span className="font-semibold text-muted-foreground">40%</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground-muted">Team</span>
-                  <span className="font-semibold text-muted-foreground">15%</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground-muted">Treasury</span>
-                  <span className="font-semibold text-muted-foreground">25%</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground-muted">Liquidity</span>
-                  <span className="font-semibold text-muted-foreground">20%</span>
-                </div>
-                
-                <Button className="w-full bg-primary hover:bg-primary/90" onClick={() => applyTemplate('defi')}>
-                  <ChevronRight className="w-4 h-4 mr-2" />
-                  Use Template
-                </Button>
-              </CardContent>
-            </Card>
-            
-            <Card className="glass-card-premium hover:border-primary/40 transition-all duration-300 cursor-pointer glass-card snarbles-border-glow">
-              <CardHeader>
-                <CardTitle className="text-muted-foreground">DAO Governance</CardTitle>
-                <CardDescription className="text-muted-foreground">Balanced model for decentralized governance</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 glass-card snarbles-border-glow">
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-muted-foreground text-muted-foreground">Community</span>
-                  <span className="font-semibold text-muted-foreground">60%</span>
-                </div>
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-muted-foreground text-muted-foreground">Team</span>
-                  <span className="font-semibold text-muted-foreground">10%</span>
-                </div>
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-muted-foreground text-muted-foreground">Investors</span>
-                  <span className="font-semibold text-muted-foreground">15%</span>
-                </div>
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-muted-foreground text-muted-foreground">Treasury</span>
-                  <span className="font-semibold text-muted-foreground">15%</span>
-                </div>
-                
-                <Button className="w-full" onClick={() => applyTemplate('dao')}>
-                  <ChevronRight className="w-4 h-4 mr-2" />
-                  Use Template
-                </Button>
-              </CardContent>
-            </Card>
-            
-            <Card className="glass-card-premium hover:border-primary/40 transition-all duration-300 cursor-pointer glass-card snarbles-border-glow">
-              <CardHeader>
-                <CardTitle className="text-muted-foreground">GameFi Project</CardTitle>
-                <CardDescription className="text-muted-foreground">Optimized for gaming and metaverse projects</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 glass-card snarbles-border-glow">
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-muted-foreground text-muted-foreground">Players & Rewards</span>
-                  <span className="font-semibold text-muted-foreground">35%</span>
-                </div>
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-muted-foreground text-muted-foreground">Team</span>
-                  <span className="font-semibold text-muted-foreground">18%</span>
-                </div>
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-muted-foreground text-muted-foreground">Investors</span>
-                  <span className="font-semibold text-muted-foreground">22%</span>
-                </div>
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="text-muted-foreground text-muted-foreground">Marketing</span>
-                  <span className="font-semibold text-muted-foreground">25%</span>
-                </div>
-                
-                <Button className="w-full" onClick={() => applyTemplate('gamefi')}>
-                  <ChevronRight className="w-4 h-4 mr-2" />
-                  Use Template
-                </Button>
-              </CardContent>
-            </Card>
           </div>
         </div>
         

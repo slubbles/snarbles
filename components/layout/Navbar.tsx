@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Sun, Moon, Wallet, ChevronDown, Copy, Check, AlertTriangle, HelpCircle, CreditCard } from 'lucide-react';
+import { Menu, X, Wallet, ChevronDown, Copy, Check, AlertTriangle, HelpCircle, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -21,7 +21,7 @@ import { isMobile } from '@/lib/mobile-wallet-utils';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [theme, setTheme] = useState('dark');
+  const [isMoreDropdownOpen, setIsMoreDropdownOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [showWalletOptions, setShowWalletOptions] = useState(false);
@@ -63,35 +63,45 @@ export default function Navbar() {
   useEffect(() => {
     setMounted(true);
     setIsMobileDevice(isMobile());
-    // Initialize theme from localStorage or default to dark
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    setTheme(savedTheme);
-    document.documentElement.setAttribute('data-theme', savedTheme);
     
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
 
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.dropdown-container')) {
+        setIsMoreDropdownOpen(false);
+        setShowWalletOptions(false);
+      }
+    };
+
     window.addEventListener('scroll', handleScroll);
+    document.addEventListener('click', handleClickOutside);
     handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      document.removeEventListener('click', handleClickOutside);
+    };
   }, []);
 
-  const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-    document.documentElement.setAttribute('data-theme', newTheme);
-  };
-
-  const navLinks = [
+  // Core navigation items for desktop
+  const coreNavLinks = [
     { name: 'Create Token', href: '/create' },
-    { name: 'Credits', href: '/credits' },
-    { name: 'Tokenomics Simulator', href: '/tokenomics' },
-    { name: 'Verify Token', href: '/verify' },
     { name: 'Dashboard', href: '/dashboard' },
-    { name: 'Analytics', href: '/analytics' },
+    // Analytics only for admins - moved to admin-only section
   ];
+
+  // Additional items moved to dropdown
+  const additionalNavLinks = [
+    { name: 'Credits', href: '/credits', icon: CreditCard },
+    { name: 'Tokenomics Simulator', href: '/tokenomics', icon: HelpCircle },
+    { name: 'Verify Token', href: '/verify', icon: AlertTriangle },
+  ];
+
+  // All links for mobile
+  const allNavLinks = [...coreNavLinks, ...additionalNavLinks];
 
   // Check if user is admin (supports both Algorand and Solana)
   const isAdmin = (solanaConnected && solanaPublicKey && solanaPublicKey.toString() === ADMIN_WALLET.toString()) ||
@@ -205,7 +215,8 @@ export default function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            {navLinks.map((link) => (
+            {/* Core Navigation Links */}
+            {coreNavLinks.map((link) => (
               <Link
                 key={link.name}
                 href={link.href}
@@ -223,35 +234,80 @@ export default function Navbar() {
               </Link>
             ))}
             
+            {/* More Dropdown */}
+            <div className="relative dropdown-container">
+              <Button
+                variant="ghost"
+                onClick={() => setIsMoreDropdownOpen(!isMoreDropdownOpen)}
+                className="text-muted-foreground hover:text-foreground transition-all duration-200 font-medium relative group"
+              >
+                More
+                <ChevronDown className="w-4 h-4 ml-1" />
+                <div className={`absolute -bottom-1 left-0 h-0.5 bg-red-500 transition-all duration-300 ${
+                  additionalNavLinks.some(link => pathname === link.href) ? 'w-full' : 'w-0 group-hover:w-full'
+                }`}></div>
+              </Button>
+              
+              {isMoreDropdownOpen && (
+                <div className="absolute right-0 top-full mt-2 w-56 bg-background/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl z-50 animate-in slide-in-from-top-2 duration-200 overflow-hidden">
+                  <div className="p-2">
+                    {additionalNavLinks.map((link) => (
+                      <Link
+                        key={link.name}
+                        href={link.href}
+                        onClick={(e) => {
+                          handleNavigation(link.href, e);
+                          setIsMoreDropdownOpen(false);
+                        }}
+                        className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          pathname === link.href 
+                            ? 'bg-red-500/10 text-red-500' 
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                        }`}
+                      >
+                        <link.icon className="w-4 h-4" />
+                        <span>{link.name}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
             {/* Admin Link */}
             {isAdmin && (
-              <Link
-                href="/admin"
-                className={`text-muted-foreground hover:text-foreground transition-all duration-200 font-medium relative group ${
-                  pathname === '/admin' ? 'text-red-500' : ''
-                }`}
-              >
-                Admin
-                <div className={`absolute -bottom-1 left-0 h-0.5 bg-red-500 transition-all duration-300 ${
-                  pathname === '/admin' ? 'w-full' : 'w-0 group-hover:w-full'
-                }`}></div>
-              </Link>
+              <>
+                <Link
+                  href="/admin"
+                  className={`text-muted-foreground hover:text-foreground transition-all duration-200 font-medium relative group ${
+                    pathname === '/admin' ? 'text-red-500' : ''
+                  }`}
+                >
+                  Admin
+                  <div className={`absolute -bottom-1 left-0 h-0.5 bg-red-500 transition-all duration-300 ${
+                    pathname === '/admin' ? 'w-full' : 'w-0 group-hover:w-full'
+                  }`}></div>
+                </Link>
+
+                <Link
+                  href="/analytics"
+                  className={`text-muted-foreground hover:text-foreground transition-all duration-200 font-medium relative group ${
+                    pathname === '/analytics' ? 'text-red-500' : ''
+                  }`}
+                >
+                  Analytics
+                  <div className={`absolute -bottom-1 left-0 h-0.5 bg-red-500 transition-all duration-300 ${
+                    pathname === '/analytics' ? 'w-full' : 'w-0 group-hover:w-full'
+                  }`}></div>
+                </Link>
+              </>
             )}
           </div>
 
           {/* Desktop Controls */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={toggleTheme}
-              className="text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-xl p-2"
-            >
-              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </Button>
-            
             {/* Enhanced Multi-Wallet Connection */}
-            <div className="relative">
+            <div className="relative dropdown-container">
               {isAnyWalletConnected ? (
                 <div className="flex items-center space-x-2">
                   <div className="wallet-status-connected rounded-full px-3 py-1.5">
@@ -660,15 +716,6 @@ export default function Navbar() {
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center space-x-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={toggleTheme}
-              className="text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-xl p-2"
-            >
-              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </Button>
-            
             <Button
               variant="ghost"
               size="sm"
@@ -684,7 +731,7 @@ export default function Navbar() {
         {isMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 border-t border-border mt-4">
-              {navLinks.map((link) => (
+              {allNavLinks.map((link) => (
                 <Link
                   key={link.name}
                   href={link.href}
@@ -702,19 +749,32 @@ export default function Navbar() {
                 </Link>
               ))}
               
-              {/* Admin Link - Mobile */}
+              {/* Admin Links - Mobile */}
               {isAdmin && (
-                <Link
-                  href="/admin"
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${
-                    pathname === '/admin'
-                      ? 'text-red-500 bg-red-500/10'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                  }`}
-                >
-                  Admin
-                </Link>
+                <>
+                  <Link
+                    href="/admin"
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${
+                      pathname === '/admin'
+                        ? 'text-red-500 bg-red-500/10'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    }`}
+                  >
+                    Admin
+                  </Link>
+                  <Link
+                    href="/analytics"
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${
+                      pathname === '/analytics'
+                        ? 'text-red-500 bg-red-500/10'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    }`}
+                  >
+                    Analytics
+                  </Link>
+                </>
               )}
               
               {/* Mobile Wallet Connection */}
