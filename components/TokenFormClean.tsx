@@ -13,7 +13,6 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
 import { useAlgorandWallet } from '@/components/providers/AlgorandWalletProvider';
-import { useWallet } from '@solana/wallet-adapter-react';
 import { usePaymentState } from '@/hooks/usePaymentState';
 import WalletAwarePaymentSelector from '@/components/WalletAwarePaymentSelector';
 import TransactionStatusModalEnhanced from '@/components/TransactionStatusModalEnhanced';
@@ -21,6 +20,8 @@ import TokenConfirmationModal from '@/components/TokenConfirmationModal';
 import { spendCreditsForTokenCreation } from '@/lib/credit-system';
 import { purchaseCreditsWithAlgo } from '@/lib/enhanced-payment-system';
 import { createRealAlgorandToken } from '@/lib/real-algorand-token-creation-v2';
+import { createTokenOnChain } from '@/lib/solana';
+import { useWallet as useSolanaWallet } from '@solana/wallet-adapter-react';
 
 interface TokenData {
   name: string;
@@ -55,7 +56,7 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
   const router = useRouter();
   const { walletAddress, walletType, isAuthenticated } = useWalletAuth();
   const algorandWallet = useAlgorandWallet();
-  const solanaWallet = useWallet();
+  const solanaWallet = useSolanaWallet();
   const { 
     selectedMethod: selectedPaymentMethod,
     userCredits,
@@ -80,6 +81,20 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
     
     if (!tokenData.totalSupply || parseFloat(tokenData.totalSupply) <= 0) {
       errors.totalSupply = 'Supply must be greater than 0';
+    } else {
+      // Add validation for large supplies that might cause issues
+      const supply = parseFloat(tokenData.totalSupply);
+      const decimals = parseInt(tokenData.decimals) || 6;
+      
+      // For Algorand mainnet, check if the combination would exceed safe limits
+      if (tokenData.network.includes('algorand')) {
+        const totalWithDecimals = supply * Math.pow(10, decimals);
+        
+        if (totalWithDecimals > Number.MAX_SAFE_INTEGER) {
+          const maxSafeSupply = Math.floor(Number.MAX_SAFE_INTEGER / Math.pow(10, decimals));
+          errors.totalSupply = `Supply of ${supply.toLocaleString()} with ${decimals} decimals is too large. Maximum safe supply: ${maxSafeSupply.toLocaleString()}. Consider reducing decimals to 6 or fewer.`;
+        }
+      }
     }
     
     setValidationErrors(errors);
@@ -249,7 +264,7 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
       
       setTokenCreationStep(2); // Sign transaction on Pera Wallet app
       
-      // REAL TOKEN CREATION - Call actual createRealAlgorandToken
+      // REAL TOKEN CREATION - Support both Algorand and Solana
       if (tokenData.network.includes('algorand') && algorandWallet.connected && algorandWallet.address) {
         console.log('🚀 Creating REAL Algorand token with credits payment');
         
@@ -374,9 +389,141 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
           throw new Error(`Token creation failed: ${tokenError instanceof Error ? tokenError.message : 'Unknown error'}`);
         }
         
+      } else if (tokenData.network.includes('solana') && solanaWallet.connected && solanaWallet.publicKey) {
+        console.log('🚀 Creating REAL Solana token with credits payment');
+        
+        try {
+          // Create wallet interface for Solana
+          if (!solanaWallet.signTransaction || !solanaWallet.signAllTransactions) {
+            throw new Error('Solana wallet does not support required signing methods');
+          }
+          
+          const walletInterface = {
+            publicKey: solanaWallet.publicKey,
+            signTransaction: solanaWallet.signTransaction,
+            signAllTransactions: solanaWallet.signAllTransactions
+          };
+          
+          const result = await createTokenOnChain(
+            walletInterface,
+            {
+              name: tokenData.name,
+              symbol: tokenData.symbol,
+              description: tokenData.description,
+              decimals: parseInt(tokenData.decimals),
+              totalSupply: parseFloat(tokenData.totalSupply),
+              logoUrl: tokenData.logoUrl || '',
+              website: tokenData.website || '',
+              twitter: tokenData.twitter || '',
+              github: tokenData.github || '',
+              mintable: tokenData.mintable,
+              burnable: tokenData.burnable,
+              pausable: tokenData.pausable,
+            },
+            {
+              onStepUpdate: (status: string) => {
+                console.log(`📱 Token Creation Status: ${status}`);
+              }
+            }
+          );
+          
+          if (!result.success) {
+            throw new Error(result.error || 'Token creation failed');
+          }
+          
+          console.log('✅ REAL Solana token created successfully:', result);
+          
+          // Track successful token creation analytics
+          try {
+            const { trackTokenCreation } = await import('@/lib/analytics');
+            await trackTokenCreation({
+              tokenName: tokenData.name,
+              tokenSymbol: tokenData.symbol,
+              network: tokenData.network,
+              successful: true
+            }, solanaWallet.publicKey?.toString() || undefined);
+            
+            // Also track token creation in token tracking system
+            const { trackTokenCreation: trackTokenDetails } = await import('@/lib/token-tracking');
+            await trackTokenDetails({
+              walletAddress: solanaWallet.publicKey?.toString() || '',
+              tokenName: tokenData.name,
+              tokenSymbol: tokenData.symbol,
+              network: tokenData.network,
+              contractAddress: 'mintAddress' in result ? (result.mintAddress || '') : '',
+              description: tokenData.description,
+              totalSupply: tokenData.totalSupply,
+              decimals: parseInt(tokenData.decimals),
+              logoUrl: tokenData.logoUrl,
+              website: tokenData.website,
+              github: tokenData.github,
+              twitter: tokenData.twitter,
+              mintable: tokenData.mintable,
+              burnable: tokenData.burnable,
+              pausable: tokenData.pausable,
+              transactionHash: 'signature' in result ? result.signature : undefined
+            });
+            
+            console.log('✅ Analytics tracking completed');
+          } catch (analyticsError) {
+            console.warn('⚠️ Analytics tracking failed (non-blocking):', analyticsError);
+          }
+          
+          setTokenCreationStep(3); // Processing
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Success
+          setTokenCreationStep(4); // Success
+          toast({
+            title: "🎉 Real Token Created Successfully!",
+            description: `${tokenData.name} (${tokenData.symbol}) created on ${tokenData.network}. Mint: ${'mintAddress' in result ? result.mintAddress : 'N/A'}`,
+          });
+          
+          // Show explorer link if available
+          if ('explorerUrl' in result && result.explorerUrl) {
+            setTimeout(() => {
+              toast({
+                title: "View Your Token",
+                description: "Click to view your token on the blockchain explorer",
+                action: (
+                  <a 
+                    href={result.explorerUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="bg-primary text-primary-foreground px-3 py-2 rounded-md text-sm"
+                  >
+                    View on Explorer
+                  </a>
+                ),
+              });
+            }, 2000);
+          }
+          
+        } catch (tokenError) {
+          console.error('❌ Real Solana token creation failed:', tokenError);
+          
+          // Track failed token creation analytics
+          try {
+            const { trackTokenCreation } = await import('@/lib/analytics');
+            await trackTokenCreation({
+              tokenName: tokenData.name,
+              tokenSymbol: tokenData.symbol,
+              network: tokenData.network,
+              successful: false,
+              error: tokenError instanceof Error ? tokenError.message : 'Unknown error'
+            }, solanaWallet.publicKey?.toString() || undefined);
+            
+            console.log('✅ Failed creation analytics tracked');
+          } catch (analyticsError) {
+            console.warn('⚠️ Failed creation analytics tracking failed:', analyticsError);
+          }
+          
+          throw new Error(`Token creation failed: ${tokenError instanceof Error ? tokenError.message : 'Unknown error'}`);
+        }
+        
       } else {
-        // Mock for non-Algorand networks or disconnected wallet
-        console.log('⚠️ Using mock token creation for non-Algorand network or disconnected wallet');
+        // Mock for unsupported networks or disconnected wallet
+        console.log('⚠️ Using mock token creation for unsupported network or disconnected wallet');
         await new Promise(resolve => setTimeout(resolve, 2000));
         setTokenCreationStep(3); // Processing
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -507,7 +654,7 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
     const isMainnet = tokenData.network.includes('mainnet');
     if (!isMainnet) return true; // Testnet is free
     
-        const creditsRequired = 10;
+    const creditsRequired = 10;
     const algoRequired = 0.1;
     
     if (selectedPaymentMethod === 'credits') {
@@ -517,6 +664,49 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
     }
     
     return selectedPaymentMethod !== null; // At least something is selected
+  };
+
+  // Get the reason why the form is not ready
+  const getFormNotReadyReason = () => {
+    if (!isAuthenticated) {
+      return "Connect your wallet to create a token";
+    }
+    
+    if (tokenData.name.length < 3) {
+      return "Token name must be at least 3 characters";
+    }
+    
+    if (tokenData.symbol.length < 2) {
+      return "Token symbol must be at least 2 characters";
+    }
+    
+    if (!tokenData.totalSupply || parseFloat(tokenData.totalSupply) <= 0) {
+      return "Enter a valid total supply";
+    }
+    
+    if (!tokenData.network) {
+      return "Select a network";
+    }
+    
+    const isMainnet = tokenData.network.includes('mainnet');
+    if (isMainnet) {
+      const creditsRequired = 10;
+      const algoRequired = 0.1;
+      
+      if (!selectedPaymentMethod) {
+        return "Select a payment method";
+      }
+      
+      if (selectedPaymentMethod === 'credits' && userCredits < creditsRequired) {
+        return `Insufficient credits. Need ${creditsRequired}, have ${userCredits}. Top up credits first.`;
+      }
+      
+      if (selectedPaymentMethod === 'algo_direct' && (walletBalance === null || walletBalance < algoRequired)) {
+        return `Insufficient ALGO balance. Need ${algoRequired} ALGO, have ${walletBalance || 0} ALGO.`;
+      }
+    }
+    
+    return null;
   };
 
   return (
@@ -876,7 +1066,7 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
         </div>
 
         {/* Create Token Button - Mobile optimized */}
-        <div className="flex justify-center pt-4 lg:pt-6">
+        <div className="flex flex-col items-center pt-4 lg:pt-6">
           <Button
             onClick={handleCreateToken}
             disabled={isDeploying || !isFormReady()}
@@ -894,6 +1084,15 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
               </>
             )}
           </Button>
+          
+          {/* Show reason why button is disabled */}
+          {!isFormReady() && !isDeploying && (
+            <div className="mt-3 text-center">
+              <p className="text-sm text-muted-foreground bg-muted/50 px-4 py-2 rounded-lg">
+                {getFormNotReadyReason()}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

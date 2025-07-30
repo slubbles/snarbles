@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { CreditCard, Wallet, AlertCircle, Info, CheckCircle, DollarSign, Zap, ArrowRight } from 'lucide-react';
+import { CreditCard, Wallet, AlertCircle, Info, CheckCircle, DollarSign, Zap, ArrowRight, ExternalLink } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
 import { useToast } from '@/hooks/use-toast';
@@ -45,6 +45,11 @@ export default function WalletAwarePaymentSelector({
     setWalletBalance,
     setUserCredits
   } = usePaymentState();
+  
+  // Check if this is a mainnet network
+  const isMainnet = network.includes('mainnet');
+  const isAlgorandTestnet = network.includes('algorand-testnet');
+  const isSolanaDevnet = network.includes('solana-devnet');
   
   // Payment validations
   const hasEnoughCredits = userCredits >= creditsRequired;
@@ -263,6 +268,76 @@ export default function WalletAwarePaymentSelector({
             <p className="text-muted-foreground">
               Connect your Pera or Phantom wallet to proceed
             </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // For testnet/devnet networks, show faucet information instead of payment methods
+  if (!isMainnet) {
+    const faucetInfo = isAlgorandTestnet 
+      ? {
+          networkName: 'Algorand Testnet',
+          faucetUrl: 'https://bank.testnet.algorand.network/',
+          faucetName: 'Algorand Testnet Faucet',
+          tokenName: 'testnet ALGO'
+        }
+      : {
+          networkName: 'Solana Devnet',  
+          faucetUrl: 'https://faucet.solana.com/',
+          faucetName: 'Solana Devnet Faucet',
+          tokenName: 'devnet SOL'
+        };
+
+    return (
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Info className="w-5 h-5 text-blue-500" />
+            Free Token Creation
+          </CardTitle>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="text-lg">{walletInfo.icon}</span>
+            <span>{walletInfo.name}</span>
+            <Badge variant="outline" className="text-xs">
+              {faucetInfo.networkName}
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <Alert className="border-green-500/20 bg-green-500/10">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <AlertDescription className="text-green-700 dark:text-green-300">
+                <strong>Good news!</strong> Token creation is completely free on {faucetInfo.networkName}.
+              </AlertDescription>
+            </Alert>
+
+            <div className="bg-muted/20 p-4 rounded-lg space-y-3">
+              <h4 className="font-semibold flex items-center gap-2">
+                <Info className="w-4 h-4" />
+                Testnet Token Requirements
+              </h4>
+              <p className="text-sm text-muted-foreground">
+                To create tokens on {faucetInfo.networkName}, you'll need some {faucetInfo.tokenName} in your wallet to pay for blockchain transaction fees.
+              </p>
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => window.open(faucetInfo.faucetUrl, '_blank')}
+                className="flex items-center gap-2 w-full"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Get Free {faucetInfo.tokenName} from {faucetInfo.faucetName}
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="text-xs text-muted-foreground p-3 bg-muted/10 rounded border-l-4 border-blue-500">
+              <strong>Note:</strong> Testnet tokens have no real value and are only used for development and testing purposes.
+            </div>
           </div>
         </CardContent>
       </Card>

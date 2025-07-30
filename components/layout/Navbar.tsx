@@ -26,6 +26,8 @@ export default function Navbar() {
   const [mounted, setMounted] = useState(false);
   const [showWalletOptions, setShowWalletOptions] = useState(false);
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+  const [creditsBalance, setCreditsBalance] = useState<number>(0);
+  const [isLoadingCredits, setIsLoadingCredits] = useState(false);
 
   const [showMainnetModal, setShowMainnetModal] = useState<boolean>(false);
   const [showMobileWalletModal, setShowMobileWalletModal] = useState<boolean>(false);
@@ -86,16 +88,39 @@ export default function Navbar() {
     };
   }, []);
 
+  // Load credits balance when wallet connects
+  useEffect(() => {
+    const loadCreditsBalance = async () => {
+      if (!walletAddress || !isAuthenticated) {
+        setCreditsBalance(0);
+        return;
+      }
+
+      setIsLoadingCredits(true);
+      try {
+        const balance = await getCreditsBalance();
+        setCreditsBalance(balance || 0);
+      } catch (error) {
+        console.error('Error loading credits balance:', error);
+        setCreditsBalance(0);
+      } finally {
+        setIsLoadingCredits(false);
+      }
+    };
+
+    loadCreditsBalance();
+  }, [walletAddress, isAuthenticated, getCreditsBalance]);
+
   // Core navigation items for desktop
   const coreNavLinks = [
     { name: 'Create Token', href: '/create' },
     { name: 'Dashboard', href: '/dashboard' },
+    { name: 'Credits', href: '/credits' },
     // Analytics only for admins - moved to admin-only section
   ];
 
   // Additional items moved to dropdown
   const additionalNavLinks = [
-    { name: 'Credits', href: '/credits', icon: CreditCard },
     { name: 'Tokenomics Simulator', href: '/tokenomics', icon: HelpCircle },
     { name: 'Verify Token', href: '/verify', icon: AlertTriangle },
   ];
@@ -306,6 +331,26 @@ export default function Navbar() {
 
           {/* Desktop Controls */}
           <div className="hidden md:flex items-center space-x-4">
+            {/* Credits Balance Display */}
+            {isAuthenticated && (
+              <Link 
+                href="/credits"
+                className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 transition-all duration-200 group"
+              >
+                <CreditCard className="w-4 h-4 text-primary" />
+                <span className="text-foreground font-medium text-sm">
+                  {isLoadingCredits ? (
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin mr-1"></div>
+                      Loading...
+                    </div>
+                  ) : (
+                    `${creditsBalance} Credits`
+                  )}
+                </span>
+              </Link>
+            )}
+            
             {/* Enhanced Multi-Wallet Connection */}
             <div className="relative dropdown-container">
               {isAnyWalletConnected ? (
@@ -748,6 +793,28 @@ export default function Navbar() {
                   {link.name}
                 </Link>
               ))}
+              
+              {/* Mobile Credits Display */}
+              {isAuthenticated && (
+                <div className="px-3 py-2">
+                  <Link 
+                    href="/credits"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center space-x-3 p-3 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20"
+                  >
+                    <CreditCard className="w-5 h-5 text-primary" />
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-foreground">
+                        {isLoadingCredits ? 'Loading Credits...' : `${creditsBalance} Credits`}
+                      </span>
+                      <span className="text-xs text-muted-foreground">Available Balance</span>
+                    </div>
+                    {isLoadingCredits && (
+                      <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin ml-auto"></div>
+                    )}
+                  </Link>
+                </div>
+              )}
               
               {/* Admin Links - Mobile */}
               {isAdmin && (

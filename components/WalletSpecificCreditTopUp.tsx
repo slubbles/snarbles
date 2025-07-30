@@ -50,6 +50,7 @@ import {
   getSolanaBalance
 } from '@/lib/solana-usdt-integration';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import CreditTopUpSuccessModal from '@/components/CreditTopUpSuccessModal';
 
 interface WalletSpecificCreditTopUpProps {
   userAddress?: string;
@@ -69,6 +70,8 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
   const [estimatedFee, setEstimatedFee] = useState<number>(0);
   const [customAlgoAmount, setCustomAlgoAmount] = useState<string>('');
   const [showCustomInput, setShowCustomInput] = useState<boolean>(false);
+  const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
+  const [successDetails, setSuccessDetails] = useState<any>(null);
   
   const { toast } = useToast();
   const { walletAddress, walletType, isAuthenticated } = useWalletAuth();
@@ -212,18 +215,33 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
           }
           
           console.log('🔐 Signing REAL ALGO transaction with Pera Wallet...');
-          const encodedTxn = algosdk.encodeUnsignedTransaction(txn);
-          const signedTxns = await algorandWallet.signTransaction([encodedTxn]);
-          return signedTxns[0];
+          // Pass the transaction object directly to the wallet provider
+          // The AlgorandWalletProvider will handle the proper encoding
+          const signedTxn = await algorandWallet.signTransaction(txn);
+          return signedTxn;
         },
         isCustom
       );
 
       if (result.success) {
-        toast({
-          title: "Credits purchased successfully!",
-          description: result.message || `You received ${result.creditsReceived} credits`,
+        // Show success modal with confetti
+        setSuccessDetails({
+          algoAmount,
+          creditsReceived: result.creditsReceived || 0,
+          bonusCredits: result.bonusCredits || 0,
+          transactionId: result.transactionHash || '',
+          newBalance: result.newBalance || userBalance
         });
+        setShowSuccessModal(true);
+        
+        // Show warning if there was a database issue
+        if (result.databaseWarning) {
+          toast({
+            title: "Database sync pending",
+            description: "Payment successful! Credits will appear after database sync.",
+            variant: "default",
+          });
+        }
         
         // Refresh balance
         await loadUserBalance();
@@ -274,13 +292,11 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
         const walletInterface = {
           address: algorandWallet.address,
           signTransaction: async (txn: any) => {
-            const encodedTxn = algosdk.encodeUnsignedTransaction(txn);
-            const signedTxns = await algorandWallet.signTransaction([encodedTxn]);
-            return signedTxns[0];
+            const signedTxn = await algorandWallet.signTransaction(txn);
+            return signedTxn;
           },
           signTransactions: async (txns: any[]) => {
-            const encodedTxns = txns.map(txn => algosdk.encodeUnsignedTransaction(txn));
-            return await algorandWallet.signTransaction(encodedTxns);
+            return await algorandWallet.signTransaction(txns);
           }
         };
 
@@ -699,6 +715,18 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
           </div>
         </CardContent>
       </Card>
+
+      {/* Success Modal */}
+      {successDetails && (
+        <CreditTopUpSuccessModal
+          isOpen={showSuccessModal}
+          onClose={() => {
+            setShowSuccessModal(false);
+            setSuccessDetails(null);
+          }}
+          topUpDetails={successDetails}
+        />
+      )}
     </div>
   );
 }

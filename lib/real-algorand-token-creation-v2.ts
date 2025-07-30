@@ -189,6 +189,12 @@ export async function createRealAlgorandToken(
       }
       
       totalSupplyForSDK = calculation.value;
+      
+      // Additional safety check for Algorand SDK compatibility
+      if (totalSupplyForSDK > Number.MAX_SAFE_INTEGER) {
+        throw new Error(`Total supply with ${params.decimals} decimals (${totalSupplyForSDK.toLocaleString()}) exceeds safe integer limits. Please reduce total supply to ${Math.floor(Number.MAX_SAFE_INTEGER / Math.pow(10, params.decimals)).toLocaleString()} or fewer, or reduce decimals.`);
+      }
+      
       console.log(`✅ Enhanced calculation completed: ${totalSupplyForSDK.toLocaleString()}`);
       
     } catch (calculationError) {
@@ -366,26 +372,27 @@ function getFeeConfiguration(network: string): {
  * This provides practical limits while staying within Algorand constraints
  */
 export function getMaximumSafeSupply(decimals: number): number {
-  // Algorand's uint64 maximum: 18,446,744,073,709,551,615
-  const algorandMaxUint64 = 18446744073709551615;
+  // Use JavaScript's safe integer limit as the conservative approach
+  // This ensures algosdk compatibility across all environments
   const multiplier = Math.pow(10, decimals);
+  const maxSafeSupply = Math.floor(Number.MAX_SAFE_INTEGER / multiplier);
   
-  // Calculate theoretical max based on Algorand's limits
-  const theoreticalMax = Math.floor(algorandMaxUint64 / multiplier);
-  
-  // Provide practical limits that are user-friendly
+  // Provide practical limits that are user-friendly and safe
   if (decimals >= 16) {
     // For very high decimals (16-18), limit to reasonable amounts
-    return Math.min(theoreticalMax, 10000); // 10k tokens max
+    return Math.min(maxSafeSupply, 10000); // 10k tokens max
   } else if (decimals >= 12) {
     // For high decimals (12-15), allow millions
-    return Math.min(theoreticalMax, 100000000); // 100 million tokens
+    return Math.min(maxSafeSupply, 100000000); // 100 million tokens
   } else if (decimals >= 9) {
-    // For standard decimals (9-11), allow billions  
-    return Math.min(theoreticalMax, 100000000000); // 100 billion tokens
+    // For standard decimals (9-11), be conservative with millions
+    return Math.min(maxSafeSupply, 9007199); // ~9 million tokens max for 9 decimals
+  } else if (decimals >= 6) {
+    // For medium decimals (6-8), allow billions
+    return Math.min(maxSafeSupply, 9007199254); // ~9 billion tokens max for 6 decimals
   } else {
-    // For low decimals (0-8), use full Algorand capacity but cap at reasonable amount
-    return Math.min(theoreticalMax, 1000000000000000); // 1 quadrillion tokens max
+    // For low decimals (0-5), allow more
+    return Math.min(maxSafeSupply, 9007199254740991); // Close to safe integer limit
   }
 }
 
@@ -393,14 +400,18 @@ export function getMaximumSafeSupply(decimals: number): number {
  * Get practical maximum for display purposes (what users typically want)
  */
 export function getPracticalMaximumSupply(decimals: number): number {
+  // Use the same conservative approach as getMaximumSafeSupply
+  // but provide even more user-friendly amounts
   if (decimals >= 15) {
-    return 1000000; // 1 million tokens for very high decimals
+    return 1000; // 1k tokens for very high decimals
   } else if (decimals >= 12) {
-    return 1000000000; // 1 billion tokens for high decimals
+    return 1000000; // 1 million tokens for high decimals
   } else if (decimals >= 9) {
-    return 1000000000000; // 1 trillion tokens for standard decimals
+    return 1000000; // 1 million tokens for 9+ decimals (conservative)
+  } else if (decimals >= 6) {
+    return 1000000000; // 1 billion tokens for 6-8 decimals
   } else {
-    return 1000000000000000; // 1 quadrillion for low decimals
+    return 1000000000000; // 1 trillion for low decimals
   }
 }
 
@@ -441,21 +452,12 @@ export function calculateTokenSupplyEnhanced(supply: number, decimals: number): 
       };
     }
     
-    // For very large numbers that might cause precision issues, validate differently
+    // For numbers that exceed JavaScript's safe integer limit, be more conservative
     if (resultNum > Number.MAX_SAFE_INTEGER) {
-      // Use string comparison for ultra-large numbers
-      const algorandMaxStr = algorandMaxUint64.toString();
-      if (resultStr.length > algorandMaxStr.length || 
-          (resultStr.length === algorandMaxStr.length && resultStr > algorandMaxStr)) {
-        return {
-          success: false,
-          error: `Total supply with ${decimals} decimals exceeds Algorand maximum`
-        };
-      }
-      
-      // If we reach here, the number is valid but large
-      // We'll trust the Algorand SDK to handle it properly
-      console.log(`⚠️ Using large number calculation for supply: ${resultStr}`);
+      return {
+        success: false,
+        error: `Total supply with ${decimals} decimals (${resultStr}) exceeds safe integer limits. Please reduce total supply to ${Math.floor(Number.MAX_SAFE_INTEGER / Math.pow(10, decimals)).toLocaleString()} or fewer, or reduce decimals to 6 or fewer.`
+      };
     }
     
     return {
