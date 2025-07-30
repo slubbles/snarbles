@@ -2,6 +2,7 @@ import * as algosdk from 'algosdk';
 import { supabaseHelpers } from '@/lib/supabase';
 import { retryWithBackoff } from '@/lib/error-handling';
 import { safeStringify } from '@/lib/utils';
+import { ensurePeraWalletPopupCloses } from './algorand-usdt-integration';
 import { 
   getPlatformFeeConfig, 
   getNetworkType,
@@ -419,6 +420,9 @@ export async function signAndSubmitAtomicGroup(
     
     // Wait for confirmation of the fee transaction (which confirms the entire group)
     await waitForConfirmationWithRetry(algodClient, feeTransactionId, 20, network);
+    
+    // Ensure Pera wallet popup closes properly on mobile
+    await ensurePeraWalletPopupCloses();
     
     if (onStepUpdate) {
       onStepUpdate('confirmation', 'completed', { message: 'Atomic transaction group confirmed' });
@@ -1385,6 +1389,9 @@ export async function transferAlgorandAssets(
     
     console.log('⏳ Waiting for transfer confirmation...');
     await waitForConfirmationWithRetry(algodClient, txId, 20, network);
+    
+    // Ensure Pera wallet popup closes properly on mobile
+    await ensurePeraWalletPopupCloses();
     
     console.log(`✅ Successfully transferred ${amount} units of asset ${assetId} to ${receiverAddress}`);
     

@@ -50,16 +50,13 @@ import {
   isValidSolanaAddress
 } from '@/lib/solana-usdt-integration';
 
-import { 
-  getAlgorandUSDTBalance, 
+import {
+  getAlgorandUSDTBalance,
   executeAlgorandUSDTTransfer,
   estimateAlgorandUSDTFee,
   isValidAlgorandAddress,
-  isOptedInToUSDT,
   createUSDTOptInTransaction
-} from '@/lib/algorand-usdt-integration';
-
-import { connectEVMWallet, executeUSDTTransfer } from '@/lib/evm-wallet-integration';
+} from '@/lib/algorand-usdt-integration';import { connectEVMWallet, executeUSDTTransfer } from '@/lib/evm-wallet-integration';
 
 interface MultiWalletUSDTTopUpProps {
   userAddress?: string;
@@ -96,7 +93,6 @@ export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: 
   const [paymentHistory, setPaymentHistory] = useState<USDTPaymentTransaction[]>([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showOptInModal, setShowOptInModal] = useState(false);
-  const [needsOptIn, setNeedsOptIn] = useState(false);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
   
@@ -163,15 +159,6 @@ export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: 
       // Load balance based on wallet type
       await loadBalance();
       await loadFeeEstimate();
-      
-      // Check for Algorand opt-in requirement
-      if (selectedNetwork.walletType === 'pera' && algorandWallet.address) {
-        const optInStatus = await isOptedInToUSDT(
-          algorandWallet.address, 
-          selectedNetwork.isTestnet || false
-        );
-        setNeedsOptIn(!optInStatus.optedIn);
-      }
     } catch (error) {
       console.error('Error loading network data:', error);
     }
@@ -367,7 +354,6 @@ export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: 
         // Submit transaction logic here
         
         setSuccess('Successfully opted in to USDT!');
-        setNeedsOptIn(false);
         setShowOptInModal(false);
         
         // Refresh balance
@@ -500,25 +486,6 @@ export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: 
             </div>
           )}
 
-          {/* Algorand Opt-in Warning */}
-          {needsOptIn && selectedNetwork?.walletType === 'pera' && (
-            <Alert className="glass-card border-primary/30 bg-primary/10">
-              <AlertCircle className="h-4 w-4 text-primary" />
-              <AlertTitle className="text-foreground">USDT Opt-in Required</AlertTitle>
-              <AlertDescription className="mt-2 text-muted-foreground">
-                You need to opt-in to USDT before making payments on Algorand.
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-2 glass-card border-border hover:bg-muted"
-                  onClick={() => setShowOptInModal(true)}
-                >
-                  Opt-in to USDT
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
-
           {/* Amount Input */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -586,7 +553,7 @@ export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: 
           {/* Payment Button */}
           <Button
             onClick={() => setShowPaymentModal(true)}
-            disabled={!selectedNetwork || needsOptIn || parseFloat(usdtAmount) <= 0}
+            disabled={!selectedNetwork || parseFloat(usdtAmount) <= 0}
             className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 font-semibold"
           >
             <CreditCard className="w-4 h-4 mr-2" />
@@ -678,7 +645,7 @@ export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: 
             </Button>
             <Button 
               onClick={handlePayment}
-              disabled={isProcessing || needsOptIn}
+              disabled={isProcessing}
               className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               {isProcessing ? (

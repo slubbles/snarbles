@@ -2,6 +2,7 @@ import { supabase, isSupabaseAvailable } from './supabase-client';
 import { getCreditsBalance, spendCreditsForTokenCreation, addCreditTransaction } from './credit-system';
 import { getAlgorandClient } from './algorand';
 import { getAdminConfig } from './admin-config';
+import { ensurePeraWalletPopupCloses } from './algorand-usdt-integration';
 import * as algosdk from 'algosdk';
 
 export type PaymentMethod = 'credits' | 'algo_direct';
@@ -278,6 +279,9 @@ export async function purchaseCreditsWithAlgo(
     
     console.log('✅ REAL ALGO transaction confirmed in round:', confirmedTxn.confirmedRound);
     
+    // Ensure Pera wallet popup closes properly on mobile
+    await ensurePeraWalletPopupCloses();
+    
     // NOW record the REAL transaction in database with credits info in description
     const creditDescription = `ALGO Credit Purchase: ${algoAmount} ALGO → ${creditsToReceive} credits${bonusCredits > 0 ? ` (${bonusCredits} bonus)` : ''}`;
     
@@ -406,6 +410,9 @@ export async function processAlgoPayment(
     
     // Wait for confirmation
     await algosdk.waitForConfirmation(algodClient, txHash, 4);
+    
+    // Ensure Pera wallet popup closes properly on mobile
+    await ensurePeraWalletPopupCloses();
     
     // Record payment
     if (isSupabaseAvailable()) {

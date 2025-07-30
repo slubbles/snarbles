@@ -38,7 +38,6 @@ import {
 import { 
   getAlgorandUSDTBalance, 
   executeAlgorandUSDTTransfer,
-  executeUSDTPaymentWithAutoOptIn,
   estimateAlgorandUSDTFee,
   isOptedInToUSDT,
   createUSDTOptInTransaction
@@ -300,17 +299,27 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
           }
         };
 
-        // Show appropriate loading message based on opt-in status
-        const loadingMessage = !isOptedIn 
-          ? `Setting up USDt & processing ${amount} USDt payment...`
-          : `Processing ${amount} USDt payment...`;
+        // Check if user is opted in to USDt
+        const optInCheck = await isOptedInToUSDT(walletAddress, true);
+        if (!optInCheck.success) {
+          throw new Error('Failed to check USDt opt-in status');
+        }
+        
+        if (!optInCheck.optedIn) {
+          toast({
+            title: "USDt Opt-in Required",
+            description: "Please opt-in to USDt first using your wallet's asset management feature.",
+            variant: "destructive",
+          });
+          return;
+        }
         
         toast({
           title: "Processing Payment",
-          description: loadingMessage,
+          description: `Processing ${amount} USDt payment...`,
         });
 
-        const result = await executeUSDTPaymentWithAutoOptIn(
+        const result = await executeAlgorandUSDTTransfer(
           walletInterface,
           amount,
           true // isTestnet - adjust based on your environment
@@ -319,9 +328,7 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
         if (result.success) {
           toast({
             title: "Payment Successful!",
-            description: result.optInRequired 
-              ? `USDt enabled and ${amount} credits purchased successfully!`
-              : `${amount} credits purchased successfully!`,
+            description: `${amount} credits purchased successfully!`,
           });
           
           // Refresh balances and credits

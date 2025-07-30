@@ -10,6 +10,7 @@ import { supabase, isSupabaseAvailable } from './supabase-client';
 import { getAlgorandClient } from './algorand';
 import { getCreditsBalance, updateCreditsBalance, addCreditTransaction } from './credit-system';
 import { getAdminConfig } from './admin-config';
+import { ensurePeraWalletPopupCloses } from './algorand-usdt-integration';
 import * as algosdk from 'algosdk';
 
 // Enhanced pricing configuration
@@ -203,6 +204,9 @@ export async function processAlgoPayment(
       transactionHash,
       4
     );
+    
+    // Ensure Pera wallet popup closes properly on mobile
+    await ensurePeraWalletPopupCloses();
     
     // Record the payment
     const paymentRecord: Omit<AlgoPaymentTransaction, 'id' | 'created_at'> = {

@@ -107,36 +107,22 @@ export async function getAlgorandUSDTBalance(
  * Check if account is opted in to USDT asset
  */
 export async function isOptedInToUSDT(
-  userAddress: string,
+  address: string,
   isTestnet: boolean = true
-): Promise<{ success: boolean; optedIn: boolean; error?: string }> {
+): Promise<{ success: boolean; optedIn: boolean }> {
   try {
-    const { indexerClient, config } = getAlgorandClients(isTestnet);
+    const { algodClient, config } = getAlgorandClients(isTestnet);
     
-    const accountInfo = await indexerClient.lookupAccountByID(userAddress).do();
+    const accountInfo = await algodClient.accountInformation(address).do();
     
-    if (!accountInfo.account) {
-      return {
-        success: true,
-        optedIn: false
-      };
-    }
+    const optedIn = accountInfo.assets?.some(
+      (asset: any) => asset['asset-id'] === config.usdtAssetId
+    ) || false;
     
-    const assets = accountInfo.account.assets || [];
-    const hasUSDT = assets.some((asset: any) => asset['asset-id'] === config.usdtAssetId);
-    
-    return {
-      success: true,
-      optedIn: hasUSDT
-    };
-    
+    return { success: true, optedIn };
   } catch (error) {
     console.error('Error checking USDT opt-in status:', error);
-    return {
-      success: false,
-      optedIn: false,
-      error: error instanceof Error ? error.message : 'Failed to check opt-in status'
-    };
+    return { success: false, optedIn: false };
   }
 }
 
@@ -211,7 +197,7 @@ export async function createUSDTOptInTransaction(
 }
 
 /**
- * Execute USDT transfer on Algorand
+ * Execute USDT transfer on Algorand (simplified - no auto opt-in)
  */
 export async function executeAlgorandUSDTTransfer(
   walletInterface: AlgorandWalletInterface,
@@ -221,59 +207,55 @@ export async function executeAlgorandUSDTTransfer(
   try {
     const { algodClient, config } = getAlgorandClients(isTestnet);
     
-    // Validate addresses
-    if (!algosdk.isValidAddress(walletInterface.address)) {
-      throw new Error('Invalid sender address');
-    }
-    
-    if (!algosdk.isValidAddress(config.receiverAddress)) {
-      throw new Error('Invalid receiver address');
-    }
-    
-    // Check if sender is opted in to USDT
-    const optInStatus = await isOptedInToUSDT(walletInterface.address, isTestnet);
-    if (!optInStatus.success || !optInStatus.optedIn) {
-      throw new Error('Sender account is not opted in to USDT. Please opt in first.');
-    }
-    
-    // Check sender's USDT balance
-    const balanceResult = await getAlgorandUSDTBalance(walletInterface.address, isTestnet);
-    if (!balanceResult.success || balanceResult.balance < usdtAmount) {
-      throw new Error(`Insufficient USDT balance. Available: ${balanceResult.balance}, Required: ${usdtAmount}`);
+    // Check if user is opted in first
+    const optInCheck = await isOptedInToUSDT(walletInterface.address, isTestnet);
+    if (!optInCheck.success || !optInCheck.optedIn) {
+      return {
+        success: false,
+        error: 'Please opt-in to USDT first using your wallet\'s asset management feature.'
+      };
     }
     
     // Get suggested parameters
     const suggestedParams = await algodClient.getTransactionParams().do();
     
-    // Calculate amount in smallest units (6 decimals for USDT)
-    const amount = Math.floor(usdtAmount * Math.pow(10, 6));
+    // Convert USDT amount to micro-units (6 decimals for USDT)
+    const usdtAmountMicroUnits = Math.round(usdtAmount * 1_000_000);
     
     // Create asset transfer transaction
-    const transferTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+    const paymentTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
       sender: walletInterface.address,
       receiver: config.receiverAddress,
-      amount,
+      amount: usdtAmountMicroUnits,
       assetIndex: config.usdtAssetId,
       suggestedParams
     });
     
-    console.log('Preparing transaction for signing...');
+    // Sign transaction
+    console.log('📱 Requesting transaction signature from Pera Wallet...');
+    const signedTxn = await walletInterface.signTransaction(paymentTxn);
     
-    // Sign transaction using wallet
-    const signedTxn = await walletInterface.signTransaction(transferTxn);
-    
-    console.log('Transaction signed, submitting...');
+    // Add small delay to allow Pera wallet app to process the signing
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Submit transaction
+    console.log('📤 Submitting signed transaction to Algorand network...');
     const response = await algodClient.sendRawTransaction(signedTxn).do();
     const txId = response.txid;
     
-    console.log('Transaction submitted:', txId);
+    if (!txId) {
+      throw new Error('Transaction ID not found in response');
+    }
+    
+    console.log(`⏳ Waiting for transaction confirmation: ${txId}`);
     
     // Wait for confirmation
-    const confirmedTxn = await algosdk.waitForConfirmation(algodClient, txId, 3);
+    await algosdk.waitForConfirmation(algodClient, txId, 4);
     
-    console.log('Transaction confirmed in round:', confirmedTxn.confirmedRound);
+    console.log('✅ USDT transaction confirmed successfully');
+    
+    // Ensure Pera wallet popup closes properly on mobile
+    await ensurePeraWalletPopupCloses();
     
     return {
       success: true,
@@ -281,10 +263,10 @@ export async function executeAlgorandUSDTTransfer(
     };
     
   } catch (error) {
-    console.error('Algorand USDT transfer error:', error);
+    console.error('Error in USDT transfer:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Transfer failed'
+      error: error instanceof Error ? error.message : 'USDT transfer failed'
     };
   }
 }
@@ -400,106 +382,7 @@ export async function getAlgorandTransactionStatus(
   }
 }
 
-/**
- * Execute USDT payment with automatic opt-in (if needed)
- * Groups opt-in and payment transactions for seamless UX
- */
-export async function executeUSDTPaymentWithAutoOptIn(
-  walletInterface: AlgorandWalletInterface,
-  usdtAmount: number,
-  isTestnet: boolean = true
-): Promise<{
-  success: boolean;
-  transactionHash?: string;
-  optInRequired?: boolean;
-  error?: string;
-}> {
-  try {
-    const { algodClient, config } = getAlgorandClients(isTestnet);
-    
-    // Check if user is already opted in
-    const optInCheck = await isOptedInToUSDT(walletInterface.address, isTestnet);
-    if (!optInCheck.success) {
-      return {
-        success: false,
-        error: 'Failed to check opt-in status'
-      };
-    }
-    
-    // Get suggested parameters
-    const suggestedParams = await algodClient.getTransactionParams().do();
-    
-    if (!optInCheck.optedIn) {
-      // User needs to opt-in - create grouped transaction
-      console.log('Creating grouped opt-in + payment transaction');
-      
-      // Create opt-in transaction
-      const optInTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
-        sender: walletInterface.address,
-        receiver: walletInterface.address, // Send to self for opt-in
-        amount: 0,
-        assetIndex: config.usdtAssetId,
-        suggestedParams
-      });
-      
-      // Create payment transaction
-      const usdtAmountMicroUnits = Math.round(usdtAmount * 1_000_000); // Convert to micro-units
-      const paymentTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
-        sender: walletInterface.address,
-        receiver: config.receiverAddress,
-        amount: usdtAmountMicroUnits,
-        assetIndex: config.usdtAssetId,
-        suggestedParams
-      });
-      
-      // Group transactions
-      const txnGroup = [optInTxn, paymentTxn];
-      algosdk.assignGroupID(txnGroup);
-      
-      // Sign grouped transactions
-      let signedTxns: Uint8Array[];
-      
-      if (walletInterface.signTransactions) {
-        // Wallet supports batch signing
-        signedTxns = await walletInterface.signTransactions(txnGroup);
-      } else {
-        // Fall back to individual signing
-        const signedOptIn = await walletInterface.signTransaction(optInTxn);
-        const signedPayment = await walletInterface.signTransaction(paymentTxn);
-        signedTxns = [signedOptIn, signedPayment];
-      }
-      
-      // Submit grouped transaction
-      const response = await algodClient.sendRawTransaction(signedTxns).do();
-      const txId = response.txid;
-      
-      if (!txId) {
-        throw new Error('Transaction ID not found in response');
-      }
-      
-      // Wait for confirmation
-      await algosdk.waitForConfirmation(algodClient, txId, 4);
-      
-      return {
-        success: true,
-        transactionHash: txId,
-        optInRequired: true
-      };
-      
-    } else {
-      // User is already opted in - use regular payment flow
-      console.log('User already opted in, executing regular payment');
-      return await executeAlgorandUSDTTransfer(walletInterface, usdtAmount, isTestnet);
-    }
-    
-  } catch (error) {
-    console.error('Error in auto opt-in payment:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Payment failed'
-    };
-  }
-}
+
 
 /**
  * Get transaction details from explorer
@@ -514,6 +397,37 @@ export function getAlgorandExplorerUrl(txId: string, isTestnet: boolean = true):
  */
 export function isValidAlgorandAddress(address: string): boolean {
   return algosdk.isValidAddress(address);
+}
+
+/**
+ * Helper function to ensure Pera wallet popup closes after transaction
+ * Useful for mobile Pera wallet app integration
+ */
+export async function ensurePeraWalletPopupCloses(): Promise<void> {
+  try {
+    // Add delay to allow wallet app to process transaction completion
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Trigger a focus event to help mobile apps return to the dApp
+    if (typeof window !== 'undefined') {
+      window.focus();
+      
+      // Dispatch a custom event that components can listen to
+      const event = new CustomEvent('pera-wallet-transaction-complete', {
+        detail: { timestamp: Date.now() }
+      });
+      window.dispatchEvent(event);
+      
+      // For mobile apps, try to trigger a visibility change
+      if (document.hidden) {
+        document.dispatchEvent(new Event('visibilitychange'));
+      }
+    }
+    
+    console.log('✅ Pera wallet popup close helper executed');
+  } catch (error) {
+    console.warn('⚠️ Error in Pera wallet popup close helper:', error);
+  }
 }
 
 /**
