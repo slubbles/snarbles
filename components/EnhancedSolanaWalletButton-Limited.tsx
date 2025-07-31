@@ -209,30 +209,31 @@ export function EnhancedSolanaWalletButton({
       </Button>
 
       {showWalletSelector && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="glass-card w-full max-w-md">
-            <CardHeader>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="bg-card border border-border w-full max-w-md shadow-2xl mx-auto">
+            <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-foreground">Connect Solana Wallet</CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                    Limited to Phantom and OKX wallets only
+                  <CardTitle className="text-foreground font-semibold text-xl">Connect Wallet</CardTitle>
+                  <CardDescription className="text-muted-foreground mt-1">
+                    Choose your preferred Solana wallet
                   </CardDescription>
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowWalletSelector(false)}
+                  className="text-muted-foreground hover:text-foreground"
                 >
                   <X className="w-4 h-4" />
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-4">
               {availableWallets.map((walletInfo) => (
                 <div
                   key={walletInfo.name}
-                  className="p-4 border border-border rounded-lg hover:bg-muted/20 transition-all duration-200 cursor-pointer"
+                  className="p-4 border border-border rounded-lg hover:border-primary/20 hover:bg-muted/10 transition-all duration-200 cursor-pointer group"
                   onClick={() => {
                     if (walletInfo.isInstalled) {
                       walletInfo.connect();
@@ -240,36 +241,36 @@ export function EnhancedSolanaWalletButton({
                     }
                   }}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
+                  <div className="flex items-center gap-4">
+                    <div className="relative flex-shrink-0">
                       <img 
                         src={walletInfo.icon} 
                         alt={walletInfo.name}
-                        className="w-10 h-10 rounded-lg"
+                        className="w-12 h-12 rounded-lg"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiByeD0iOCIgZmlsbD0iI0Y5RkFGQiIvPgo8cGF0aCBkPSJNMjAgMTBDMTYuNjg2IDEwIDEyIDEyLjY4NiAxMiAxNkMxMiAxOS4zMTQgMTQuNjg2IDIyIDIwIDIyQzIzLjMxNCAyMiAyNiAxOS4zMTQgMjYgMTZDMjYgMTIuNjg2IDIzLjMxNCAxMCAyMCAxMFoiIGZpbGw9IiM5OUEyQTgiLz4KPC9zdmc+Cg==';
                         }}
                       />
-                      <div>
-                        <p className="font-medium text-foreground">{walletInfo.name}</p>
-                        <p className="text-xs text-muted-foreground">{walletInfo.description}</p>
-                        <div className="flex items-center mt-1">
-                          {walletInfo.isInstalled ? (
-                            <Badge variant="outline" className="text-green-500 border-green-500/20 bg-green-500/10">
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              Installed
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-orange-500 border-orange-500/20 bg-orange-500/10">
-                              <AlertTriangle className="w-3 h-3 mr-1" />
-                              Not Installed
-                            </Badge>
-                          )}
+                      {walletInfo.isInstalled && (
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                          <CheckCircle className="w-3 h-3 text-white" />
                         </div>
-                      </div>
+                      )}
                     </div>
                     
-                    <div className="flex items-center">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-foreground group-hover:text-primary transition-colors">{walletInfo.name}</p>
+                      <p className="text-sm text-muted-foreground truncate">{walletInfo.description}</p>
+                      {walletInfo.isInstalled && (
+                        <div className="flex items-center mt-2">
+                          <Badge variant="outline" className="text-green-600 border-green-500/30 bg-green-500/10 text-xs">
+                            ✅ Installed
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex-shrink-0">
                       {!walletInfo.isInstalled ? (
                         <Button
                           size="sm"
@@ -278,6 +279,7 @@ export function EnhancedSolanaWalletButton({
                             e.stopPropagation();
                             window.open(walletInfo.downloadUrl, '_blank');
                           }}
+                          className="border-primary/20 hover:border-primary hover:bg-primary/10"
                         >
                           <Download className="w-4 h-4 mr-1" />
                           Install
@@ -285,6 +287,7 @@ export function EnhancedSolanaWalletButton({
                       ) : (
                         <Button
                           size="sm"
+                          className="bg-primary hover:bg-primary/90 text-primary-foreground"
                           disabled={walletInfo.isConnected}
                         >
                           {walletInfo.isConnected ? 'Connected' : 'Connect'}
@@ -295,15 +298,18 @@ export function EnhancedSolanaWalletButton({
                 </div>
               ))}
               
-              <div className="pt-4 border-t border-border text-center">
-                <p className="text-xs text-muted-foreground mb-3">
-                  🔒 Only Phantom and OKX wallets are supported for Solana connections
-                </p>
+              <div className="pt-3 mt-4 border-t border-border">
+                <div className="flex items-center justify-center space-x-2 mb-3">
+                  <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Only Phantom and OKX wallets are supported for Solana connections
+                  </p>
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowWalletSelector(false)}
-                  className="w-full"
+                  className="w-full text-muted-foreground hover:text-foreground"
                 >
                   Cancel
                 </Button>

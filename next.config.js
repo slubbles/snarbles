@@ -36,14 +36,14 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' *.github.dev",
-              "style-src 'self' 'unsafe-inline' *.github.dev",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' *.github.dev https://unpkg.com",
+              "style-src 'self' 'unsafe-inline' *.github.dev https://fonts.googleapis.com",
               "img-src 'self' data: blob: https: *.github.dev",
-              "font-src 'self' data: *.github.dev",
-              "connect-src 'self' data: https://*.supabase.co https://api.devnet.solana.com https://api.mainnet-beta.solana.com https://testnet-api.algonode.cloud https://mainnet-api.algonode.cloud https://testnet-idx.algonode.cloud https://mainnet-idx.algonode.cloud https://wc.perawallet.app https://*.perawallet.app https://s3.amazonaws.com https://*.github.dev *.github.dev wss://api.devnet.solana.com wss://api.mainnet-beta.solana.com wss://*.perawallet.app wss://*.bridge.walletconnect.org wss://*.walletconnect.org https://*.walletconnect.org",
+              "font-src 'self' data: *.github.dev https://fonts.gstatic.com",
+              "connect-src 'self' data: https://*.supabase.co https://api.devnet.solana.com https://api.mainnet-beta.solana.com https://testnet-api.algonode.cloud https://mainnet-api.algonode.cloud https://testnet-idx.algonode.cloud https://mainnet-idx.algonode.cloud https://wc.perawallet.app https://*.perawallet.app https://s3.amazonaws.com https://*.github.dev *.github.dev wss://api.devnet.solana.com wss://api.mainnet-beta.solana.com wss://*.perawallet.app wss://*.bridge.walletconnect.org wss://*.walletconnect.org https://*.walletconnect.org https://explorer.solana.com https://algoexplorer.io https://testnet.algoexplorer.io",
               "worker-src 'self' blob:",
               "frame-src 'self' https://verify.walletconnect.com *.github.dev",
-              "manifest-src 'self' *.github.dev",
+              "manifest-src 'self' *.github.dev https://github.dev",
               "object-src 'none'",
               "base-uri 'self'"
             ].join('; ')

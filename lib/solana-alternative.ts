@@ -13,8 +13,10 @@ import {
   createInitializeMintInstruction,
   createAssociatedTokenAccountInstruction,
   createMintToInstruction,
+  createSetAuthorityInstruction,
   getMinimumBalanceForRentExemptMint,
   getAssociatedTokenAddress,
+  AuthorityType,
   MINT_SIZE
 } from '@solana/spl-token';
 import { CURRENT_SOLANA_NETWORK } from './solana-data';
@@ -230,12 +232,16 @@ export async function createSolanaTokenDirect(
     );
 
     // Add initialize mint instruction
+    // Properly implement token features for Solana:
+    // - mintable: If false, mint authority will be set to null after initial mint (no more minting allowed)
+    // - pausable: If true, set freeze authority to wallet (can freeze accounts)
+    // - burnable: Always allowed in Solana (token holders can burn their own tokens)
     transaction.add(
       createInitializeMintInstruction(
         mintKeypair.publicKey,
         tokenData.decimals,
-        wallet.publicKey, // mint authority
-        tokenData.mintable ? wallet.publicKey : null, // freeze authority (if mintable)
+        wallet.publicKey, // Initially set mint authority to create initial supply
+        tokenData.pausable ? wallet.publicKey : null, // freeze authority (null = no freezing)
         TOKEN_PROGRAM_ID
       )
     );
@@ -265,6 +271,10 @@ export async function createSolanaTokenDirect(
         )
       );
     }
+
+    // If token is not mintable, we need to revoke mint authority after initial mint
+    // This will be done in a separate transaction to ensure proper feature implementation
+    const needsSecondTransaction = !tokenData.mintable;
 
     // Get recent blockhash
     const latestBlockhash = await connection.getLatestBlockhash();
@@ -313,6 +323,69 @@ export async function createSolanaTokenDirect(
       onStepUpdate('blockchain-submit', 'completed', { 
         message: 'Transaction confirmed successfully' 
       });
+    }
+
+    // If token is not mintable, revoke mint authority in a second transaction
+    if (needsSecondTransaction) {
+      if (onStepUpdate) {
+        onStepUpdate('revoke-authority', 'in-progress', { 
+          message: 'Revoking mint authority (making token non-mintable)...' 
+        });
+      }
+
+      try {
+        const revokeTransaction = new Transaction();
+        
+        // Add instruction to set mint authority to null (revoke minting capability)
+        revokeTransaction.add(
+          createSetAuthorityInstruction(
+            mintKeypair.publicKey, // mint
+            wallet.publicKey, // current authority
+            AuthorityType.MintTokens, // authority type
+            null, // new authority (null = revoke)
+            [], // signers
+            TOKEN_PROGRAM_ID
+          )
+        );
+
+        // Get recent blockhash for second transaction
+        const latestBlockhash2 = await connection.getLatestBlockhash();
+        revokeTransaction.recentBlockhash = latestBlockhash2.blockhash;
+        revokeTransaction.feePayer = wallet.publicKey;
+
+        // Sign and send revoke transaction
+        const signedRevokeTransaction = await wallet.signTransaction(revokeTransaction);
+        const revokeSignature = await connection.sendRawTransaction(signedRevokeTransaction.serialize());
+
+        // Confirm revoke transaction
+        const revokeConfirmation = await connection.confirmTransaction({
+          signature: revokeSignature,
+          blockhash: latestBlockhash2.blockhash,
+          lastValidBlockHeight: latestBlockhash2.lastValidBlockHeight
+        }, 'confirmed');
+
+        if (revokeConfirmation.value.err) {
+          console.warn('Failed to revoke mint authority:', revokeConfirmation.value.err);
+          // Don't fail the whole process, just warn the user
+        } else {
+          if (onStepUpdate) {
+            onStepUpdate('revoke-authority', 'completed', { 
+              message: 'Mint authority revoked - token is now non-mintable' 
+            });
+          }
+        }
+      } catch (revokeError) {
+        console.warn('Failed to revoke mint authority:', revokeError);
+        // Don't fail the whole process, just log the warning
+        if (onStepUpdate) {
+          onStepUpdate('revoke-authority', 'warning', { 
+            message: 'Warning: Could not revoke mint authority. Token may still be mintable.' 
+          });
+        }
+      }
+    }
+
+    if (onStepUpdate) {
       onStepUpdate('metadata-upload', 'in-progress', { message: 'Creating token metadata...' });
     }
 
@@ -334,9 +407,9 @@ export async function createSolanaTokenDirect(
       attributes: [
         { trait_type: 'Decimals', value: tokenData.decimals },
         { trait_type: 'Total Supply', value: tokenData.totalSupply },
-        { trait_type: 'Mintable', value: tokenData.mintable },
-        { trait_type: 'Burnable', value: tokenData.burnable },
-        { trait_type: 'Pausable', value: tokenData.pausable },
+        { trait_type: 'Mintable', value: tokenData.mintable, description: 'Mint authority revoked if false' },
+        { trait_type: 'Burnable', value: true, description: 'Token holders can always burn their own tokens' },
+        { trait_type: 'Pausable', value: tokenData.pausable, description: 'Freeze authority set if true' },
         { trait_type: 'Network', value: CURRENT_SOLANA_NETWORK.name },
         { trait_type: 'Created By', value: 'Snarbles Token Platform' }
       ],
@@ -364,9 +437,9 @@ export async function createSolanaTokenDirect(
       decimals: tokenData.decimals,
       initialSupply: tokenData.totalSupply,
       features: {
-        mintable: tokenData.mintable,
-        burnable: tokenData.burnable,
-        pausable: tokenData.pausable
+        mintable: tokenData.mintable, // Implemented via mint authority (revoked if false)
+        burnable: true, // Always true in Solana (token holders can burn their own tokens)
+        pausable: tokenData.pausable // Implemented via freeze authority
       },
       // Add display info for better tracking
       displayInfo: {

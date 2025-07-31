@@ -12,7 +12,7 @@ export interface DecimalAdjustmentResult {
 }
 
 /**
- * Calculate the optimal decimals for a given supply
+ * Calculate the optimal decimals for a given supply with improved logic
  * This ensures we stay within JavaScript's MAX_SAFE_INTEGER while maximizing precision
  */
 export function calculateOptimalDecimals(supply: number): DecimalAdjustmentResult {
@@ -20,49 +20,54 @@ export function calculateOptimalDecimals(supply: number): DecimalAdjustmentResul
   
   // Find the highest decimals that still work with this supply
   let maxDecimals = 0;
-  let recommendedDecimals = 0;
+  let recommendedDecimals = 6; // Default to USDC standard
   
   for (let decimals = 0; decimals <= 18; decimals++) {
     const total = cleanSupply * Math.pow(10, decimals);
     
     if (total <= Number.MAX_SAFE_INTEGER) {
       maxDecimals = decimals;
-      
-      // Recommended decimals based on common standards
-      if (decimals >= 6 && recommendedDecimals < 6) {
-        recommendedDecimals = 6; // USDC standard
-      } else if (decimals >= 9 && recommendedDecimals < 9) {
-        recommendedDecimals = 9; // SOL standard
-      } else if (decimals >= 12 && recommendedDecimals < 12) {
-        recommendedDecimals = 12; // High precision
-      } else if (decimals >= 15 && recommendedDecimals < 15) {
-        recommendedDecimals = 15; // Ultra high precision
-      }
     } else {
       break;
     }
   }
   
-  // Use recommended or max available
-  const finalDecimals = recommendedDecimals || maxDecimals;
-  const precision = finalDecimals > 0 ? `0.${'0'.repeat(finalDecimals - 1)}1` : '1';
+  // Improved recommended decimals based on supply ranges and common standards
+  if (cleanSupply <= 1000) {
+    recommendedDecimals = Math.min(18, maxDecimals); // Ultra-high precision for small supplies
+  } else if (cleanSupply <= 100000) {
+    recommendedDecimals = Math.min(15, maxDecimals); // Very high precision
+  } else if (cleanSupply <= 10000000) { // 10M
+    recommendedDecimals = Math.min(12, maxDecimals); // High precision
+  } else if (cleanSupply <= 1000000000) { // 1B
+    recommendedDecimals = Math.min(9, maxDecimals); // SOL/ETH standard
+  } else if (cleanSupply <= 100000000000) { // 100B
+    recommendedDecimals = Math.min(6, maxDecimals); // USDC/USDT standard
+  } else {
+    recommendedDecimals = Math.min(3, maxDecimals); // Large supply tokens
+  }
+  
+  // Ensure we don't go below 0 or above what's mathematically possible
+  recommendedDecimals = Math.max(0, Math.min(recommendedDecimals, maxDecimals));
+  
+  const precision = recommendedDecimals > 0 ? `0.${'0'.repeat(recommendedDecimals - 1)}1` : '1';
   
   let explanation = '';
   
   if (cleanSupply >= 1000000000000) { // 1 trillion+
-    explanation = `Large supply (${cleanSupply.toLocaleString()}) requires low decimals for safety. Using ${finalDecimals} decimals.`;
+    explanation = `Massive supply (${cleanSupply.toLocaleString()}) requires ${recommendedDecimals} decimals to stay within safe limits.`;
   } else if (cleanSupply >= 1000000000) { // 1 billion+
-    explanation = `Billion-scale supply detected. Using ${finalDecimals} decimals (like USDC) for optimal balance.`;
+    explanation = `Large supply detected. Using ${recommendedDecimals} decimals (like major stablecoins) for optimal balance.`;
   } else if (cleanSupply >= 1000000) { // 1 million+
-    explanation = `Million-scale supply allows higher precision. Using ${finalDecimals} decimals for flexibility.`;
+    explanation = `Million-scale supply allows ${recommendedDecimals} decimals for excellent precision and flexibility.`;
   } else if (cleanSupply >= 10000) { // 10k+
-    explanation = `Moderate supply enables high precision. Using ${finalDecimals} decimals for maximum flexibility.`;
+    explanation = `Moderate supply enables ${recommendedDecimals} decimals for high-precision transactions.`;
   } else {
-    explanation = `Small supply allows maximum precision. Using ${finalDecimals} decimals for ultra-fine control.`;
+    explanation = `Small supply allows ${recommendedDecimals} decimals for maximum precision and control.`;
   }
   
   return {
-    recommendedDecimals: finalDecimals,
+    recommendedDecimals,
     maxPossibleDecimals: maxDecimals,
     currentSafeSupply: cleanSupply,
     explanation,

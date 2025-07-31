@@ -26,6 +26,7 @@ interface PaymentActions {
   setWalletBalance: (balance: number | null) => void;
   setIsConnected: (connected: boolean) => void;
   setNetwork: (network: 'algorand' | 'solana' | null) => void;
+  updateStepsForNetwork: (network: 'algorand' | 'solana') => void;
   resetPayment: () => void;
   clearError: () => void;
 }
@@ -96,6 +97,25 @@ export const usePaymentState = create<PaymentStore>()(
       
       setNetwork: (network: 'algorand' | 'solana' | null) => {
         set({ network });
+      },
+      
+      updateStepsForNetwork: (network: 'algorand' | 'solana') => {
+        const networkSteps = network === 'solana' 
+          ? [
+              'Preparing payment',
+              'Confirming transaction', 
+              'Sign transaction in your Solana wallet (Phantom, OKX, etc.)',
+              'Processing',
+              'Success'
+            ]
+          : [
+              'Preparing payment',
+              'Confirming transaction',
+              'Sign transaction on Pera Wallet app',
+              'Processing', 
+              'Success'
+            ];
+        set({ steps: networkSteps });
       },
       
       resetPayment: () => {

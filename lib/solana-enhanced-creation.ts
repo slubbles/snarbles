@@ -18,8 +18,10 @@ import {
   createInitializeMintInstruction,
   createAssociatedTokenAccountInstruction,
   createMintToInstruction,
+  createSetAuthorityInstruction,
   getMinimumBalanceForRentExemptMint,
   getAssociatedTokenAddress,
+  AuthorityType,
   MINT_SIZE
 } from '@solana/spl-token';
 import { CURRENT_SOLANA_NETWORK } from './solana-data';
@@ -139,12 +141,16 @@ export async function createSolanaTokenWithMetadata(
     );
 
     // Add initialize mint instruction
+    // Properly implement token features for Solana enhanced creation:
+    // - mintable: Initially set mint authority, will be revoked later if false
+    // - pausable: Set freeze authority if true (allows freezing accounts)
+    // - burnable: Always allowed in Solana
     transaction.add(
       createInitializeMintInstruction(
         mintKeypair.publicKey,
         tokenData.decimals,
-        wallet.publicKey, // mint authority
-        tokenData.mintable ? wallet.publicKey : null, // freeze authority
+        wallet.publicKey, // Initially set mint authority to create initial supply
+        tokenData.pausable ? wallet.publicKey : null, // freeze authority (null = no freezing)
         TOKEN_PROGRAM_ID
       )
     );
@@ -198,10 +204,11 @@ export async function createSolanaTokenWithMetadata(
       onStepUpdate('blockchain-submit', 'in-progress', { message: 'Creating token on blockchain...' });
     }
 
-    // Send main transaction
+    // Send main transaction with improved error handling
     const signature = await connection.sendRawTransaction(signedTransaction.serialize(), {
       skipPreflight: false,
-      preflightCommitment: 'confirmed'
+      preflightCommitment: 'confirmed',
+      maxRetries: 3
     });
 
     console.log('📤 Main transaction sent:', signature);
@@ -212,23 +219,131 @@ export async function createSolanaTokenWithMetadata(
       });
     }
 
-    // Confirm main transaction
-    const confirmation = await connection.confirmTransaction({
-      signature: signature,
-      blockhash: latestBlockhash.blockhash,
-      lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
-    }, 'confirmed');
+    // Improved confirmation strategy with timeout handling
+    try {
+      // Use a more robust confirmation strategy
+      const confirmationStrategy = {
+        signature: signature,
+        blockhash: latestBlockhash.blockhash,
+        lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
+      };
 
-    if (confirmation.value.err) {
-      throw new Error(`Token creation failed: ${JSON.stringify(confirmation.value.err)}`);
+      // Add timeout and retry logic
+      const confirmationPromise = connection.confirmTransaction(confirmationStrategy, 'confirmed');
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Transaction confirmation timeout')), 60000) // 60 second timeout
+      );
+
+      const confirmation = await Promise.race([confirmationPromise, timeoutPromise]) as any;
+
+      if (confirmation?.value?.err) {
+        throw new Error(`Token creation failed: ${JSON.stringify(confirmation.value.err)}`);
+      }
+
+      console.log('✅ Token created successfully:', mintKeypair.publicKey.toString());
+
+    } catch (confirmError) {
+      console.warn('Confirmation timeout, but transaction may still succeed:', confirmError);
+      
+      // Try to verify the transaction actually succeeded by checking if the mint exists
+      try {
+        const mintInfo = await connection.getParsedAccountInfo(mintKeypair.publicKey);
+        if (mintInfo) {
+          console.log('✅ Token creation verified despite confirmation timeout');
+        } else {
+          throw new Error('Transaction failed - mint account not found');
+        }
+      } catch (verifyError) {
+        // If we can't verify, assume it failed
+        throw new Error(`Transaction confirmation failed: ${confirmError instanceof Error ? confirmError.message : 'Unknown error'}`);
+      }
     }
-
-    console.log('✅ Token created successfully:', mintKeypair.publicKey.toString());
 
     if (onStepUpdate) {
       onStepUpdate('blockchain-submit', 'completed', { 
         message: 'Token created successfully' 
       });
+    }
+
+    // If token is not mintable, revoke mint authority
+    if (!tokenData.mintable) {
+      if (onStepUpdate) {
+        onStepUpdate('revoke-authority', 'in-progress', { 
+          message: 'Revoking mint authority (making token non-mintable)...' 
+        });
+      }
+
+      try {
+        const revokeTransaction = new Transaction();
+        
+        // Add instruction to set mint authority to null (revoke minting capability)
+        revokeTransaction.add(
+          createSetAuthorityInstruction(
+            mintKeypair.publicKey, // mint
+            wallet.publicKey, // current authority
+            AuthorityType.MintTokens, // authority type
+            null, // new authority (null = revoke)
+            [], // signers
+            TOKEN_PROGRAM_ID
+          )
+        );
+
+        // Get recent blockhash for revoke transaction
+        const latestBlockhash2 = await connection.getLatestBlockhash();
+        revokeTransaction.recentBlockhash = latestBlockhash2.blockhash;
+        revokeTransaction.feePayer = wallet.publicKey;
+
+        // Sign and send revoke transaction with improved handling
+        const signedRevokeTransaction = await wallet.signTransaction(revokeTransaction);
+        const revokeSignature = await connection.sendRawTransaction(signedRevokeTransaction.serialize(), {
+          skipPreflight: false,
+          preflightCommitment: 'confirmed',
+          maxRetries: 2
+        });
+
+        // Improved confirmation for revoke transaction
+        try {
+          const revokeConfirmationStrategy = {
+            signature: revokeSignature,
+            blockhash: latestBlockhash2.blockhash,
+            lastValidBlockHeight: latestBlockhash2.lastValidBlockHeight
+          };
+
+          const revokeConfirmationPromise = connection.confirmTransaction(revokeConfirmationStrategy, 'confirmed');
+          const revokeTimeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Revoke confirmation timeout')), 30000) // 30 second timeout
+          );
+
+          const revokeConfirmation = await Promise.race([revokeConfirmationPromise, revokeTimeoutPromise]) as any;
+
+          if (revokeConfirmation?.value?.err) {
+            console.warn('Failed to revoke mint authority:', revokeConfirmation.value.err);
+          } else {
+            if (onStepUpdate) {
+              onStepUpdate('revoke-authority', 'completed', { 
+                message: 'Mint authority revoked - token is now non-mintable' 
+              });
+            }
+          }
+        } catch (revokeConfirmError) {
+          console.warn('Revoke confirmation timeout, but may have succeeded:', revokeConfirmError);
+          if (onStepUpdate) {
+            onStepUpdate('revoke-authority', 'warning', { 
+              message: 'Mint authority revocation pending - check explorer for status' 
+            });
+          }
+        }
+      } catch (revokeError) {
+        console.warn('Failed to revoke mint authority:', revokeError);
+        if (onStepUpdate) {
+          onStepUpdate('revoke-authority', 'warning', { 
+            message: 'Warning: Could not revoke mint authority. Token may still be mintable.' 
+          });
+        }
+      }
+    }
+
+    if (onStepUpdate) {
       onStepUpdate('metadata-upload', 'in-progress', { message: 'Adding metadata to blockchain...' });
     }
 

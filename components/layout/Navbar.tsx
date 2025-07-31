@@ -435,26 +435,6 @@ export default function Navbar() {
                     <div className="mb-4 text-center">
                       <h3 className="text-foreground font-bold text-lg mb-1 gradient-text">Wallet Management</h3>
                       <p className="text-muted-foreground text-xs">Connect or manage your wallets</p>
-                      
-                      {/* Authenticated User Status */}
-                      {isAuthenticated && user && (
-                        <div className="mt-3 p-3 bg-gradient-to-r from-green-500/10 to-blue-500/10 border border-green-500/20 rounded-lg">
-                          <div className="flex items-center justify-center">
-                            <div className="flex items-center space-x-2">
-                              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                              <span className="text-xs font-medium text-green-600">Authenticated</span>
-                            </div>
-                          </div>
-                          <div className="mt-2 flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">
-                              {walletType?.charAt(0).toUpperCase()}{walletType?.slice(1)} • {user.network}
-                            </span>
-                            <span className="text-muted-foreground">
-                              {user.totalTokensCreated} tokens created
-                            </span>
-                          </div>
-                        </div>
-                      )}
                     </div>
                     
                     {/* Wallet Cards Container */}

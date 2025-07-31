@@ -241,33 +241,55 @@ export default function TokenConfirmationModal({
 
           <Separator className="bg-border" />
 
-          {/* Cost Information */}
-          <div className="p-3 bg-muted/20 rounded-lg space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Payment Method:</span>
-              <span className="text-sm font-medium text-foreground">
-                {selectedPaymentMethod === 'credits' ? 'Credits' : 
-                 selectedPaymentMethod === 'algo_direct' ? 'ALGO Direct' : 
-                 'Not Selected'}
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Total Cost:</span>
-              <span className="text-sm font-semibold text-foreground">{networkInfo.cost}</span>
-            </div>
-            {selectedPaymentMethod === 'algo_direct' && paymentCosts && (
-              <div className="text-xs text-muted-foreground pt-1 border-t border-border">
-                <div className="flex justify-between">
-                  <span>Platform fee:</span>
-                  <span>{paymentCosts.algo} ALGO</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Network fee:</span>
-                  <span>~0.001 ALGO</span>
-                </div>
+          {/* Cost Information or Testnet Wallet Note */}
+          {tokenData.network.includes('testnet') || tokenData.network.includes('devnet') ? (
+            // For testnets - show wallet balance requirement
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-900">Wallet Requirements</span>
               </div>
-            )}
-          </div>
+              <p className="text-xs text-blue-700 leading-relaxed">
+                {tokenData.network.includes('solana') ? (
+                  <>Make sure you have <strong>Solana devnet tokens</strong> in your wallet to pay for transaction fees.</>
+                ) : (
+                  <>Make sure you have <strong>Algorand testnet tokens</strong> in your wallet to pay for transaction fees.</>
+                )}
+              </p>
+              <div className="flex items-center justify-between pt-1 border-t border-blue-200">
+                <span className="text-sm text-blue-700">Network Cost:</span>
+                <span className="text-sm font-semibold text-blue-900">Free (testnet)</span>
+              </div>
+            </div>
+          ) : (
+            // For mainnets - show payment method and cost
+            <div className="p-3 bg-muted/20 rounded-lg space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Payment Method:</span>
+                <span className="text-sm font-medium text-foreground">
+                  {selectedPaymentMethod === 'credits' ? 'Credits' : 
+                   selectedPaymentMethod === 'algo_direct' ? 'ALGO Direct' : 
+                   'Not Selected'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Total Cost:</span>
+                <span className="text-sm font-semibold text-foreground">{networkInfo.cost}</span>
+              </div>
+              {selectedPaymentMethod === 'algo_direct' && paymentCosts && (
+                <div className="text-xs text-muted-foreground pt-1 border-t border-border">
+                  <div className="flex justify-between">
+                    <span>Platform fee:</span>
+                    <span>{paymentCosts.algo} ALGO</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Network fee:</span>
+                    <span>~0.001 ALGO</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Warning */}
           <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">

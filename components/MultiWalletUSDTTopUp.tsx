@@ -184,7 +184,7 @@ export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: 
           if (algorandWallet.address) {
             balanceResult = await getAlgorandUSDTBalance(
               algorandWallet.address,
-              selectedNetwork.isTestnet || false
+              false // Use mainnet for production
             );
           }
           break;

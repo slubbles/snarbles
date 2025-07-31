@@ -146,12 +146,16 @@ export async function buildMobileOptimizedTransaction(
   );
 
   // Add initialize mint instruction
+  // Properly implement token features for Solana mobile:
+  // - mintable: Initially set mint authority, will be revoked later if false
+  // - pausable: Set freeze authority if true (allows freezing accounts)
+  // - burnable: Always allowed in Solana
   transaction.add(
     createInitializeMintInstruction(
       mintKeypair.publicKey,
       tokenData.decimals,
-      wallet.publicKey, // mint authority
-      tokenData.mintable ? wallet.publicKey : null, // freeze authority
+      wallet.publicKey, // Initially set mint authority to create initial supply
+      null, // Always set freeze authority to null for mobile (pausable feature not implemented in mobile version)
       TOKEN_PROGRAM_ID
     )
   );

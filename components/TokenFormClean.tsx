@@ -53,6 +53,8 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
   const [decimalSuggestion, setDecimalSuggestion] = useState<any>(null);
   const [showDecimalAdjustment, setShowDecimalAdjustment] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [lastAutoAdjustment, setLastAutoAdjustment] = useState<string>(''); // Track last auto-adjustment to prevent loops
+  const autoAdjustmentTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { toast } = useToast();
@@ -66,6 +68,7 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
     walletBalance,
     setProcessing,
     setTokenCreationStep,
+    updateStepsForNetwork,
   } = usePaymentState();
 
   // Validation
@@ -98,11 +101,12 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
         
         if (totalBigInt > BigInt(Number.MAX_SAFE_INTEGER)) {
           const maxSafeSupply = Math.floor(Number.MAX_SAFE_INTEGER / Math.pow(10, decimals));
-          errors.totalSupply = `Supply of ${supply.toLocaleString()} with ${decimals} decimals is too large. Maximum safe supply: ${maxSafeSupply.toLocaleString()}. 
+          errors.totalSupply = `Supply of ${supply.toLocaleString()} with ${decimals} decimals exceeds safe limits. 
           
-💡 **Why this happens**: Algorand's JavaScript SDK uses native numbers, while Solana/Ethereum use BigNumber libraries.
+💡 **Auto-adjustment available**: Change your supply and decimals will automatically optimize.
 💡 **Solutions**: 
   • Reduce supply to ${maxSafeSupply.toLocaleString()} tokens
+  • Enter a different supply (decimals will auto-adjust)
   • Use 6 decimals instead of ${decimals} (allows ~9 billion tokens)
   • Use 3 decimals (allows ~9 trillion tokens)`;
         }
@@ -113,27 +117,98 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
     return Object.keys(errors).length === 0;
   };
 
-  // Smart decimal adjustment based on supply
+  // Smart decimal adjustment based on supply (real-time auto-adjustment for Algorand)
   useEffect(() => {
+    // Clear any existing timeout
+    if (autoAdjustmentTimeoutRef.current) {
+      clearTimeout(autoAdjustmentTimeoutRef.current);
+    }
+    
     const supply = parseFloat(tokenData.totalSupply);
     const currentDecimals = parseInt(tokenData.decimals) || 6;
     
     if (!isNaN(supply) && supply > 0 && tokenData.network.includes('algorand')) {
-      const optimal = calculateOptimalDecimals(supply);
-      const decimalCheck = isDecimalOptimal(supply, currentDecimals);
+      // Add a small delay to prevent rapid adjustments while user is typing
+      autoAdjustmentTimeoutRef.current = setTimeout(() => {
+        const decimalCheck = isDecimalOptimal(supply, currentDecimals);
+        
+        // Auto-apply optimal decimals for Algorand networks only
+        if (!decimalCheck.isOptimal && decimalCheck.suggestion) {
+          const optimalDecimals = decimalCheck.suggestion.recommendedDecimals;
+          const newDecimals = optimalDecimals.toString();
+          const adjustmentKey = `${supply}-${optimalDecimals}`;
+          
+          // Only auto-adjust if we haven't already made this exact adjustment
+          if (newDecimals !== tokenData.decimals && lastAutoAdjustment !== adjustmentKey) {
+            setTokenData({ 
+              ...tokenData, 
+              decimals: newDecimals 
+            });
+            setLastAutoAdjustment(adjustmentKey);
+            
+            // Show a brief notification about the auto-adjustment
+            toast({
+              title: "🔧 Decimals auto-optimized",
+              description: `Auto-adjusted to ${newDecimals} decimals for ${supply.toLocaleString()} supply (Algorand optimization)`,
+              duration: 3000,
+            });
+          }
+          
+          setDecimalSuggestion(null); // Clear suggestion since we auto-applied it
+          setShowDecimalAdjustment(false); 
+        } else {
+          // Decimals are already optimal
+          setDecimalSuggestion(null);
+          setShowDecimalAdjustment(false);
+        }
+      }, 500); // 500ms delay for better UX
+    } else if (tokenData.network.includes('solana')) {
+      // For Solana networks, keep decimals fixed at 9 (not limited like Algorand)
+      setDecimalSuggestion(null);
+      setShowDecimalAdjustment(false);
       
-      if (!decimalCheck.isOptimal && decimalCheck.suggestion) {
-        setDecimalSuggestion(decimalCheck.suggestion);
-        setShowDecimalAdjustment(true);
-      } else {
-        setDecimalSuggestion(null);
-        setShowDecimalAdjustment(false);
+      // For Solana, ensure we use 9 decimals (standard)
+      if (tokenData.decimals !== '9') {
+        setTokenData({ 
+          ...tokenData, 
+          decimals: '9' 
+        });
       }
     } else {
+      // Clear suggestions for other cases
       setDecimalSuggestion(null);
       setShowDecimalAdjustment(false);
     }
-  }, [tokenData.totalSupply, tokenData.decimals, tokenData.network]);
+    
+    // Cleanup timeout on unmount
+    return () => {
+      if (autoAdjustmentTimeoutRef.current) {
+        clearTimeout(autoAdjustmentTimeoutRef.current);
+      }
+    };
+  }, [tokenData.totalSupply, tokenData.network]); // Intentionally excluding tokenData.decimals to prevent adjustment loops
+
+  // Handle wallet type changes - clear network if incompatible
+  useEffect(() => {
+    if (isAuthenticated && walletType && tokenData.network) {
+      const networkRequiresAlgorand = tokenData.network.includes('algorand');
+      const networkRequiresSolana = tokenData.network.includes('solana');
+      
+      const isIncompatible = 
+        (networkRequiresAlgorand && walletType !== 'algorand') ||
+        (networkRequiresSolana && walletType !== 'solana');
+      
+      if (isIncompatible) {
+        // Clear network selection when wallet type becomes incompatible
+        setTokenData({ ...tokenData, network: '' });
+        toast({
+          title: "Network cleared",
+          description: `Previous network selection was incompatible with your ${walletType === 'algorand' ? 'Algorand' : 'Solana'} wallet`,
+          duration: 3000,
+        });
+      }
+    }
+  }, [walletType, isAuthenticated]); // Run when wallet type or authentication status changes
 
   // Apply suggested decimals automatically
   const applyOptimalDecimals = () => {
@@ -706,6 +781,15 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
     
     if (!basicValidation) return false;
     
+    // Check wallet compatibility with selected network
+    if (walletType && tokenData.network) {
+      const networkRequiresAlgorand = tokenData.network.includes('algorand');
+      const networkRequiresSolana = tokenData.network.includes('solana');
+      
+      if (networkRequiresAlgorand && walletType !== 'algorand') return false;
+      if (networkRequiresSolana && walletType !== 'solana') return false;
+    }
+    
     // Check payment method and sufficient funds
     const isMainnet = tokenData.network.includes('mainnet');
     if (!isMainnet) return true; // Testnet is free
@@ -742,6 +826,20 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
     
     if (!tokenData.network) {
       return "Select a network";
+    }
+    
+    // Check wallet compatibility with selected network
+    if (isAuthenticated && walletType && tokenData.network) {
+      const networkRequiresAlgorand = tokenData.network.includes('algorand');
+      const networkRequiresSolana = tokenData.network.includes('solana');
+      
+      if (networkRequiresAlgorand && walletType !== 'algorand') {
+        return "Connect an Algorand wallet to create tokens on Algorand networks";
+      }
+      
+      if (networkRequiresSolana && walletType !== 'solana') {
+        return "Connect a Solana wallet to create tokens on Solana networks";
+      }
     }
     
     const isMainnet = tokenData.network.includes('mainnet');
@@ -830,10 +928,20 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
             {/* Decimals */}
             <div className="space-y-2">
               <Label htmlFor="decimals" className="text-sm font-medium text-foreground">
-                Decimals
+                Decimals {tokenData.network.includes('algorand') ? '(auto-optimized ⚡)' : tokenData.network.includes('solana') ? '(fixed at 9)' : ''}
               </Label>
-              <Select value={tokenData.decimals} onValueChange={(value) => setTokenData({ ...tokenData, decimals: value })}>
-                <SelectTrigger className="bg-background border-border text-foreground h-10 lg:h-11">
+              <Select 
+                value={tokenData.decimals} 
+                onValueChange={(value) => {
+                  setTokenData({ ...tokenData, decimals: value });
+                  // Reset auto-adjustment tracking when user manually changes
+                  setLastAutoAdjustment('');
+                }}
+                disabled={tokenData.network.includes('solana')} // Solana decimals are fixed at 9
+              >
+                <SelectTrigger className={`bg-background border-border text-foreground h-10 lg:h-11 ${
+                  tokenData.network.includes('solana') ? 'opacity-75 cursor-not-allowed' : ''
+                }`}>
                   <SelectValue placeholder="Select decimals" />
                 </SelectTrigger>
                 <SelectContent>
@@ -845,25 +953,38 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
                 </SelectContent>
               </Select>
               
-              {/* Current precision display */}
-              <div className="text-xs text-muted-foreground">
-                Precision: {formatPrecisionExample(parseInt(tokenData.decimals) || 6)}
+              {/* Network-specific information */}
+              <div className="text-xs text-muted-foreground space-y-1">
+                <div>Precision: {formatPrecisionExample(parseInt(tokenData.decimals) || 6)}</div>
+                {tokenData.network.includes('algorand') && (
+                  <div className="flex items-center gap-1 text-blue-600">
+                    <Zap className="w-3 h-3" />
+                    Auto-adjusts in real-time based on supply for optimal precision
+                  </div>
+                )}
+                {tokenData.network.includes('solana') && (
+                  <div className="flex items-center gap-1 text-purple-600">
+                    <Shield className="w-3 h-3" />
+                    Fixed at 9 decimals (Solana standard - no limitations)
+                  </div>
+                )}
               </div>
               
-              {/* Smart decimal suggestion */}
+              {/* Smart decimal suggestion - now only shows for manual adjustments */}
               {showDecimalAdjustment && decimalSuggestion && tokenData.network.includes('algorand') && (
                 <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="flex items-start space-x-2">
                     <Lightbulb className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-blue-900">
-                        Smart Decimal Optimization
+                        Alternative Decimal Option
                       </p>
                       <p className="text-xs text-blue-700 mt-1">
                         {decimalSuggestion.explanation}
                       </p>
                       <div className="mt-2 space-y-1 text-xs text-blue-600">
-                        <div>• Recommended: <strong>{decimalSuggestion.recommendedDecimals} decimals</strong></div>
+                        <div>• Current: <strong>{tokenData.decimals} decimals</strong></div>
+                        <div>• Alternative: <strong>{decimalSuggestion.recommendedDecimals} decimals</strong></div>
                         <div>• Max possible: {decimalSuggestion.maxPossibleDecimals} decimals</div>
                         <div>• Precision: {decimalSuggestion.precision}</div>
                       </div>
@@ -907,44 +1028,90 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
-                  { value: 'algorand-testnet', name: 'Algorand Testnet', cost: 'Free', icon: '🔸', description: 'Test network for development' },
-                  { value: 'algorand-mainnet', name: 'Algorand Mainnet', cost: '10 credits', icon: '🔺', description: 'Production network for real tokens' },
-                  { value: 'solana-devnet', name: 'Solana Devnet', cost: 'Free', icon: '🟣', description: 'Test network for development' }
-                ].map((network) => (
-                  <div
-                    key={network.value}
-                    className={`relative border rounded-lg p-4 cursor-pointer transition-all hover:border-border ${
-                      tokenData.network === network.value 
-                        ? 'border-primary/50 ring-1 ring-primary/20' 
-                        : 'border-border/50 hover:border-border'
-                    }`}
-                    onClick={() => setTokenData({ ...tokenData, network: network.value })}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <span className="text-lg">{network.icon}</span>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{network.name}</p>
-                          <p className="text-xs text-muted-foreground">{network.description}</p>
+                  { value: 'algorand-testnet', name: 'Algorand Testnet', cost: 'Free', icon: '🔸', description: 'Test network • Smart decimal optimization', walletType: 'algorand' },
+                  { value: 'algorand-mainnet', name: 'Algorand Mainnet', cost: '10 credits', icon: '🔺', description: 'Production network • Smart decimal optimization', walletType: 'algorand' },
+                  { value: 'solana-devnet', name: 'Solana Devnet', cost: 'Free', icon: '🟣', description: 'Test network • Fixed 9 decimals (no limits)', walletType: 'solana' }
+                ].map((network) => {
+                  const isWalletCompatible = !isAuthenticated || walletType === network.walletType;
+                  const isClickable = isWalletCompatible;
+                  const isSelected = tokenData.network === network.value;
+                  
+                  return (
+                    <div
+                      key={network.value}
+                      className={`relative border rounded-lg p-4 transition-all ${
+                        isClickable ? 'cursor-pointer hover:border-primary/30 hover:shadow-sm' : 'cursor-not-allowed opacity-50'
+                      } ${
+                        isSelected
+                          ? 'border-primary/50 ring-2 ring-primary/20 bg-primary/5' 
+                          : 'border-border hover:border-border/80'
+                      }`}
+                      onClick={() => {
+                        if (!isClickable) return;
+                        
+                        const newTokenData = { ...tokenData, network: network.value };
+                        
+                        // Set appropriate decimals based on network
+                        if (network.value.includes('solana')) {
+                          newTokenData.decimals = '9'; // Solana standard - fixed
+                          newTokenData.burnable = true; // Always true on Solana
+                        } else if (network.value.includes('algorand')) {
+                          // For Algorand, start with 6 if switching from Solana, otherwise keep current
+                          if (tokenData.network.includes('solana') || !tokenData.decimals) {
+                            newTokenData.decimals = '6'; // Will be auto-optimized based on supply
+                          }
+                          // If already on Algorand and has decimals, keep them (will be optimized by useEffect)
+                        }
+                        
+                        setTokenData(newTokenData);
+                        
+                        // Update payment steps for the new network
+                        if (network.value.includes('solana')) {
+                          updateStepsForNetwork('solana');
+                        } else if (network.value.includes('algorand')) {
+                          updateStepsForNetwork('algorand');
+                        }
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="text-lg">
+                            {network.icon}
+                          </span>
+                          <div className="flex-1">
+                            <p className={`text-sm font-medium ${
+                              isSelected ? 'text-primary' : 'text-foreground'
+                            }`}>
+                              {network.name}
+                            </p>
+                            <p className="text-xs mt-0.5 text-muted-foreground">
+                              {network.description}
+                            </p>
+                            {!isWalletCompatible && isAuthenticated && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Connect {network.walletType === 'algorand' ? 'Algorand' : 'Solana'} wallet to use this network
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className={`text-sm font-semibold ${
+                            isSelected ? 'text-primary' : 'text-foreground'
+                          }`}>
+                            {network.cost}
+                          </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-foreground">
-                          {network.cost}
-                        </p>
-                      </div>
+                      
+                      {isSelected && (
+                        <div className="absolute top-2 right-2">
+                          <CheckCircle className="w-4 h-4 text-primary" />
+                        </div>
+                      )}
                     </div>
-                    
-                    {tokenData.network === network.value && (
-                      <div className="absolute top-2 right-2">
-                        <CheckCircle className="w-4 h-4 text-primary" />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-              
-              {tokenData.network && (
+                  );
+                })}
+              </div>              {tokenData.network && (
                 <div className="mt-3 p-3 bg-muted/30 rounded-lg border border-border/50">
                   <div className="flex items-start gap-2">
                     <Info className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
@@ -959,6 +1126,72 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
                   </div>
                 </div>
               )}
+              
+              {/* Enhanced Wallet compatibility notice */}
+              {isAuthenticated && (
+                <div className={`mt-3 p-4 rounded-lg border ${
+                  walletType === 'algorand' ? 'bg-blue-50 border-blue-200' : 
+                  walletType === 'solana' ? 'bg-purple-50 border-purple-200' :
+                  'bg-gray-50 border-gray-200'
+                }`}>
+                  <div className="flex items-start gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      walletType === 'algorand' ? 'bg-blue-100' : 
+                      walletType === 'solana' ? 'bg-purple-100' :
+                      'bg-gray-100'
+                    }`}>
+                      <span className="text-sm">
+                        {walletType === 'algorand' ? '🔺' : walletType === 'solana' ? '🟣' : '🔗'}
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <div className={`text-sm font-medium ${
+                        walletType === 'algorand' ? 'text-blue-900' : 
+                        walletType === 'solana' ? 'text-purple-900' :
+                        'text-gray-900'
+                      }`}>
+                        <span className="capitalize">{walletType || 'Unknown'} Wallet Connected</span>
+                        <span className={`ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                          walletType === 'algorand' ? 'bg-blue-100 text-blue-700' : 
+                          walletType === 'solana' ? 'bg-purple-100 text-purple-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {walletType === 'algorand' ? 'Algorand Networks Available' : 
+                           walletType === 'solana' ? 'Solana Networks Available' : 'Limited Access'}
+                        </span>
+                      </div>
+                      <div className={`text-xs mt-1 ${
+                        walletType === 'algorand' ? 'text-blue-700' : 
+                        walletType === 'solana' ? 'text-purple-700' :
+                        'text-gray-700'
+                      }`}>
+                        {walletType === 'algorand' && (
+                          <>
+                            ✅ Can create tokens on Algorand Testnet and Mainnet
+                            <br />
+                            🔒 Solana networks require a Solana wallet connection
+                          </>
+                        )}
+                        {walletType === 'solana' && (
+                          <>
+                            ✅ Can create tokens on Solana Devnet
+                            <br />
+                            🔒 Algorand networks require an Algorand wallet connection
+                          </>
+                        )}
+                        {!walletType && 'Please connect a supported wallet to access networks'}
+                      </div>
+                      <div className={`text-xs mt-2 ${
+                        walletType === 'algorand' ? 'text-blue-600' : 
+                        walletType === 'solana' ? 'text-purple-600' :
+                        'text-gray-600'
+                      }`}>
+                        💡 <strong>Pro tip:</strong> To access all networks, you can connect multiple wallet types
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -969,11 +1202,42 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
             Token Features
           </h2>
           
+          {/* Network-specific feature information */}
+          {tokenData.network && (
+            <div className="mb-4 p-3 bg-muted/30 rounded-lg border border-border/50">
+              <div className="flex items-start gap-2">
+                <Info className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                <div>
+                  {tokenData.network.includes('algorand') && (
+                    <p className="text-sm text-foreground">
+                      <strong>Algorand:</strong> All features are fully customizable and enforced by the protocol's Asset Standard (ASA).
+                    </p>
+                  )}
+                  {tokenData.network.includes('solana') && (
+                    <div className="text-sm text-foreground space-y-1">
+                      <p><strong>Solana Token Features:</strong></p>
+                      <ul className="text-xs text-muted-foreground ml-4 space-y-0.5">
+                        <li>• <strong>Mintable:</strong> Mint authority is revoked if disabled (no more tokens can be created)</li>
+                        <li>• <strong>Burnable:</strong> Always enabled (token holders can burn their own tokens)</li>
+                        <li>• <strong>Pausable:</strong> Freeze authority allows freezing individual accounts</li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="space-y-4">
             <div className="flex items-center justify-between p-3 lg:p-4 rounded-lg border border-border hover:border-border/80 transition-colors">
               <div className="flex-1">
                 <Label className="text-sm font-medium text-foreground">Mintable</Label>
-                <p className="text-xs text-muted-foreground mt-1">Allow creating new tokens after deployment</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {tokenData.network.includes('solana') 
+                    ? 'Allow creating new tokens after deployment (mint authority will be revoked if disabled)'
+                    : 'Allow creating new tokens after deployment'
+                  }
+                </p>
               </div>
               <Switch
                 checked={tokenData.mintable}
@@ -984,18 +1248,30 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
             <div className="flex items-center justify-between p-3 lg:p-4 rounded-lg border border-border hover:border-border/80 transition-colors">
               <div className="flex-1">
                 <Label className="text-sm font-medium text-foreground">Burnable</Label>
-                <p className="text-xs text-muted-foreground mt-1">Allow permanently destroying tokens</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {tokenData.network.includes('solana')
+                    ? 'Allow permanently destroying tokens (always enabled on Solana - token holders can burn their own)'
+                    : 'Allow permanently destroying tokens'
+                  }
+                </p>
               </div>
               <Switch
-                checked={tokenData.burnable}
+                checked={tokenData.network.includes('solana') ? true : tokenData.burnable}
                 onCheckedChange={(checked) => setTokenData({ ...tokenData, burnable: checked })}
+                disabled={tokenData.network.includes('solana')}
+                className={tokenData.network.includes('solana') ? 'opacity-75' : ''}
               />
             </div>
             
             <div className="flex items-center justify-between p-3 lg:p-4 rounded-lg border border-border hover:border-border/80 transition-colors">
               <div className="flex-1">
                 <Label className="text-sm font-medium text-foreground">Pausable</Label>
-                <p className="text-xs text-muted-foreground mt-1">Allow pausing all token transfers</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {tokenData.network.includes('solana')
+                    ? 'Allow freezing individual token accounts (freeze authority)'
+                    : 'Allow pausing all token transfers'
+                  }
+                </p>
               </div>
               <Switch
                 checked={tokenData.pausable}
@@ -1208,6 +1484,12 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
         isOpen={showTransactionModal}
         onClose={() => setShowTransactionModal(false)}
         status={isDeploying ? 'preparing' : null}
+        network={tokenData.network}
+        tokenData={{
+          name: tokenData.name,
+          symbol: tokenData.symbol,
+          network: tokenData.network
+        }}
       />
     </>
   );

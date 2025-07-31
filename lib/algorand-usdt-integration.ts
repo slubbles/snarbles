@@ -59,7 +59,12 @@ export async function getAlgorandUSDTBalance(
   isTestnet: boolean = true
 ): Promise<{ success: boolean; balance: number; error?: string }> {
   try {
+    console.log('🔍 [getAlgorandUSDTBalance] Starting for:', userAddress, 'isTestnet:', isTestnet);
     const { indexerClient, config } = getAlgorandClients(isTestnet);
+    console.log('🔧 [getAlgorandUSDTBalance] Using config:', { 
+      usdtAssetId: config.usdtAssetId, 
+      network: isTestnet ? 'testnet' : 'mainnet' 
+    });
     
     // Check if address is valid
     if (!algosdk.isValidAddress(userAddress)) {
@@ -67,7 +72,9 @@ export async function getAlgorandUSDTBalance(
     }
     
     // Get account information
+    console.log('📡 [getAlgorandUSDTBalance] Fetching account info...');
     const accountInfo = await indexerClient.lookupAccountByID(userAddress).do();
+    console.log('📊 [getAlgorandUSDTBalance] Account info received, assets count:', accountInfo.account?.assets?.length || 0);
     
     if (!accountInfo.account) {
       throw new Error('Account not found');
@@ -75,18 +82,25 @@ export async function getAlgorandUSDTBalance(
     
     // Find USDT asset in account assets
     const assets = accountInfo.account.assets || [];
-    const usdtAsset = assets.find((asset: any) => asset['asset-id'] === config.usdtAssetId);
+    console.log('🔍 [getAlgorandUSDTBalance] Looking for USDt asset ID:', config.usdtAssetId);
+    console.log('📋 [getAlgorandUSDTBalance] Available asset IDs:', assets.map((a: any) => a.assetId.toString()));
+    
+    // Use the correct property name: assetId (camelCase) and convert to bigint for comparison
+    const usdtAsset = assets.find((asset: any) => asset.assetId === BigInt(config.usdtAssetId));
+    console.log('🎯 [getAlgorandUSDTBalance] Found USDt asset:', usdtAsset);
     
     if (!usdtAsset) {
       // Account exists but doesn't hold USDT (not opted in)
+      console.log('❌ [getAlgorandUSDTBalance] USDt asset not found in account assets');
       return {
         success: true,
         balance: 0
       };
     }
     
-    // USDT has 6 decimals
+    // USDT has 6 decimals - usdtAsset is guaranteed to exist here
     const balance = Number(usdtAsset.amount) / Math.pow(10, 6);
+    console.log('✅ [getAlgorandUSDTBalance] USDt balance calculated:', balance);
     
     return {
       success: true,

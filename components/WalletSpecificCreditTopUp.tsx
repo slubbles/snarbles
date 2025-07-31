@@ -120,25 +120,38 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
     if (!walletAddress || !walletType) return;
 
     try {
+      console.log('🔍 Loading wallet balances for:', walletType, walletAddress);
+      
       if (walletType === 'algorand') {
         // Check ALGO balance
         if (algorandWallet.address) {
           setNativeBalance(algorandWallet.balance || 0);
+          console.log('💰 ALGO balance:', algorandWallet.balance);
         }
 
         // Check USDt balance and opt-in status
-        const usdtBalResult = await getAlgorandUSDTBalance(walletAddress);
+        console.log('🔍 Fetching Algorand USDt balance for mainnet...');
+        const usdtBalResult = await getAlgorandUSDTBalance(walletAddress, false);
+        console.log('📊 USDt balance result:', usdtBalResult);
         if (usdtBalResult.success) {
           setUSDTBalance(usdtBalResult.balance);
+          console.log('✅ USDt balance set to:', usdtBalResult.balance);
+        } else {
+          console.error('❌ Failed to get USDt balance:', usdtBalResult.error);
         }
         
-        const optInResult = await isOptedInToUSDT(walletAddress);
+        console.log('🔍 Checking USDt opt-in status...');
+        const optInResult = await isOptedInToUSDT(walletAddress, false);
+        console.log('📊 Opt-in result:', optInResult);
         if (optInResult.success) {
           setIsOptedIn(optInResult.optedIn);
+          console.log('✅ Opt-in status set to:', optInResult.optedIn);
+        } else {
+          console.error('❌ Failed to check opt-in status');
         }
         
         // Estimate fee
-        const feeResult = await estimateAlgorandUSDTFee();
+        const feeResult = await estimateAlgorandUSDTFee(false);
         if (feeResult.success) {
           setEstimatedFee(feeResult.fee);
         }
@@ -300,7 +313,7 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
         };
 
         // Check if user is opted in to USDt
-        const optInCheck = await isOptedInToUSDT(walletAddress, true);
+        const optInCheck = await isOptedInToUSDT(walletAddress, false);
         if (!optInCheck.success) {
           throw new Error('Failed to check USDt opt-in status');
         }
@@ -322,7 +335,7 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
         const result = await executeAlgorandUSDTTransfer(
           walletInterface,
           amount,
-          true // isTestnet - adjust based on your environment
+          false // Use mainnet for production credit purchases
         );
 
         if (result.success) {

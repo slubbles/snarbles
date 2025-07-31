@@ -79,6 +79,9 @@ export default function TransactionStatusModalEnhanced({
   }, []);
 
   const getTransactionSteps = (): TransactionStep[] => {
+    // Determine if this is Solana based on network prop or tokenData
+    const isSolana = network?.includes('solana') || tokenData?.network?.includes('solana');
+    
     // Use global payment state steps if available and processing
     if (isProcessing && steps.length > 0) {
       return steps.map((stepTitle: string, index: number) => ({
@@ -86,8 +89,12 @@ export default function TransactionStatusModalEnhanced({
         title: stepTitle,
         description: index === 0 ? 'Validating parameters and preparing payment' :
                     index === 1 ? 'Building transaction for your wallet' :
-                    index === 2 ? '⭐ Please open your Pera Wallet app and sign the transaction' :
-                    index === 3 ? 'Processing your token creation on the blockchain' :
+                    index === 2 ? isSolana 
+                      ? '⭐ Please approve the transaction in your Solana wallet (Phantom, OKX, etc.)'
+                      : '⭐ Please open your Pera Wallet app and sign the transaction' :
+                    index === 3 ? isSolana 
+                      ? 'Processing your token creation on the Solana blockchain'
+                      : 'Processing your token creation on the Algorand blockchain' :
                     index === 4 ? 'Token created successfully!' : 'Processing...',
         status: index < tokenCreationStep ? 'completed' : 
                index === tokenCreationStep ? 'active' : 'pending',
@@ -99,7 +106,7 @@ export default function TransactionStatusModalEnhanced({
       }));
     }
 
-    // Fallback to local status-based steps
+    // Fallback to local status-based steps with network-specific descriptions
     const baseSteps: TransactionStep[] = [
       {
         id: 'preparing',
@@ -112,7 +119,9 @@ export default function TransactionStatusModalEnhanced({
       {
         id: 'signing',
         title: isMobile ? 'Wallet Signing' : 'Wallet Signature Required',
-        description: isMobile ? 'Sign with your wallet app' : 'Please sign the transaction in your connected wallet',
+        description: isMobile ? 
+          (isSolana ? 'Sign with your Solana wallet' : 'Sign with your wallet app') :
+          (isSolana ? 'Please approve the transaction in your Solana wallet' : 'Please sign the transaction in your connected wallet'),
         status: status === 'signing' ? 'active' : (status && ['broadcasting', 'confirming', 'success'].includes(status)) ? 'completed' : 'pending',
         estimatedTime: '30s',
         mobileOptimized: true
@@ -120,7 +129,8 @@ export default function TransactionStatusModalEnhanced({
       {
         id: 'broadcasting',
         title: isMobile ? 'Broadcasting' : 'Broadcasting to Network',
-        description: isMobile ? 'Sending to blockchain...' : 'Submitting your transaction to the Algorand network',
+        description: isMobile ? 'Sending to blockchain...' : 
+          isSolana ? 'Submitting your transaction to the Solana network' : 'Submitting your transaction to the Algorand network',
         status: status === 'broadcasting' ? 'active' : (status && ['confirming', 'success'].includes(status)) ? 'completed' : 'pending',
         estimatedTime: '15s',
         mobileOptimized: true
@@ -128,9 +138,10 @@ export default function TransactionStatusModalEnhanced({
       {
         id: 'confirming',
         title: isMobile ? 'Confirming' : 'Network Confirmation',
-        description: isMobile ? 'Waiting for confirmation...' : 'Waiting for blockchain confirmation (4 blocks)',
+        description: isMobile ? 'Waiting for confirmation...' : 
+          isSolana ? 'Waiting for blockchain confirmation (finalized)' : 'Waiting for blockchain confirmation (4 blocks)',
         status: status === 'confirming' ? 'active' : status === 'success' ? 'completed' : 'pending',
-        estimatedTime: '60s',
+        estimatedTime: isSolana ? '30s' : '60s',
         mobileOptimized: true
       }
     ];
@@ -243,7 +254,15 @@ export default function TransactionStatusModalEnhanced({
   const currentStep = getTransactionSteps().find(step => step.status === 'active');
   const completedSteps = getTransactionSteps().filter(step => step.status === 'completed').length;
   const totalSteps = getTransactionSteps().length;
-  const progressPercentage = (completedSteps / totalSteps) * 100;
+  const activeStepIndex = getTransactionSteps().findIndex(step => step.status === 'active');
+  
+  // More accurate progress calculation
+  const progressPercentage = status === 'success' ? 100 : 
+    activeStepIndex >= 0 ? ((activeStepIndex + 0.5) / totalSteps) * 100 :
+    (completedSteps / totalSteps) * 100;
+  
+  // Get network type for styling
+  const isSolana = network?.includes('solana') || tokenData?.network?.includes('solana');
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -295,18 +314,37 @@ export default function TransactionStatusModalEnhanced({
             </div>
           )}
 
-          {/* Progress Bar for Mobile */}
-          {isMobile && status !== 'success' && status !== 'error' && (
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Progress</span>
-                <span>{Math.round(progressPercentage)}%</span>
+          {/* Enhanced Progress Bar - Always visible during transaction */}
+          {status !== 'success' && status !== 'error' && (
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-foreground">
+                  {isSolana ? 'Solana Token Creation Progress' : 'Algorand Token Creation Progress'}
+                </span>
+                <span className="text-sm font-bold text-primary">
+                  {Math.round(progressPercentage)}%
+                </span>
               </div>
-              <div className="w-full bg-muted rounded-full h-2">
-                <div 
-                  className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${progressPercentage}%` }}
-                />
+              <div className="relative">
+                <div className="w-full bg-muted/30 rounded-full h-3 overflow-hidden">
+                  <div 
+                    className={`h-3 rounded-full transition-all duration-700 ease-out ${
+                      isSolana 
+                        ? 'bg-gradient-to-r from-purple-500 to-purple-600' 
+                        : 'bg-gradient-to-r from-blue-500 to-blue-600'
+                    } relative`}
+                    style={{ width: `${progressPercentage}%` }}
+                  >
+                    {/* Animated shimmer effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-pulse" />
+                  </div>
+                </div>
+                <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+                  <span>Step {Math.min(activeStepIndex + 1, totalSteps)} of {totalSteps}</span>
+                  {currentStep && (
+                    <span>Est. {currentStep.estimatedTime} remaining</span>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -349,11 +387,20 @@ export default function TransactionStatusModalEnhanced({
                     
                     {/* Mobile-specific guidance */}
                     {isMobile && step.status === 'active' && step.id === 'signing' && (
-                      <div className="mt-2 p-2 glass-card border border-primary/20">
+                      <div className={`mt-2 p-2 glass-card border ${
+                        isSolana ? 'border-purple-500/20' : 'border-primary/20'
+                      }`}>
                         <div className="flex items-center gap-2">
-                          <Wallet className="w-4 h-4 text-primary" />
-                          <p className="text-xs text-primary font-medium">
-                            Check your wallet app to sign the transaction
+                          <Wallet className={`w-4 h-4 ${
+                            isSolana ? 'text-purple-500' : 'text-primary'
+                          }`} />
+                          <p className={`text-xs font-medium ${
+                            isSolana ? 'text-purple-600' : 'text-primary'
+                          }`}>
+                            {isSolana 
+                              ? 'Check your Solana wallet (Phantom, OKX, etc.) to approve the transaction'
+                              : 'Check your Pera Wallet app to sign the transaction'
+                            }
                           </p>
                         </div>
                       </div>
