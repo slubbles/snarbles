@@ -30,6 +30,9 @@ import {
   MobileWalletInterface
 } from './solana-mobile-optimized';
 
+// Import enhanced creation with metadata
+import { createSolanaTokenWithMetadata } from './solana-enhanced-creation';
+
 // Alternative token creation using standard Solana token program
 export async function createSolanaTokenDirect(
   wallet: { publicKey: PublicKey; signTransaction: (txn: any) => Promise<any> },
@@ -54,6 +57,33 @@ export async function createSolanaTokenDirect(
   try {
     const { onStepUpdate } = options || {};
     
+    // Try enhanced creation with metadata first
+    if (onStepUpdate) {
+      onStepUpdate('method-selection', 'in-progress', { 
+        message: 'Using enhanced token creation with metadata...' 
+      });
+    }
+
+    try {
+      const result = await createSolanaTokenWithMetadata(wallet, tokenData, options);
+      
+      if (result.success) {
+        console.log('✅ Enhanced token creation successful');
+        return result;
+      } else {
+        console.warn('Enhanced creation failed, falling back to basic method:', result);
+      }
+    } catch (enhancedError) {
+      console.warn('Enhanced creation error, falling back to basic method:', enhancedError);
+    }
+
+    // Fallback to basic creation if enhanced fails
+    if (onStepUpdate) {
+      onStepUpdate('method-selection', 'in-progress', { 
+        message: 'Using fallback basic token creation...' 
+      });
+    }
+
     // Detect mobile environment
     const environment = detectMobileWalletEnvironment();
     
@@ -132,10 +162,10 @@ export async function createSolanaTokenDirect(
       }
     }
 
-    // Fall back to desktop version for non-mobile environments
+    // Fall back to basic desktop version
     if (onStepUpdate) {
       onStepUpdate('desktop-fallback', 'in-progress', { 
-        message: 'Using desktop token creation...' 
+        message: 'Using basic desktop token creation...' 
       });
     }
     
@@ -237,8 +267,8 @@ export async function createSolanaTokenDirect(
     }
 
     // Get recent blockhash
-    const { blockhash } = await connection.getLatestBlockhash();
-    transaction.recentBlockhash = blockhash;
+    const latestBlockhash = await connection.getLatestBlockhash();
+    transaction.recentBlockhash = latestBlockhash.blockhash;
     transaction.feePayer = wallet.publicKey;
 
     // Sign with mint keypair
@@ -268,8 +298,12 @@ export async function createSolanaTokenDirect(
       });
     }
 
-    // Confirm transaction
-    const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+    // Confirm transaction with extended timeout
+    const confirmation = await connection.confirmTransaction({
+      signature: signature,
+      blockhash: latestBlockhash.blockhash,
+      lastValidBlockHeight: latestBlockhash.lastValidBlockHeight
+    }, 'confirmed');
 
     if (confirmation.value.err) {
       throw new Error(`Transaction failed: ${confirmation.value.err}`);
@@ -333,6 +367,15 @@ export async function createSolanaTokenDirect(
         mintable: tokenData.mintable,
         burnable: tokenData.burnable,
         pausable: tokenData.pausable
+      },
+      // Add display info for better tracking
+      displayInfo: {
+        name: tokenData.name,
+        symbol: tokenData.symbol,
+        description: tokenData.description,
+        image: tokenData.logoUrl,
+        totalSupply: tokenData.totalSupply.toString(),
+        decimals: tokenData.decimals
       }
     };
 

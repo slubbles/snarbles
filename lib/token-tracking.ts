@@ -44,37 +44,82 @@ export async function trackTokenCreation({
   }
   
   try {
-    // Insert token creation record directly using wallet address
+    // Normalize and validate data before insertion
+    const normalizedData = {
+      wallet_address: walletAddress?.trim(),
+      token_name: tokenName?.trim()?.substring(0, 100), // Limit length
+      token_symbol: tokenSymbol?.trim()?.substring(0, 20), // Limit length
+      network: network?.trim(),
+      contract_address: contractAddress?.trim(),
+      description: description?.trim()?.substring(0, 500) || '', // Limit length
+      total_supply: totalSupply ? Number(totalSupply) : null,
+      decimals: decimals ? Number(decimals) : null,
+      logo_url: logoUrl?.trim()?.substring(0, 500) || '',
+      website: website?.trim()?.substring(0, 500) || '',
+      github: github?.trim()?.substring(0, 500) || '',
+      twitter: twitter?.trim()?.substring(0, 500) || '',
+      mintable: Boolean(mintable),
+      burnable: Boolean(burnable),
+      pausable: Boolean(pausable),
+      transaction_hash: transactionHash?.trim() || '',
+      created_at: new Date().toISOString(),
+      status: 'completed',
+      credits_spent: getNetworkCost(network),
+    };
+
+    // Validate required fields
+    if (!normalizedData.wallet_address || !normalizedData.token_name || !normalizedData.contract_address) {
+      throw new Error('Missing required fields: wallet_address, token_name, or contract_address');
+    }
+
+    // Insert token creation record
     const { data, error } = await supabase
       .from('token_creation_history')
-      .insert([{
-        wallet_address: walletAddress,
-        token_name: tokenName,
-        token_symbol: tokenSymbol,
-        network,
-        contract_address: contractAddress,
-        description,
-        total_supply: totalSupply,
-        decimals,
-        logo_url: logoUrl,
-        website,
-        github,
-        twitter,
-        mintable,
-        burnable,
-        pausable,
-        transaction_hash: transactionHash,
-        created_at: new Date().toISOString(),
-        status: 'completed',
-        credits_spent: getNetworkCost(network),
-      }]);
+      .insert([normalizedData])
+      .select()
+      .single();
 
     if (error) {
-      console.error('Error tracking token creation:', error);
+      console.error('Database error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      
+      // If it's a schema error, try with minimal data
+      if (error.code === '42703' || error.message.includes('column') || error.message.includes('does not exist')) {
+        console.log('Trying minimal data insertion...');
+        
+        const minimalData = {
+          wallet_address: normalizedData.wallet_address,
+          token_name: normalizedData.token_name,
+          token_symbol: normalizedData.token_symbol,
+          network: normalizedData.network,
+          contract_address: normalizedData.contract_address,
+          created_at: normalizedData.created_at,
+          status: 'completed'
+        };
+        
+        const { data: minimalResult, error: minimalError } = await supabase
+          .from('token_creation_history')
+          .insert([minimalData])
+          .select()
+          .single();
+          
+        if (minimalError) {
+          console.error('Even minimal insertion failed:', minimalError);
+          return { success: false, error: `Database error: ${minimalError.message}` };
+        }
+        
+        console.log('✅ Minimal token tracking successful');
+        return { success: true, data: minimalResult, warning: 'Used minimal data due to schema mismatch' };
+      }
+      
       return { success: false, error: error.message };
     }
 
-    // Update user's total tokens created count
+    // Update user's total tokens created count (non-critical)
     try {
       const { data: profile } = await supabase
         .from('user_profiles')
@@ -92,7 +137,7 @@ export async function trackTokenCreation({
           .eq('wallet_address', walletAddress);
       }
     } catch (updateError) {
-      console.warn('Could not update total tokens created:', updateError);
+      console.warn('Could not update total tokens created (non-critical):', updateError);
     }
 
     console.log('✅ Token creation tracked successfully');

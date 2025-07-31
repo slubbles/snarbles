@@ -2,26 +2,31 @@
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { NetworkBadge } from "@/components/ui/NetworkBadge"
 import { CheckCircle, Clock, Zap } from "lucide-react"
 
 const networks = [
   {
-    name: "Solana Network",
+    name: "Solana Devnet",
     status: "Live",
-    description: "Fast, low-cost transactions with instant finality",
-    features: ["Sub-second finality", "Low fees", "High throughput"],
+    description: "Development network - Fast, low-cost transactions with instant finality",
+    features: ["Sub-second finality", "Free transactions", "Perfect for testing"],
     color: "from-purple-500 to-blue-500",
     statusColor: "bg-green-500",
     icon: "S",
+    network: "solana-devnet" as const,
+    cost: "Free"
   },
   {
     name: "Algorand Testnet",
-    status: "Live",
-    description: "Pure proof-of-stake with carbon-negative consensus",
-    features: ["Carbon negative", "Instant finality", "Low fees"],
+    status: "Live", 
+    description: "Test network - Pure proof-of-stake with carbon-negative consensus",
+    features: ["Carbon negative", "Free transactions", "Perfect for testing"],
     color: "from-blue-500 to-cyan-500",
     statusColor: "bg-green-500",
     icon: "A",
+    network: "algorand-testnet" as const,
+    cost: "Free"
   },
   {
     name: "SOON Network",
@@ -31,6 +36,8 @@ const networks = [
     color: "from-gray-600 to-gray-700",
     statusColor: "bg-yellow-500",
     icon: "S",
+    network: undefined,
+    cost: "TBD"
   },
 ]
 
@@ -59,6 +66,7 @@ export default function MultiChainSection() {
                   {network.icon}
                 </div>
                 <div className="flex items-center space-x-2">
+                  {network.network && <NetworkBadge network={network.network} />}
                   <div className={`w-2 h-2 rounded-full ${network.statusColor} animate-pulse`}></div>
                   <span
                     className={`text-sm font-medium ${network.status === "Live" ? "text-green-500" : "text-yellow-500"}`}

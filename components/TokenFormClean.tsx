@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles, AlertCircle, CheckCircle, Loader2, ExternalLink, CreditCard, Globe, Twitter, Github, Upload, X, Image as ImageIcon, Zap, Shield, DollarSign, Info } from 'lucide-react';
+import { Sparkles, AlertCircle, CheckCircle, Loader2, ExternalLink, CreditCard, Globe, Twitter, Github, Upload, X, Image as ImageIcon, Zap, Shield, DollarSign, Info, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,6 +22,7 @@ import { purchaseCreditsWithAlgo } from '@/lib/enhanced-payment-system';
 import { createRealAlgorandToken } from '@/lib/real-algorand-token-creation-v2';
 import { createTokenOnChain } from '@/lib/solana';
 import { useWallet as useSolanaWallet } from '@solana/wallet-adapter-react';
+import { calculateOptimalDecimals, isDecimalOptimal, formatPrecisionExample, getDecimalDescription } from '@/lib/smart-decimal-adjustment';
 
 interface TokenData {
   name: string;
@@ -49,6 +50,8 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [decimalSuggestion, setDecimalSuggestion] = useState<any>(null);
+  const [showDecimalAdjustment, setShowDecimalAdjustment] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -88,17 +91,63 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
       
       // For Algorand mainnet, check if the combination would exceed safe limits
       if (tokenData.network.includes('algorand')) {
-        const totalWithDecimals = supply * Math.pow(10, decimals);
+        // Use BigInt for accurate calculation
+        const supplyBigInt = BigInt(Math.floor(supply));
+        const multiplierBigInt = BigInt(10) ** BigInt(decimals);
+        const totalBigInt = supplyBigInt * multiplierBigInt;
         
-        if (totalWithDecimals > Number.MAX_SAFE_INTEGER) {
+        if (totalBigInt > BigInt(Number.MAX_SAFE_INTEGER)) {
           const maxSafeSupply = Math.floor(Number.MAX_SAFE_INTEGER / Math.pow(10, decimals));
-          errors.totalSupply = `Supply of ${supply.toLocaleString()} with ${decimals} decimals is too large. Maximum safe supply: ${maxSafeSupply.toLocaleString()}. Consider reducing decimals to 6 or fewer.`;
+          errors.totalSupply = `Supply of ${supply.toLocaleString()} with ${decimals} decimals is too large. Maximum safe supply: ${maxSafeSupply.toLocaleString()}. 
+          
+💡 **Why this happens**: Algorand's JavaScript SDK uses native numbers, while Solana/Ethereum use BigNumber libraries.
+💡 **Solutions**: 
+  • Reduce supply to ${maxSafeSupply.toLocaleString()} tokens
+  • Use 6 decimals instead of ${decimals} (allows ~9 billion tokens)
+  • Use 3 decimals (allows ~9 trillion tokens)`;
         }
       }
     }
     
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
+  };
+
+  // Smart decimal adjustment based on supply
+  useEffect(() => {
+    const supply = parseFloat(tokenData.totalSupply);
+    const currentDecimals = parseInt(tokenData.decimals) || 6;
+    
+    if (!isNaN(supply) && supply > 0 && tokenData.network.includes('algorand')) {
+      const optimal = calculateOptimalDecimals(supply);
+      const decimalCheck = isDecimalOptimal(supply, currentDecimals);
+      
+      if (!decimalCheck.isOptimal && decimalCheck.suggestion) {
+        setDecimalSuggestion(decimalCheck.suggestion);
+        setShowDecimalAdjustment(true);
+      } else {
+        setDecimalSuggestion(null);
+        setShowDecimalAdjustment(false);
+      }
+    } else {
+      setDecimalSuggestion(null);
+      setShowDecimalAdjustment(false);
+    }
+  }, [tokenData.totalSupply, tokenData.decimals, tokenData.network]);
+
+  // Apply suggested decimals automatically
+  const applyOptimalDecimals = () => {
+    if (decimalSuggestion) {
+      setTokenData({ 
+        ...tokenData, 
+        decimals: decimalSuggestion.recommendedDecimals.toString() 
+      });
+      setShowDecimalAdjustment(false);
+      toast({
+        title: "Decimals optimized!",
+        description: `Updated to ${decimalSuggestion.recommendedDecimals} decimals for optimal precision`,
+      });
+    }
   };
 
   // Image upload handler
@@ -292,7 +341,8 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
               signAtomicGroup: algorandWallet.signAtomicGroup,
               signTransaction: algorandWallet.signTransaction,
               address: algorandWallet.address
-            }
+            },
+            selectedPaymentMethod as 'credits' | 'algo_direct' // Pass the payment method
           );
           
           if (!result.success) {
@@ -428,7 +478,8 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
           );
           
           if (!result.success) {
-            throw new Error(result.error || 'Token creation failed');
+            const errorMessage = ('error' in result) ? result.error : 'Token creation failed';
+            throw new Error(errorMessage);
           }
           
           console.log('✅ REAL Solana token created successfully:', result);
@@ -443,30 +494,35 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
               successful: true
             }, solanaWallet.publicKey?.toString() || undefined);
             
-            // Also track token creation in token tracking system
+            // Also track token creation in token tracking system with better error handling
             const { trackTokenCreation: trackTokenDetails } = await import('@/lib/token-tracking');
-            await trackTokenDetails({
+            const trackingResult = await trackTokenDetails({
               walletAddress: solanaWallet.publicKey?.toString() || '',
               tokenName: tokenData.name,
               tokenSymbol: tokenData.symbol,
               network: tokenData.network,
               contractAddress: 'mintAddress' in result ? (result.mintAddress || '') : '',
               description: tokenData.description,
-              totalSupply: tokenData.totalSupply,
-              decimals: parseInt(tokenData.decimals),
-              logoUrl: tokenData.logoUrl,
-              website: tokenData.website,
-              github: tokenData.github,
-              twitter: tokenData.twitter,
-              mintable: tokenData.mintable,
-              burnable: tokenData.burnable,
-              pausable: tokenData.pausable,
+              totalSupply: Number(tokenData.totalSupply) || 0,
+              decimals: parseInt(tokenData.decimals) || 9,
+              logoUrl: tokenData.logoUrl || '',
+              website: tokenData.website || '',
+              github: tokenData.github || '',
+              twitter: tokenData.twitter || '',
+              mintable: Boolean(tokenData.mintable),
+              burnable: Boolean(tokenData.burnable),
+              pausable: Boolean(tokenData.pausable),
               transactionHash: 'signature' in result ? result.signature : undefined
             });
             
-            console.log('✅ Analytics tracking completed');
+            if (trackingResult.success) {
+              console.log('✅ Analytics tracking completed');
+            } else {
+              console.warn('⚠️ Token tracking failed:', trackingResult.error);
+            }
           } catch (analyticsError) {
-            console.warn('⚠️ Analytics tracking failed (non-blocking):', analyticsError);
+            console.error('Error tracking token creation:', analyticsError);
+            // Don't block the flow, but log the error properly
           }
           
           setTokenCreationStep(3); // Processing
@@ -782,10 +838,47 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
                 </SelectTrigger>
                 <SelectContent>
                   {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].map(num => (
-                    <SelectItem key={num} value={num.toString()}>{num}</SelectItem>
+                    <SelectItem key={num} value={num.toString()}>
+                      {num} - {getDecimalDescription(num)}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              
+              {/* Current precision display */}
+              <div className="text-xs text-muted-foreground">
+                Precision: {formatPrecisionExample(parseInt(tokenData.decimals) || 6)}
+              </div>
+              
+              {/* Smart decimal suggestion */}
+              {showDecimalAdjustment && decimalSuggestion && tokenData.network.includes('algorand') && (
+                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start space-x-2">
+                    <Lightbulb className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-blue-900">
+                        Smart Decimal Optimization
+                      </p>
+                      <p className="text-xs text-blue-700 mt-1">
+                        {decimalSuggestion.explanation}
+                      </p>
+                      <div className="mt-2 space-y-1 text-xs text-blue-600">
+                        <div>• Recommended: <strong>{decimalSuggestion.recommendedDecimals} decimals</strong></div>
+                        <div>• Max possible: {decimalSuggestion.maxPossibleDecimals} decimals</div>
+                        <div>• Precision: {decimalSuggestion.precision}</div>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="mt-2 h-7 text-xs bg-blue-600 hover:bg-blue-700"
+                        onClick={applyOptimalDecimals}
+                      >
+                        Use {decimalSuggestion.recommendedDecimals} decimals
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Description - Full width moved above network selection */}
@@ -1103,6 +1196,11 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
         onConfirm={handleConfirmCreation}
         tokenData={tokenData}
         isLoading={isDeploying}
+        selectedPaymentMethod={selectedPaymentMethod}
+        paymentCosts={{
+          credits: tokenData.network.includes('mainnet') ? 10 : 0,
+          algo: tokenData.network.includes('mainnet') ? 10 : 0
+        }}
       />
 
       {/* Transaction Status Modal */}

@@ -47,21 +47,14 @@ export async function createRealAlgorandToken(
     signAtomicGroup: (transactions: any[]) => Promise<Uint8Array[]>;
     signTransaction: (txn: any) => Promise<any>;
     address: string;
-  }
+  },
+  paymentMethod?: 'credits' | 'algo_direct'
 ): Promise<TokenCreationResult> {
-  try {
-    console.log('� Starting REAL Algorand token creation (not simulated)');
-    
-    // Validate wallet provider
-    if (!walletProvider) {
-      throw new Error('Wallet provider is required for real token creation');
-    }
-    
-    const walletAddress = walletProvider.address;
-    if (!walletAddress) {
-      throw new Error('Wallet must be connected to create tokens');
-    }
+  if (typeof window === 'undefined') {
+    throw new Error('This function can only be called in a browser environment');
+  }
 
+  try {
     // This function has been superseded by real-algorand-token-creation-v2.ts
     // Redirect to the fully implemented version
     const { createRealAlgorandToken } = await import('./real-algorand-token-creation-v2');
@@ -70,15 +63,13 @@ export async function createRealAlgorandToken(
     return await createRealAlgorandToken(
       params,
       onStatusUpdate,
-      walletProvider
+      walletProvider,
+      paymentMethod
     );
     
   } catch (error) {
-    console.error('Real Algorand token creation failed:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred'
-    };
+    console.error('Error in createRealAlgorandToken redirect:', error);
+    throw error;
   }
 }
 

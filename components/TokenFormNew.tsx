@@ -551,7 +551,8 @@ export default function TokenFormNew({ tokenData, setTokenData }: TokenFormNewPr
               if (status.mobileHint) {
                 console.log(`💡 Mobile Hint: ${status.mobileHint}`);
               }
-            }
+            },
+            selectedPaymentMethod as 'credits' | 'algo_direct' // Pass the payment method
           );
           
           console.log('✅ REAL Algorand token creation with mobile optimization completed:', result.data);

@@ -496,8 +496,12 @@ export const IDL: Idl = {
   }
 };
 
-// Connection instance
-export const connection = new Connection(NETWORK_ENDPOINT, 'confirmed');
+// Connection instance with extended timeout for devnet
+export const connection = new Connection(NETWORK_ENDPOINT, {
+  commitment: 'confirmed',
+  confirmTransactionInitialTimeout: 60000, // 60 seconds
+  wsEndpoint: 'wss://api.devnet.solana.com/',
+});
 
 // Get program instance
 export function getProgram(wallet: WalletInterface | null) {

@@ -93,7 +93,8 @@ export async function createRealAlgorandToken(
     signAtomicGroup: (transactions: any[]) => Promise<Uint8Array[]>;
     signTransaction: (txn: any) => Promise<any>;
     address: string;
-  }
+  },
+  paymentMethod?: 'credits' | 'algo_direct'
 ): Promise<TokenCreationResult> {
   try {
     console.log('🚀 Starting REAL Algorand token creation (not simulated)');
@@ -221,7 +222,7 @@ export async function createRealAlgorandToken(
 
     console.log('📝 Asset creation transaction prepared');
 
-    // Step 6: Create fee payment transaction (if needed)
+    // Step 6: Create fee payment transaction (only for ALGO direct payments)
     onStatusUpdate?.('Preparing fee transaction...');
     
     let feeTransactionId: string | undefined;
@@ -230,7 +231,9 @@ export async function createRealAlgorandToken(
     
     const feeConfig = getFeeConfigForNetwork(params.network);
     
-    if (isMainnet && feeConfig.enabled) {
+    // Only create ALGO fee payment when payment method is 'algo_direct'
+    // If payment method is 'credits', fees are already handled by credit deduction
+    if (isMainnet && feeConfig.enabled && paymentMethod === 'algo_direct') {
       feePaymentTxn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
         sender: walletAddress,
         receiver: feeConfig.recipient,
@@ -243,7 +246,9 @@ export async function createRealAlgorandToken(
       const txnGroup = algosdk.assignGroupID(txns);
       groupId = Buffer.from(txnGroup[0].group!).toString('base64');
       
-      console.log('💰 Fee payment transaction added to group');
+      console.log('💰 ALGO fee payment transaction added to group');
+    } else if (isMainnet && paymentMethod === 'credits') {
+      console.log('💳 Credits payment - no ALGO fee transaction needed');
     } else {
       console.log('💰 Fee payment disabled for this deployment');
     }
@@ -254,11 +259,12 @@ export async function createRealAlgorandToken(
     console.log('📱 Sending transaction to wallet for signing...');
     
     // Prepare transactions for signing
-    const txnsToSign = (isMainnet && feeConfig.enabled && feePaymentTxn) 
+    const txnsToSign = (isMainnet && feeConfig.enabled && feePaymentTxn && paymentMethod === 'algo_direct') 
       ? [assetCreateTxn, feePaymentTxn] 
       : [assetCreateTxn];
     
     console.log(`🔍 Signing ${txnsToSign.length} transaction(s) with wallet...`);
+    console.log(`💳 Payment method: ${paymentMethod || 'not specified'}`);
     console.log('📋 Transaction details:');
     txnsToSign.forEach((txn, index) => {
       console.log(`  Transaction ${index + 1}:`, {
@@ -398,25 +404,27 @@ export function getMaximumSafeSupply(decimals: number): number {
 
 /**
  * Get practical maximum for display purposes (what users typically want)
+ * This is more generous than the technical limits for better UX
  */
 export function getPracticalMaximumSupply(decimals: number): number {
-  // Use the same conservative approach as getMaximumSafeSupply
-  // but provide even more user-friendly amounts
+  // Use the smart decimal calculation to be more generous
   if (decimals >= 15) {
-    return 1000; // 1k tokens for very high decimals
+    return 100000; // 100k tokens for very high decimals
   } else if (decimals >= 12) {
-    return 1000000; // 1 million tokens for high decimals
+    return 10000000; // 10 million tokens for high decimals
   } else if (decimals >= 9) {
-    return 1000000; // 1 million tokens for 9+ decimals (conservative)
+    return 10000000; // 10 million tokens for 9+ decimals (more practical than 1M)
   } else if (decimals >= 6) {
-    return 1000000000; // 1 billion tokens for 6-8 decimals
+    return 10000000000; // 10 billion tokens for 6-8 decimals
+  } else if (decimals >= 3) {
+    return 1000000000000; // 1 trillion tokens for 3-5 decimals
   } else {
-    return 1000000000000; // 1 trillion for low decimals
+    return 9007199254740991; // Close to safe integer limit for whole numbers
   }
 }
 
 /**
- * Enhanced supply calculation that handles larger numbers more safely
+ * Enhanced supply calculation that handles larger numbers more safely using BigInt
  */
 export function calculateTokenSupplyEnhanced(supply: number, decimals: number): {
   success: boolean;
@@ -432,33 +440,36 @@ export function calculateTokenSupplyEnhanced(supply: number, decimals: number): 
       };
     }
     
-    // Second check: Will the result exceed Algorand's uint64 limit?
-    const algorandMaxUint64 = 18446744073709551615;
+    // Use BigInt for precise calculation
     const supplyCleaned = Math.floor(supply);
+    const supplyBigInt = BigInt(supplyCleaned);
+    const multiplierBigInt = BigInt(10) ** BigInt(decimals);
+    const resultBigInt = supplyBigInt * multiplierBigInt;
     
-    // Use string-based calculation for high precision
-    const supplyStr = supplyCleaned.toString();
-    const zerosToAdd = '0'.repeat(decimals);
-    const resultStr = supplyStr + zerosToAdd;
-    
-    // Convert back to number for final validation
-    const resultNum = parseFloat(resultStr);
-    
-    // Check against Algorand maximum
-    if (resultNum > algorandMaxUint64) {
+    // Check against Algorand's uint64 limit (2^64 - 1)
+    const algorandMaxUint64 = BigInt('18446744073709551615');
+    if (resultBigInt > algorandMaxUint64) {
+      const maxSupplyForDecimals = algorandMaxUint64 / multiplierBigInt;
       return {
         success: false,
-        error: `Total supply with ${decimals} decimals exceeds Algorand maximum`
+        error: `Total supply with ${decimals} decimals exceeds Algorand's maximum. Maximum supply for ${decimals} decimals: ${maxSupplyForDecimals.toString()} tokens`
       };
     }
     
-    // For numbers that exceed JavaScript's safe integer limit, be more conservative
-    if (resultNum > Number.MAX_SAFE_INTEGER) {
+    // Check if result fits in JavaScript's safe integer range
+    const maxSafeBigInt = BigInt(Number.MAX_SAFE_INTEGER);
+    if (resultBigInt > maxSafeBigInt) {
+      // IMPORTANT: For Algorand, we CAN actually handle this with BigInt,
+      // but for compatibility with the current SDK usage, we're being conservative
+      const maxSafeSupply = Number.MAX_SAFE_INTEGER / Math.pow(10, decimals);
       return {
         success: false,
-        error: `Total supply with ${decimals} decimals (${resultStr}) exceeds safe integer limits. Please reduce total supply to ${Math.floor(Number.MAX_SAFE_INTEGER / Math.pow(10, decimals)).toLocaleString()} or fewer, or reduce decimals to 6 or fewer.`
+        error: `Total supply with ${decimals} decimals (${resultBigInt.toString()}) exceeds JavaScript safe integer limits. For compatibility, please reduce total supply to ${Math.floor(maxSafeSupply).toLocaleString()} or reduce decimals to 6 or fewer.\n\nNote: Other chains like Solana/Ethereum can handle larger numbers natively.`
       };
     }
+    
+    // Convert BigInt back to number for SDK compatibility
+    const resultNum = Number(resultBigInt);
     
     return {
       success: true,

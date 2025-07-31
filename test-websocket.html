@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Solana WebSocket Test</title>
+</head>
+<body>
+    <h1>Solana Devnet WebSocket Connection Test</h1>
+    <div id="status">Testing connection...</div>
+    <div id="log"></div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const logDiv = document.getElementById('log');
+        
+        function log(message) {
+            console.log(message);
+            logDiv.innerHTML += '<p>' + message + '</p>';
+        }
+
+        try {
+            log('Attempting to connect to wss://api.devnet.solana.com/...');
+            const ws = new WebSocket('wss://api.devnet.solana.com/');
+            
+            ws.onopen = function() {
+                statusDiv.innerHTML = '<span style="color: green;">✅ WebSocket connection successful!</span>';
+                log('WebSocket opened successfully');
+                
+                // Send a test message
+                ws.send(JSON.stringify({
+                    jsonrpc: "2.0",
+                    id: 1,
+                    method: "getVersion"
+                }));
+            };
+            
+            ws.onmessage = function(event) {
+                log('Received: ' + event.data);
+            };
+            
+            ws.onerror = function(error) {
+                statusDiv.innerHTML = '<span style="color: red;">❌ WebSocket connection failed</span>';
+                log('WebSocket error: ' + error);
+            };
+            
+            ws.onclose = function() {
+                log('WebSocket connection closed');
+            };
+            
+        } catch (error) {
+            statusDiv.innerHTML = '<span style="color: red;">❌ WebSocket connection failed</span>';
+            log('Error: ' + error.message);
+        }
+    </script>
+</body>
+</html>

@@ -26,6 +26,40 @@ const nextConfig = {
     scrollRestoration: false,
     forceSwcTransforms: true,
   },
+  // Add security headers for Solana WebSocket connections and GitHub Codespaces
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' *.github.dev",
+              "style-src 'self' 'unsafe-inline' *.github.dev",
+              "img-src 'self' data: blob: https: *.github.dev",
+              "font-src 'self' data: *.github.dev",
+              "connect-src 'self' data: https://*.supabase.co https://api.devnet.solana.com https://api.mainnet-beta.solana.com https://testnet-api.algonode.cloud https://mainnet-api.algonode.cloud https://testnet-idx.algonode.cloud https://mainnet-idx.algonode.cloud https://wc.perawallet.app https://*.perawallet.app https://s3.amazonaws.com https://*.github.dev *.github.dev wss://api.devnet.solana.com wss://api.mainnet-beta.solana.com wss://*.perawallet.app wss://*.bridge.walletconnect.org wss://*.walletconnect.org https://*.walletconnect.org",
+              "worker-src 'self' blob:",
+              "frame-src 'self' https://verify.walletconnect.com *.github.dev",
+              "manifest-src 'self' *.github.dev",
+              "object-src 'none'",
+              "base-uri 'self'"
+            ].join('; ')
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN'
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          }
+        ]
+      }
+    ]
+  },
   // Simplified webpack configuration
   webpack: (config, { webpack, isServer }) => {
     // Add polyfills for Node.js modules

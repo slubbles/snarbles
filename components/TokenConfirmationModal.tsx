@@ -38,6 +38,11 @@ interface TokenConfirmationModalProps {
   onConfirm: () => void;
   tokenData: TokenData;
   isLoading?: boolean;
+  selectedPaymentMethod?: string | null;
+  paymentCosts?: {
+    credits: number;
+    algo: number;
+  };
 }
 
 export default function TokenConfirmationModal({ 
@@ -45,7 +50,9 @@ export default function TokenConfirmationModal({
   onClose, 
   onConfirm, 
   tokenData, 
-  isLoading = false 
+  isLoading = false,
+  selectedPaymentMethod,
+  paymentCosts
 }: TokenConfirmationModalProps) {
   
   // Format total supply
@@ -72,18 +79,42 @@ export default function TokenConfirmationModal({
     }
   };
 
-  // Get network info
+  // Get network info with dynamic cost based on payment method
   const getNetworkInfo = (network: string) => {
-    switch (network) {
-      case 'algorand-mainnet':
-        return { name: 'Algorand Mainnet', cost: '10 credits + 0.1 ALGO', icon: '🔺' };
-      case 'algorand-testnet':
-        return { name: 'Algorand Testnet', cost: 'Free', icon: '🔸' };
-      case 'solana-devnet':
-        return { name: 'Solana Devnet', cost: 'Free', icon: '🟣' };
-      default:
-        return { name: 'Unknown Network', cost: 'Unknown', icon: '❓' };
+    const isMainnet = network.includes('mainnet');
+    const isTestnet = network.includes('testnet') || network.includes('devnet');
+    
+    let cost = 'Free';
+    let networkName = 'Unknown Network';
+    let icon = '❓';
+    
+    // Determine network details
+    if (network === 'algorand-mainnet') {
+      networkName = 'Algorand Mainnet';
+      icon = '🔺';
+    } else if (network === 'algorand-testnet') {
+      networkName = 'Algorand Testnet';
+      icon = '🔸';
+    } else if (network === 'solana-devnet') {
+      networkName = 'Solana Devnet';
+      icon = '🟣';
+    } else if (network === 'solana-mainnet') {
+      networkName = 'Solana Mainnet';
+      icon = '🟣';
     }
+    
+    // Calculate cost based on selected payment method
+    if (isMainnet && selectedPaymentMethod && paymentCosts) {
+      if (selectedPaymentMethod === 'credits') {
+        cost = `${paymentCosts.credits} credits`;
+      } else if (selectedPaymentMethod === 'algo_direct') {
+        cost = `${paymentCosts.algo} ALGO + network fee`;
+      }
+    } else if (isTestnet) {
+      cost = 'Free (testnet)';
+    }
+    
+    return { name: networkName, cost, icon };
   };
 
   const networkInfo = getNetworkInfo(tokenData.network);
@@ -211,11 +242,31 @@ export default function TokenConfirmationModal({
           <Separator className="bg-border" />
 
           {/* Cost Information */}
-          <div className="p-3 bg-muted/20 rounded-lg">
+          <div className="p-3 bg-muted/20 rounded-lg space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Payment Method:</span>
+              <span className="text-sm font-medium text-foreground">
+                {selectedPaymentMethod === 'credits' ? 'Credits' : 
+                 selectedPaymentMethod === 'algo_direct' ? 'ALGO Direct' : 
+                 'Not Selected'}
+              </span>
+            </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Total Cost:</span>
               <span className="text-sm font-semibold text-foreground">{networkInfo.cost}</span>
             </div>
+            {selectedPaymentMethod === 'algo_direct' && paymentCosts && (
+              <div className="text-xs text-muted-foreground pt-1 border-t border-border">
+                <div className="flex justify-between">
+                  <span>Platform fee:</span>
+                  <span>{paymentCosts.algo} ALGO</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Network fee:</span>
+                  <span>~0.001 ALGO</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Warning */}

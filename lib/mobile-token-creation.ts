@@ -9,7 +9,8 @@ export async function createTokenWithMobileOptimizations(
   tokenData: any,
   selectedNetwork: string,
   algorandWallet: any,
-  onStatusUpdate: (status: any) => void
+  onStatusUpdate: (status: any) => void,
+  paymentMethod?: 'credits' | 'algo_direct'
 ): Promise<any> {
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   
@@ -82,7 +83,8 @@ export async function createTokenWithMobileOptimizations(
             : undefined
         });
       },
-      algorandWallet
+      algorandWallet,
+      paymentMethod
     );
 
     onStatusUpdate({ 

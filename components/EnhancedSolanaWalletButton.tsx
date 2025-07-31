@@ -287,7 +287,10 @@ export function EnhancedSolanaWalletButton({
     <>
       <Button
         variant={variant}
-        onClick={() => setShowWalletSelector(true)}
+        onClick={() => {
+          // Always use our custom modal that's limited to Phantom and OKX only
+          setShowWalletSelector(true);
+        }}
         className={`${buttonSizeClass} ${className}`}
       >
         <Wallet className="w-4 h-4 mr-2" />

@@ -411,7 +411,8 @@ ${tokenomicsInfo.vestingSchedule?.enabled ? `- Vesting: Enabled (Team: ${tokenom
         setDeploymentComplete(true);
         onTokenCreate?.(createResult);
       } else {
-        throw new Error(createResult.error || 'Failed to create token');
+        const errorMessage = ('error' in createResult) ? createResult.error : 'Failed to create token';
+        throw new Error(errorMessage);
       }
         
         // Show success confetti
