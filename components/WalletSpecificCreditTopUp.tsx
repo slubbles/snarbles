@@ -28,7 +28,8 @@ import { useAlgorandWallet } from '@/components/providers/AlgorandWalletProvider
 import { useWallet } from '@solana/wallet-adapter-react';
 import { 
   getCreditsBalance,
-  addCreditTransaction 
+  addCreditTransaction,
+  updateCreditsBalance
 } from '@/lib/credit-system';
 import { 
   purchaseCreditsWithAlgo, 
@@ -50,6 +51,8 @@ import {
 } from '@/lib/solana-usdt-integration';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import CreditTopUpSuccessModal from '@/components/CreditTopUpSuccessModal';
+import USDTPaymentConfirmationModal from '@/components/USDTPaymentConfirmationModal';
+import PaymentProcessingModal from '@/components/PaymentProcessingModal';
 
 interface WalletSpecificCreditTopUpProps {
   userAddress?: string;
@@ -71,6 +74,12 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
   const [showCustomInput, setShowCustomInput] = useState<boolean>(false);
   const [showSuccessModal, setShowSuccessModal] = useState<boolean>(false);
   const [successDetails, setSuccessDetails] = useState<any>(null);
+  const [configurationError, setConfigurationError] = useState<string | null>(null);
+  const [showConfirmationModal, setShowConfirmationModal] = useState<boolean>(false);
+  const [showProcessingModal, setShowProcessingModal] = useState<boolean>(false);
+  const [processingStep, setProcessingStep] = useState<'checking' | 'signing' | 'submitting' | 'confirming' | 'recording' | 'completed' | 'error'>('checking');
+  const [processingError, setProcessingError] = useState<string | null>(null);
+  const [transactionHash, setTransactionHash] = useState<string | null>(null);
   
   const { toast } = useToast();
   const { walletAddress, walletType, isAuthenticated } = useWalletAuth();
@@ -103,11 +112,16 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
   const loadUserBalance = async () => {
     if (!walletAddress) return;
     
+    console.log('🔄 Loading user balance for:', walletAddress);
     setIsLoading(true);
     try {
       const result = await getCreditsBalance(walletAddress);
+      console.log('📊 Balance query result:', result);
       if (result.success) {
+        console.log('✅ Setting user balance to:', result.balance || 0);
         setUserBalance(result.balance || 0);
+      } else {
+        console.error('❌ Failed to get balance:', result.error);
       }
     } catch (error) {
       console.error('Error loading balance:', error);
@@ -143,6 +157,12 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
           console.log('✅ Opt-in status set to:', userOptedIn);
         } else {
           console.error('❌ Failed to get USDt balance:', usdtBalResult.error);
+          
+          // Check if it's a configuration error
+          if (usdtBalResult.error?.includes('Configuration not set up')) {
+            setConfigurationError('Development Mode: USDT payments are not fully configured for this environment. This is normal for development.');
+          }
+          
           // Fallback: explicitly check opt-in status only if balance check failed
           console.log('🔍 Fallback: Checking USDt opt-in status...');
           const optInResult = await isOptedInToUSDT(walletAddress, false);
@@ -247,7 +267,8 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
           creditsReceived: result.creditsReceived || 0,
           bonusCredits: result.bonusCredits || 0,
           transactionId: result.transactionHash || '',
-          newBalance: result.newBalance || userBalance
+          newBalance: result.newBalance || userBalance,
+          paymentMethod: 'ALGO'
         });
         setShowSuccessModal(true);
         
@@ -278,16 +299,7 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
     }
   };
 
-  const handleUSDTPayment = async () => {
-    if (!walletAddress || !walletType) {
-      toast({
-        title: "Wallet not connected",
-        description: "Please connect your wallet first",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleUSDTPaymentClick = () => {
     const amount = parseFloat(usdtAmount);
     if (amount <= 0 || amount > usdtBalance) {
       toast({
@@ -297,6 +309,29 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
       });
       return;
     }
+
+    if (!walletAddress || !walletType) {
+      toast({
+        title: "Wallet not connected",
+        description: "Please connect your wallet first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Show confirmation modal
+    setShowConfirmationModal(true);
+  };
+
+  const handleUSDTPayment = async () => {
+    // Close confirmation modal and start processing
+    setShowConfirmationModal(false);
+    setShowProcessingModal(true);
+    setProcessingStep('checking');
+    setProcessingError(null);
+    setTransactionHash(null);
+
+    const amount = parseFloat(usdtAmount);
 
     setIsPurchasing(true);
     try {
@@ -318,6 +353,12 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
         };
 
         // Check if user is opted in to USDt using the improved balance check
+        setProcessingStep('checking');
+        
+        if (!walletAddress) {
+          throw new Error('Wallet address is not available');
+        }
+        
         const balanceCheck = await getAlgorandUSDTBalance(walletAddress, false);
         
         if (!balanceCheck.success) {
@@ -329,18 +370,11 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
         console.log('✅ User opt-in status from balance check:', userOptedIn);
         
         if (!userOptedIn) {
-          toast({
-            title: "USDt Opt-in Required",
-            description: "Please opt-in to USDt first using your wallet's asset management feature.",
-            variant: "destructive",
-          });
-          return;
+          throw new Error('USDt opt-in required. Please opt-in to USDt first using your wallet\'s asset management feature.');
         }
         
-        toast({
-          title: "Processing Payment",
-          description: `Processing ${amount} USDt payment...`,
-        });
+        // Start wallet signing step
+        setProcessingStep('signing');
 
         const result = await executeAlgorandUSDTTransfer(
           walletInterface,
@@ -349,41 +383,105 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
         );
 
         if (result.success) {
-          toast({
-            title: "Payment Successful!",
-            description: `${amount} credits purchased successfully!`,
+          setTransactionHash(result.transactionHash || null);
+          setProcessingStep('submitting');
+          
+          // Small delay to show submitting step
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          setProcessingStep('confirming');
+          
+          // Small delay to show confirming step
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          setProcessingStep('recording');
+
+          // Add transaction to database
+          console.log('💾 Recording transaction in database...');
+          try {
+            const dbResult = await addCreditTransaction(
+              walletAddress,
+              'purchase',
+              amount,
+              `USDT credit purchase - ${amount} credits`,
+              {
+                transactionHash: result.transactionHash,
+                paymentMethod: 'usdt',
+                paymentAddress: walletAddress,
+                status: 'completed'
+              }
+            );
+            console.log('💾 Database transaction result:', dbResult);
+            
+            // Update user balance after successful transaction
+            if (dbResult.success) {
+              console.log('💰 Updating user balance...');
+              const newBalance = userBalance + amount;
+              const balanceUpdateResult = await updateCreditsBalance(walletAddress, newBalance);
+              console.log('💰 Balance update result:', balanceUpdateResult);
+              
+              if (balanceUpdateResult.success) {
+                console.log('✅ User balance updated successfully to:', newBalance);
+                // Update local state immediately
+                setUserBalance(newBalance);
+              } else {
+                console.error('❌ Failed to update balance:', balanceUpdateResult.error);
+              }
+            }
+          } catch (dbError) {
+            console.error('Failed to record transaction in database:', dbError);
+            // Continue anyway since the payment succeeded
+          }
+
+          setProcessingStep('completed');
+          
+          // Small delay before showing success
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          console.log('🔄 Refreshing balances and showing success modal...');
+          
+          // Calculate the new balance for the success modal
+          const estimatedNewBalance = userBalance + amount;
+          
+          // Close processing modal and show success modal
+          setShowProcessingModal(false);
+          setSuccessDetails({
+            algoAmount: amount, // USDT amount
+            creditsReceived: amount, // 1:1 ratio for USDT
+            bonusCredits: 0,
+            transactionId: result.transactionHash,
+            newBalance: estimatedNewBalance, // Show the updated balance
+            paymentMethod: 'USDT'
           });
+          setShowSuccessModal(true);
           
           // Refresh balances and credits
+          console.log('📊 Refreshing user balance...');
           await loadUserBalance();
+          console.log('💰 Refreshing wallet balances...');
           await loadWalletBalances();
           onCreditsUpdated?.();
           
           // Reset form
           setUSDTAmount('10');
           setCreditsAmount('10');
+          
+          console.log('✅ USDT payment process completed successfully!');
         } else {
           throw new Error(result.error || 'Payment failed');
         }
 
       } else if (walletType === 'solana') {
         // Solana implementation (no opt-in required)
-        toast({
-          title: "Feature coming soon",
-          description: "SPL-USDT payments will be available soon",
-          variant: "destructive",
-        });
+        throw new Error('SPL-USDT payments will be available soon');
       } else {
         throw new Error('Unsupported wallet type');
       }
       
     } catch (error) {
       console.error('USDT payment error:', error);
-      toast({
-        title: "Payment failed",
-        description: error instanceof Error ? error.message : "Unknown error occurred",
-        variant: "destructive",
-      });
+      setProcessingError(error instanceof Error ? error.message : 'Unknown error occurred');
+      setProcessingStep('error');
     } finally {
       setIsPurchasing(false);
     }
@@ -459,6 +557,16 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
           </div>
         </CardContent>
       </Card>
+
+      {/* Configuration Error Alert */}
+      {configurationError && (
+        <Alert className="border-yellow-500/20 bg-yellow-500/5">
+          <Info className="h-4 w-4 text-yellow-500" />
+          <AlertDescription className="text-yellow-200">
+            {configurationError}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Enhanced Payment Options - Side by Side */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -657,7 +765,7 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
               </div>
 
               <Button 
-                onClick={handleUSDTPayment}
+                onClick={handleUSDTPaymentClick}
                 disabled={
                   isPurchasing || 
                   parseFloat(usdtAmount) <= 0 || 
@@ -757,6 +865,41 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
           topUpDetails={successDetails}
         />
       )}
+
+      {/* USDT Payment Confirmation Modal */}
+      <USDTPaymentConfirmationModal
+        isOpen={showConfirmationModal}
+        onClose={() => setShowConfirmationModal(false)}
+        onConfirm={handleUSDTPayment}
+        paymentDetails={{
+          amount: parseFloat(usdtAmount),
+          currency: walletInfo?.stablecoin || 'USDT',
+          creditsReceived: parseFloat(usdtAmount),
+          estimatedFee: estimatedFee,
+          nativeCurrency: walletInfo?.nativeCurrency || 'ALGO',
+          walletAddress: walletAddress || ''
+        }}
+        isProcessing={isPurchasing}
+      />
+
+      {/* Payment Processing Modal */}
+      <PaymentProcessingModal
+        isOpen={showProcessingModal}
+        onClose={() => {
+          setShowProcessingModal(false);
+          setProcessingStep('checking');
+          setProcessingError(null);
+          setTransactionHash(null);
+        }}
+        currentStep={processingStep}
+        error={processingError || undefined}
+        transactionHash={transactionHash || undefined}
+        paymentDetails={transactionHash ? {
+          amount: parseFloat(usdtAmount),
+          currency: walletInfo?.stablecoin || 'USDT',
+          creditsReceived: parseFloat(usdtAmount)
+        } : undefined}
+      />
     </div>
   );
 }

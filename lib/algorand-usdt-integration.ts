@@ -6,26 +6,13 @@
  */
 
 import * as algosdk from 'algosdk';
+import { getAlgorandConfig } from './algorand-config';
 
-// Algorand USDT configuration
-export const ALGORAND_USDT_CONFIG = {
-  MAINNET: {
-    algodServer: 'https://mainnet-api.algonode.cloud',
-    indexerServer: 'https://mainnet-idx.algonode.cloud',
-    usdtAssetId: 312769, // USDt Asset ID on Algorand mainnet
-    receiverAddress: process.env.ALGORAND_MAINNET_RECEIVER_ADDRESS || 'SNARBLES7CREDIT7PURCHASE7MAINNET7ALGORAND7USDT7RECEIVER7ADDR', // Platform mainnet receiver
-    explorerUrl: 'https://algoexplorer.io',
-    networkId: 'mainnet-v1.0'
-  },
-  TESTNET: {
-    algodServer: 'https://testnet-api.algonode.cloud',
-    indexerServer: 'https://testnet-idx.algonode.cloud',
-    usdtAssetId: 10458941, // USDt Asset ID on Algorand testnet
-    receiverAddress: process.env.ALGORAND_TESTNET_RECEIVER_ADDRESS || 'SNARBLES7CREDIT7PURCHASE7TESTNET7ALGORAND7USDT7RECEIVER7ADDR', // Platform testnet receiver
-    explorerUrl: 'https://testnet.algoexplorer.io',
-    networkId: 'testnet-v1.0'
-  }
-};
+// Get dynamic configuration
+const ALGORAND_USDT_CONFIG = getAlgorandConfig();
+
+// Export for external use
+export { ALGORAND_USDT_CONFIG };
 
 export interface AlgorandWalletInterface {
   address: string;
@@ -45,13 +32,30 @@ export interface AlgorandUSDTTransferResult {
 function getAlgorandClients(isTestnet: boolean = true) {
   const config = isTestnet ? ALGORAND_USDT_CONFIG.TESTNET : ALGORAND_USDT_CONFIG.MAINNET;
   
-  // Validate receiver address
+  // In development, if receiver address is not properly configured, log a warning but don't throw
   if (!algosdk.isValidAddress(config.receiverAddress)) {
     const networkName = isTestnet ? 'testnet' : 'mainnet';
-    const envVar = isTestnet ? 'ALGORAND_TESTNET_RECEIVER_ADDRESS' : 'ALGORAND_MAINNET_RECEIVER_ADDRESS';
-    console.error(`❌ Invalid receiver address for ${networkName}:`, config.receiverAddress);
-    console.error(`💡 Set ${envVar} environment variable with a valid Algorand address for production`);
-    throw new Error(`Invalid receiver address configured for ${networkName}. Please set ${envVar} environment variable.`);
+    const envVar = isTestnet ? 'NEXT_PUBLIC_ALGORAND_TESTNET_RECEIVER_ADDRESS' : 'NEXT_PUBLIC_ALGORAND_MAINNET_RECEIVER_ADDRESS';
+    
+    // Check if we're in development environment
+    const isDevelopment = process.env.NODE_ENV === 'development' || 
+                         process.env.NEXT_PUBLIC_ENVIRONMENT === 'development' ||
+                         typeof window !== 'undefined'; // Client-side check
+    
+    if (isDevelopment) {
+      console.warn(`⚠️ Development Mode: Invalid receiver address for ${networkName}:`, config.receiverAddress);
+      console.warn(`💡 For production, set ${envVar} environment variable with a valid Algorand address`);
+      console.warn(`🔧 Continuing with limited functionality for development...`);
+      
+      // Return clients anyway for development, but operations will fail gracefully
+      const algodClient = new algosdk.Algodv2('', config.algodServer, '');
+      const indexerClient = new algosdk.Indexer('', config.indexerServer, '');
+      return { algodClient, indexerClient, config };
+    } else {
+      console.error(`❌ Invalid receiver address for ${networkName}:`, config.receiverAddress);
+      console.error(`💡 Set ${envVar} environment variable with a valid Algorand address for production`);
+      throw new Error(`Invalid receiver address configured for ${networkName}. Please set ${envVar} environment variable.`);
+    }
   }
   
   const algodClient = new algosdk.Algodv2('', config.algodServer, '');
@@ -69,7 +73,23 @@ export async function getAlgorandUSDTBalance(
 ): Promise<{ success: boolean; balance: number; optedIn?: boolean; error?: string }> {
   try {
     console.log('🔍 [getAlgorandUSDTBalance] Starting for:', userAddress, 'isTestnet:', isTestnet);
-    const { indexerClient, config } = getAlgorandClients(isTestnet);
+    
+    // Try to get clients, but handle configuration errors gracefully
+    let clients;
+    try {
+      clients = getAlgorandClients(isTestnet);
+    } catch (configError) {
+      const errorMessage = configError instanceof Error ? configError.message : 'Unknown configuration error';
+      console.warn('⚠️ [getAlgorandUSDTBalance] Configuration error:', errorMessage);
+      return { 
+        success: false, 
+        balance: 0, 
+        optedIn: false,
+        error: 'Configuration not set up for this environment' 
+      };
+    }
+    
+    const { indexerClient, config } = clients;
     console.log('🔧 [getAlgorandUSDTBalance] Using config:', { 
       usdtAssetId: config.usdtAssetId, 
       network: isTestnet ? 'testnet' : 'mainnet' 
@@ -137,7 +157,17 @@ export async function isOptedInToUSDT(
   isTestnet: boolean = true
 ): Promise<{ success: boolean; optedIn: boolean }> {
   try {
-    const { algodClient, config } = getAlgorandClients(isTestnet);
+    // Try to get clients, but handle configuration errors gracefully
+    let clients;
+    try {
+      clients = getAlgorandClients(isTestnet);
+    } catch (configError) {
+      const errorMessage = configError instanceof Error ? configError.message : 'Unknown configuration error';
+      console.warn('⚠️ [isOptedInToUSDT] Configuration error:', errorMessage);
+      return { success: false, optedIn: false };
+    }
+    
+    const { algodClient, config } = clients;
     
     const accountInfo = await algodClient.accountInformation(address).do();
     
@@ -159,7 +189,21 @@ export async function estimateAlgorandUSDTFee(
   isTestnet: boolean = true
 ): Promise<{ success: boolean; fee: number; error?: string }> {
   try {
-    const { algodClient } = getAlgorandClients(isTestnet);
+    // Try to get clients, but handle configuration errors gracefully
+    let clients;
+    try {
+      clients = getAlgorandClients(isTestnet);
+    } catch (configError) {
+      const errorMessage = configError instanceof Error ? configError.message : 'Unknown configuration error';
+      console.warn('⚠️ [estimateAlgorandUSDTFee] Configuration error:', errorMessage);
+      return { 
+        success: false, 
+        fee: 1000, // Default minimum fee
+        error: 'Configuration not set up for this environment' 
+      };
+    }
+    
+    const { algodClient } = clients;
     
     // Get suggested transaction parameters
     const params = await algodClient.getTransactionParams().do();

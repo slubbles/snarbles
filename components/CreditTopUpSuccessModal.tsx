@@ -9,6 +9,7 @@ interface CreditTopUpSuccessModalProps {
     bonusCredits?: number;
     transactionId: string;
     newBalance?: number;
+    paymentMethod?: 'ALGO' | 'USDT'; // Add payment method
   };
 }
 
@@ -43,6 +44,12 @@ export default function CreditTopUpSuccessModal({
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  // Determine payment method and display labels
+  const paymentMethod = topUpDetails.paymentMethod || 'ALGO';
+  const isUSDT = paymentMethod === 'USDT';
+  const currencyLabel = isUSDT ? 'USDt' : 'ALGO';
+  const amountLabel = isUSDT ? 'USDt Paid' : 'ALGO Paid';
 
   const formatAlgo = (amount: number) => amount.toLocaleString('en-US', { 
     minimumFractionDigits: 0, 
@@ -144,9 +151,9 @@ export default function CreditTopUpSuccessModal({
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-gray-400 font-['Inter']">ALGO Paid</p>
+                      <p className="text-sm text-gray-400 font-['Inter']">{amountLabel}</p>
                       <p className="text-xl font-semibold text-white font-['Inter']">
-                        {formatAlgo(topUpDetails.algoAmount)} ALGO
+                        {formatAlgo(topUpDetails.algoAmount)} {currencyLabel}
                       </p>
                     </div>
                   </div>
