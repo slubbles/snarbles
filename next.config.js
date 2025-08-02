@@ -28,6 +28,11 @@ const nextConfig = {
   },
   // Add security headers for Solana WebSocket connections and GitHub Codespaces
   async headers() {
+    // Skip CSP in development to avoid chunk loading issues
+    if (process.env.NODE_ENV === 'development') {
+      return [];
+    }
+    
     return [
       {
         source: '/(.*)',

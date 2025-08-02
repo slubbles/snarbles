@@ -136,18 +136,23 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
         if (usdtBalResult.success) {
           setUSDTBalance(usdtBalResult.balance);
           console.log('✅ USDt balance set to:', usdtBalResult.balance);
+          
+          // Use the optedIn status from the balance check result
+          const userOptedIn = usdtBalResult.optedIn || false;
+          setIsOptedIn(userOptedIn);
+          console.log('✅ Opt-in status set to:', userOptedIn);
         } else {
           console.error('❌ Failed to get USDt balance:', usdtBalResult.error);
-        }
-        
-        console.log('🔍 Checking USDt opt-in status...');
-        const optInResult = await isOptedInToUSDT(walletAddress, false);
-        console.log('📊 Opt-in result:', optInResult);
-        if (optInResult.success) {
-          setIsOptedIn(optInResult.optedIn);
-          console.log('✅ Opt-in status set to:', optInResult.optedIn);
-        } else {
-          console.error('❌ Failed to check opt-in status');
+          // Fallback: explicitly check opt-in status only if balance check failed
+          console.log('🔍 Fallback: Checking USDt opt-in status...');
+          const optInResult = await isOptedInToUSDT(walletAddress, false);
+          console.log('📊 Opt-in result:', optInResult);
+          if (optInResult.success) {
+            setIsOptedIn(optInResult.optedIn);
+            console.log('✅ Opt-in status set to:', optInResult.optedIn);
+          } else {
+            console.error('❌ Failed to check opt-in status');
+          }
         }
         
         // Estimate fee
@@ -312,13 +317,18 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
           }
         };
 
-        // Check if user is opted in to USDt
-        const optInCheck = await isOptedInToUSDT(walletAddress, false);
-        if (!optInCheck.success) {
-          throw new Error('Failed to check USDt opt-in status');
+        // Check if user is opted in to USDt using the improved balance check
+        const balanceCheck = await getAlgorandUSDTBalance(walletAddress, false);
+        
+        if (!balanceCheck.success) {
+          throw new Error('Failed to check USDt balance and opt-in status');
         }
         
-        if (!optInCheck.optedIn) {
+        // User is opted in if the balance check returned optedIn: true
+        const userOptedIn = balanceCheck.optedIn || false;
+        console.log('✅ User opt-in status from balance check:', userOptedIn);
+        
+        if (!userOptedIn) {
           toast({
             title: "USDt Opt-in Required",
             description: "Please opt-in to USDt first using your wallet's asset management feature.",

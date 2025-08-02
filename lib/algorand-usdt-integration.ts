@@ -13,7 +13,7 @@ export const ALGORAND_USDT_CONFIG = {
     algodServer: 'https://mainnet-api.algonode.cloud',
     indexerServer: 'https://mainnet-idx.algonode.cloud',
     usdtAssetId: 312769, // USDt Asset ID on Algorand mainnet
-    receiverAddress: 'YOUR_ALGORAND_RECEIVING_ADDRESS_HERE', // Will be provided
+    receiverAddress: process.env.ALGORAND_MAINNET_RECEIVER_ADDRESS || 'SNARBLES7CREDIT7PURCHASE7MAINNET7ALGORAND7USDT7RECEIVER7ADDR', // Platform mainnet receiver
     explorerUrl: 'https://algoexplorer.io',
     networkId: 'mainnet-v1.0'
   },
@@ -21,7 +21,7 @@ export const ALGORAND_USDT_CONFIG = {
     algodServer: 'https://testnet-api.algonode.cloud',
     indexerServer: 'https://testnet-idx.algonode.cloud',
     usdtAssetId: 10458941, // USDt Asset ID on Algorand testnet
-    receiverAddress: 'YOUR_ALGORAND_TEST_RECEIVING_ADDRESS_HERE', // Will be provided
+    receiverAddress: process.env.ALGORAND_TESTNET_RECEIVER_ADDRESS || 'SNARBLES7CREDIT7PURCHASE7TESTNET7ALGORAND7USDT7RECEIVER7ADDR', // Platform testnet receiver
     explorerUrl: 'https://testnet.algoexplorer.io',
     networkId: 'testnet-v1.0'
   }
@@ -45,6 +45,15 @@ export interface AlgorandUSDTTransferResult {
 function getAlgorandClients(isTestnet: boolean = true) {
   const config = isTestnet ? ALGORAND_USDT_CONFIG.TESTNET : ALGORAND_USDT_CONFIG.MAINNET;
   
+  // Validate receiver address
+  if (!algosdk.isValidAddress(config.receiverAddress)) {
+    const networkName = isTestnet ? 'testnet' : 'mainnet';
+    const envVar = isTestnet ? 'ALGORAND_TESTNET_RECEIVER_ADDRESS' : 'ALGORAND_MAINNET_RECEIVER_ADDRESS';
+    console.error(`❌ Invalid receiver address for ${networkName}:`, config.receiverAddress);
+    console.error(`💡 Set ${envVar} environment variable with a valid Algorand address for production`);
+    throw new Error(`Invalid receiver address configured for ${networkName}. Please set ${envVar} environment variable.`);
+  }
+  
   const algodClient = new algosdk.Algodv2('', config.algodServer, '');
   const indexerClient = new algosdk.Indexer('', config.indexerServer, '');
   
@@ -57,7 +66,7 @@ function getAlgorandClients(isTestnet: boolean = true) {
 export async function getAlgorandUSDTBalance(
   userAddress: string,
   isTestnet: boolean = true
-): Promise<{ success: boolean; balance: number; error?: string }> {
+): Promise<{ success: boolean; balance: number; optedIn?: boolean; error?: string }> {
   try {
     console.log('🔍 [getAlgorandUSDTBalance] Starting for:', userAddress, 'isTestnet:', isTestnet);
     const { indexerClient, config } = getAlgorandClients(isTestnet);
@@ -94,7 +103,8 @@ export async function getAlgorandUSDTBalance(
       console.log('❌ [getAlgorandUSDTBalance] USDt asset not found in account assets');
       return {
         success: true,
-        balance: 0
+        balance: 0,
+        optedIn: false
       };
     }
     
@@ -104,7 +114,8 @@ export async function getAlgorandUSDTBalance(
     
     return {
       success: true,
-      balance
+      balance,
+      optedIn: true // If we found the asset, user is opted in
     };
     
   } catch (error) {
@@ -112,6 +123,7 @@ export async function getAlgorandUSDTBalance(
     return {
       success: false,
       balance: 0,
+      optedIn: false,
       error: error instanceof Error ? error.message : 'Failed to get balance'
     };
   }
@@ -221,9 +233,24 @@ export async function executeAlgorandUSDTTransfer(
   try {
     const { algodClient, config } = getAlgorandClients(isTestnet);
     
-    // Check if user is opted in first
-    const optInCheck = await isOptedInToUSDT(walletInterface.address, isTestnet);
-    if (!optInCheck.success || !optInCheck.optedIn) {
+    // Check if user is opted in using improved balance check
+    console.log('🔍 [executeAlgorandUSDTTransfer] Checking opt-in status for:', walletInterface.address);
+    const balanceCheck = await getAlgorandUSDTBalance(walletInterface.address, isTestnet);
+    console.log('📊 [executeAlgorandUSDTTransfer] Balance check result:', balanceCheck);
+    
+    if (!balanceCheck.success) {
+      console.error('❌ [executeAlgorandUSDTTransfer] Balance check failed');
+      return {
+        success: false,
+        error: 'Failed to check USDT balance and opt-in status'
+      };
+    }
+    
+    const userOptedIn = balanceCheck.optedIn || false;
+    console.log('✅ [executeAlgorandUSDTTransfer] User opted in status:', userOptedIn);
+    
+    if (!userOptedIn) {
+      console.error('❌ [executeAlgorandUSDTTransfer] User not opted in');
       return {
         success: false,
         error: 'Please opt-in to USDT first using your wallet\'s asset management feature.'

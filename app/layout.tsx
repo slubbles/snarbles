@@ -7,6 +7,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { WalletAuthProvider } from '@/components/providers/WalletAuthProvider';
 import ClientWalletProvider from '@/components/providers/ClientWalletProvider';
 import { SkipToMain } from '@/components/ui/accessibility';
+import ChunkErrorBoundary from '@/components/ChunkErrorBoundary';
 
     export const metadata: Metadata = {
       title: 'Snarbles - Create Your Own Token in 30 Seconds',
@@ -65,6 +66,32 @@ function ServiceWorkerRegistration() {
           });
       });
     }
+
+    // Global chunk loading error handler
+    window.addEventListener('error', (event) => {
+      const { message, filename } = event;
+      const isChunkError = message.includes('Loading chunk') || 
+                          message.includes('ChunkLoadError') ||
+                          filename?.includes('/_next/static/chunks/');
+      
+      if (isChunkError) {
+        console.warn('🔄 Chunk loading error detected, reloading page');
+        window.location.reload();
+      }
+    });
+
+    // Handle unhandled promise rejections for chunk loading
+    window.addEventListener('unhandledrejection', (event) => {
+      const error = event.reason;
+      const isChunkError = error?.name === 'ChunkLoadError' ||
+                          error?.message?.includes('Loading chunk');
+      
+      if (isChunkError) {
+        console.warn('🔄 Chunk loading promise rejection, reloading page');
+        event.preventDefault();
+        window.location.reload();
+      }
+    });
   }
   return null;
 }
@@ -96,19 +123,21 @@ function ServiceWorkerRegistration() {
           <body className="font-inter antialiased bg-background">
             <ServiceWorkerRegistration />
             <SkipToMain />
-            <ClientWalletProvider>
-              <WalletAuthProvider>
-                <div className="relative min-h-screen">
-                  <NavbarOptimized />
-                  <BoltBadge />
-                  <main id="main-content" className="pt-16" role="main">
-                    {children}
-                  </main>
-                  <Footer />    
-                </div>
-                <Toaster />
-              </WalletAuthProvider>
-            </ClientWalletProvider>
+            <ChunkErrorBoundary>
+              <ClientWalletProvider>
+                <WalletAuthProvider>
+                  <div className="relative min-h-screen">
+                    <NavbarOptimized />
+                    <BoltBadge />
+                    <main id="main-content" className="pt-16" role="main">
+                      {children}
+                    </main>
+                    <Footer />    
+                  </div>
+                  <Toaster />
+                </WalletAuthProvider>
+              </ClientWalletProvider>
+            </ChunkErrorBoundary>
           </body>
         </html>
       );
