@@ -325,8 +325,8 @@ export async function createRealAlgorandToken(
       const assetId = Number(confirmedTxn.assetIndex || 0);
       
       const explorerUrl = isMainnet
-        ? `https://allo.info/asset/${assetId}`
-        : `https://testnet.algoexplorer.io/asset/${assetId}`;
+        ? `https://explorer.perawallet.app/asset/${assetId}`
+        : `https://testnet.explorer.perawallet.app/asset/${assetId}`;
 
       console.log('✅ REAL Algorand token creation completed!');
       console.log('🎉 Asset ID:', assetId);

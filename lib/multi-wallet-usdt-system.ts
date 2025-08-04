@@ -93,7 +93,7 @@ export const SUPPORTED_USDT_NETWORKS: USDTNetwork[] = [
     walletType: 'pera',
     contractAddress: '10458941', // USDt Asset ID on Testnet
     receiverAddress: 'SNARBLES_ALGO_TEST_RECEIVER_ADDRESS_HERE', // Will be provided
-    explorerUrl: 'https://testnet.algoexplorer.io',
+    explorerUrl: 'https://testnet.explorer.perawallet.app',
     decimals: 6,
     isTestnet: true
   },

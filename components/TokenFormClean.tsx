@@ -50,6 +50,7 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [deploymentResult, setDeploymentResult] = useState<any>(null);
   const [decimalSuggestion, setDecimalSuggestion] = useState<any>(null);
   const [showDecimalAdjustment, setShowDecimalAdjustment] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -69,6 +70,7 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
     setProcessing,
     setTokenCreationStep,
     updateStepsForNetwork,
+    setUserCredits,
   } = usePaymentState();
 
   // Validation
@@ -467,6 +469,15 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
           
           // Success
           setTokenCreationStep(4); // Success
+          
+          // Store deployment result for the modal
+          setDeploymentResult({
+            assetId: result.data?.assetId,
+            transactionId: result.data?.transactionId,
+            explorerUrl: result.data?.explorerUrl,
+            network: tokenData.network
+          });
+          
           toast({
             title: "🎉 Real Token Created Successfully!",
             description: `${tokenData.name} (${tokenData.symbol}) created on ${tokenData.network}. Asset ID: ${result.data?.assetId}`,
@@ -715,6 +726,11 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
     if (!result.success) {
       throw new Error(result.error || 'Failed to process credits payment');
     }
+    
+    // Update the credits balance in the global state
+    const newBalance = userCredits - creditsRequired;
+    setUserCredits(newBalance);
+    console.log(`✅ Credits updated: ${userCredits} → ${newBalance} (spent ${creditsRequired})`);
   };
 
   // Process ALGO direct payment
@@ -1483,8 +1499,9 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
       <TransactionStatusModalEnhanced
         isOpen={showTransactionModal}
         onClose={() => setShowTransactionModal(false)}
-        status={isDeploying ? 'preparing' : null}
+        status={null} // Let the modal use global payment state for status
         network={tokenData.network}
+        deploymentResult={deploymentResult}
         tokenData={{
           name: tokenData.name,
           symbol: tokenData.symbol,

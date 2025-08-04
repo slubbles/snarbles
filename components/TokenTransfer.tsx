@@ -108,7 +108,7 @@ export function TokenTransfer({ token }: TokenTransferProps) {
             success: true,
             txId: mockResult.txId!,
             explorerUrl: token.network.includes('testnet') 
-              ? `https://testnet.algoexplorer.io/tx/${mockResult.txId}`
+              ? `https://testnet.explorer.perawallet.app/tx/${mockResult.txId}`
               : `https://algoexplorer.io/tx/${mockResult.txId}`
           });
         } else {

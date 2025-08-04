@@ -20,7 +20,7 @@ const ALGO_PAYMENT_CONFIG = {
   TESTNET: {
     receiverAddress: 'PJEIDDKUOONTJOIV3BLZS7SZSAHCVKNNHTLKMASI6RTYSOZNSDY7MWGZ3M', // Your wallet address
     algodServer: 'https://testnet-api.algonode.cloud',
-    explorerUrl: 'https://testnet.algoexplorer.io'
+    explorerUrl: 'https://testnet.explorer.perawallet.app'
   }
 };
 

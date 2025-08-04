@@ -55,8 +55,13 @@ export default function WalletAwarePaymentSelector({
   const hasEnoughCredits = userCredits >= creditsRequired;
   const hasEnoughNative = walletBalance !== null && walletBalance >= nativeRequired;
   
+  // Local canPay logic that checks actual balances for selected method
+  const canPay = selectedMethod && (
+    (selectedMethod === 'credits' && hasEnoughCredits) ||
+    (selectedMethod === 'native_direct' && hasEnoughNative)
+  );
+  
   const {
-    canPay,
     currentStep,
     progressPercentage,
     needsConnection,

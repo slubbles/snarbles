@@ -731,7 +731,7 @@ export default function VerifyPage() {
         metrics,
         explorerUrl: actualNetwork === 'mainnet'
           ? `https://explorer.perawallet.app/asset/${assetId}`
-          : `https://testnet.algoexplorer.io/asset/${assetId}`,
+          : `https://testnet.explorer.perawallet.app/asset/${assetId}`,
         warnings: score < 70 ? [
           ...(score < 50 ? ['Low security score - proceed with caution'] : []),
           ...(asset.manager ? ['Asset has manager - not fully decentralized'] : []),

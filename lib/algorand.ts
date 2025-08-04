@@ -36,7 +36,7 @@ export const ALGORAND_NETWORKS = {
     token: '',
     port: '',
     chainId: 416002,
-    explorer: 'https://testnet.algoexplorer.io',
+    explorer: 'https://testnet.explorer.perawallet.app',
     isMainnet: false,
     color: 'bg-[#76f935]'
   }

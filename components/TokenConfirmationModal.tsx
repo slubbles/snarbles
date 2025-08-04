@@ -291,6 +291,19 @@ export default function TokenConfirmationModal({
             </div>
           )}
 
+          {/* Algorand Pera Wallet Network Note */}
+          {tokenData.network.includes('algorand') && (
+            <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg space-y-2">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-orange-600" />
+                <span className="text-sm font-medium text-orange-900">Pera Wallet Setup</span>
+              </div>
+              <p className="text-xs text-orange-700 leading-relaxed">
+                <strong>Important:</strong> Ensure your Pera Wallet is connected to the correct Algorand network ({tokenData.network.includes('mainnet') ? 'MainNet' : 'TestNet'}) before proceeding. Check your wallet's network settings to avoid transaction failures.
+              </p>
+            </div>
+          )}
+
           {/* Warning */}
           <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
             <p className="text-xs text-foreground leading-relaxed">

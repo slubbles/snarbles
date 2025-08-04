@@ -352,12 +352,12 @@ export default function EnhancedTokenMetadata({
               <Button
                 variant="outline"
                 onClick={() => {
-                  const explorerUrl = `https://testnet.algoexplorer.io/asset/${tokenId}`;
+                  const explorerUrl = `https://testnet.explorer.perawallet.app/asset/${tokenId}`;
                   window.open(explorerUrl, '_blank');
                 }}
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
-                AlgoExplorer
+                Pera Explorer
               </Button>
             )}
 

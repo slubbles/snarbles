@@ -525,7 +525,7 @@ export default function MetadataHistory({
                                   size="sm"
                                   onClick={() => {
                                     const explorerUrl = network === 'algorand' 
-                                      ? `https://testnet.algoexplorer.io/tx/${entry.transactionHash}`
+                                      ? `https://testnet.explorer.perawallet.app/tx/${entry.transactionHash}`
                                       : `https://explorer.solana.com/tx/${entry.transactionHash}?cluster=devnet`;
                                     window.open(explorerUrl, '_blank');
                                   }}
@@ -689,13 +689,13 @@ export default function MetadataHistory({
                             variant="outline"
                             onClick={() => {
                               const explorerUrl = network === 'algorand' 
-                                ? `https://testnet.algoexplorer.io/tx/${selectedEntry.transactionHash}`
+                                ? `https://testnet.explorer.perawallet.app/tx/${selectedEntry.transactionHash}`
                                 : `https://explorer.solana.com/tx/${selectedEntry.transactionHash}?cluster=devnet`;
                               window.open(explorerUrl, '_blank');
                             }}
                           >
                             <ExternalLink className="w-4 h-4 mr-2" />
-                            View on {network === 'algorand' ? 'AlgoExplorer' : 'Solana Explorer'}
+                            View on {network === 'algorand' ? 'Pera Explorer' : 'Solana Explorer'}
                           </Button>
                         </div>
                       </CardContent>

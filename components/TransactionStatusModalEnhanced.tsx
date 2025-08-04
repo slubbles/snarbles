@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -82,8 +82,9 @@ export default function TransactionStatusModalEnhanced({
     // Determine if this is Solana based on network prop or tokenData
     const isSolana = network?.includes('solana') || tokenData?.network?.includes('solana');
     
-    // Use global payment state steps if available and processing
-    if (isProcessing && steps.length > 0) {
+    // Use global payment state steps ONLY if we have an explicit status indicating we're processing
+    // and the global state is actively being used for token creation
+    if (isProcessing && steps.length > 0 && tokenCreationStep >= 0) {
       return steps.map((stepTitle: string, index: number) => ({
         id: `step-${index}`,
         title: stepTitle,
@@ -256,8 +257,11 @@ export default function TransactionStatusModalEnhanced({
   const totalSteps = getTransactionSteps().length;
   const activeStepIndex = getTransactionSteps().findIndex(step => step.status === 'active');
   
+  // Determine if we're in success state - either from explicit status or global payment state completion
+  const isSuccess = status === 'success' || (tokenCreationStep >= 4 && deploymentResult);
+  
   // More accurate progress calculation
-  const progressPercentage = status === 'success' ? 100 : 
+  const progressPercentage = isSuccess ? 100 : 
     activeStepIndex >= 0 ? ((activeStepIndex + 0.5) / totalSteps) * 100 :
     (completedSteps / totalSteps) * 100;
   
@@ -266,12 +270,12 @@ export default function TransactionStatusModalEnhanced({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={`${isMobile ? 'max-w-sm mx-4' : 'max-w-md'} rounded-xl`}>
-        <DialogHeader className="space-y-3">
+      <DialogContent className={`${isMobile ? 'max-w-[95vw] w-full mx-2' : 'max-w-lg w-full'} max-h-[90vh] overflow-y-auto rounded-xl z-50`}>
+        <DialogHeader className="space-y-3 pb-4">
           <div className="flex items-center justify-between">
             <DialogTitle className={`flex items-center gap-2 ${isMobile ? 'text-lg' : 'text-xl'}`}>
               {isMobile && <Smartphone className="w-5 h-5" />}
-              {status === 'success' ? (
+              {isSuccess ? (
                 <>
                   <CheckCircle className="w-6 h-6 text-primary" />
                   {isMobile ? 'Token Created!' : 'Token Created Successfully!'}
@@ -288,6 +292,11 @@ export default function TransactionStatusModalEnhanced({
                 </>
               )}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              {isSuccess ? 'Your token has been successfully created on the blockchain.' :
+               status === 'error' ? 'There was an error creating your token.' :
+               'Please wait while your token is being created on the blockchain.'}
+            </DialogDescription>
             <Button
               variant="ghost"
               size="sm"
@@ -315,7 +324,7 @@ export default function TransactionStatusModalEnhanced({
           )}
 
           {/* Enhanced Progress Bar - Always visible during transaction */}
-          {status !== 'success' && status !== 'error' && (
+          {!isSuccess && status !== 'error' && (
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-foreground">
@@ -352,7 +361,7 @@ export default function TransactionStatusModalEnhanced({
 
         <div className="space-y-4">
           {/* Transaction Steps */}
-          {status !== 'success' && (
+          {!isSuccess && (
             <div className="space-y-3">
               {getTransactionSteps().map((step, index) => (
                 <div
@@ -445,9 +454,9 @@ export default function TransactionStatusModalEnhanced({
           )}
 
           {/* Success State */}
-          {status === 'success' && deploymentResult && (
-            <div className="space-y-4">
-              <div className="text-center py-4">
+          {isSuccess && deploymentResult && (
+            <div className="space-y-6">
+              <div className="text-center py-2">
                 <div className="w-16 h-16 bg-gradient-to-r from-primary to-primary/80 rounded-full flex items-center justify-center mx-auto mb-4">
                   <CheckCircle className="w-8 h-8 text-white" />
                 </div>
@@ -460,13 +469,13 @@ export default function TransactionStatusModalEnhanced({
               </div>
 
               {/* Token Details */}
-              <div className="grid grid-cols-1 gap-3">
+              <div className="space-y-4">
                 {deploymentResult.assetId && (
-                  <div className="glass-card p-4 border border-primary/20">
+                  <div className="glass-card p-4 border border-primary/20 rounded-lg">
                     <div className="flex items-center justify-between">
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-primary mb-1">Asset ID</p>
-                        <p className={`font-mono ${isMobile ? 'text-lg' : 'text-xl'} font-bold text-foreground`}>
+                        <p className={`font-mono ${isMobile ? 'text-base' : 'text-lg'} font-bold text-foreground break-all`}>
                           {deploymentResult.assetId}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
@@ -477,7 +486,7 @@ export default function TransactionStatusModalEnhanced({
                         variant="ghost"
                         size="sm"
                         onClick={handleCopyAssetId}
-                        className="p-2 hover:bg-primary/10"
+                        className="p-2 hover:bg-primary/10 ml-2 flex-shrink-0"
                       >
                         {copiedAssetId ? (
                           <CheckCircle className="w-4 h-4 text-primary" />
@@ -490,7 +499,7 @@ export default function TransactionStatusModalEnhanced({
                 )}
 
                 {deploymentResult.transactionId && (
-                  <div className="glass-card p-3 border border-muted">
+                  <div className="glass-card p-4 border border-muted rounded-lg">
                     <div className="flex items-center justify-between">
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-muted-foreground mb-1">Transaction ID</p>
@@ -502,7 +511,7 @@ export default function TransactionStatusModalEnhanced({
                         variant="ghost"
                         size="sm"
                         onClick={handleCopyTxId}
-                        className="p-2 hover:bg-muted"
+                        className="p-2 hover:bg-muted ml-2 flex-shrink-0"
                       >
                         {copiedTxId ? (
                           <CheckCircle className="w-4 h-4 text-primary" />
@@ -516,13 +525,13 @@ export default function TransactionStatusModalEnhanced({
               </div>
 
               {/* Action Buttons */}
-              <div className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-3`}>
-                {/* Explorer Button */}
+              <div className="space-y-3">
+                {/* Primary action - Explorer button */}
                 {deploymentResult.explorerUrl && (
                   <Button
                     variant="default"
-                    size={isMobile ? "default" : "default"}
-                    className="flex-1 button-enhanced"
+                    size="default"
+                    className="w-full button-enhanced"
                     onClick={() => window.open(deploymentResult.explorerUrl, '_blank')}
                   >
                     <ExternalLink className="w-4 h-4 mr-2" />
@@ -530,46 +539,46 @@ export default function TransactionStatusModalEnhanced({
                   </Button>
                 )}
 
-                {/* Dashboard Button */}
-                <Button
-                  variant="outline"
-                  size={isMobile ? "default" : "default"}
-                  className="flex-1 border-border hover:bg-muted"
-                  onClick={() => {
-                    window.open('/dashboard', '_blank');
-                  }}
-                >
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  Dashboard
-                </Button>
+                {/* Secondary actions */}
+                <div className={`grid ${isMobile ? 'grid-cols-1 gap-2' : 'grid-cols-2 gap-3'}`}>
+                  <Button
+                    variant="outline"
+                    size="default"
+                    className="border-border hover:bg-muted"
+                    onClick={() => {
+                      window.open('/dashboard', '_blank');
+                    }}
+                  >
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Dashboard
+                  </Button>
 
-                {/* Create Token Again Button */}
-                <Button
-                  variant="ghost"
-                  size={isMobile ? "default" : "default"}
-                  className="flex-1 text-primary hover:bg-primary/10"
-                  onClick={() => {
-                    onClose();
-                    // Trigger form reset or navigate to create new token
-                    window.location.reload();
-                  }}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Again
-                </Button>
-              </div>
+                  <Button
+                    variant="ghost"
+                    size="default"
+                    className="text-primary hover:bg-primary/10"
+                    onClick={() => {
+                      onClose();
+                      window.location.reload();
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Again
+                  </Button>
+                </div>
 
-              {/* Share Button - moved to separate row for better spacing */}
-              <div className="flex justify-center">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground hover:text-foreground"
-                  onClick={handleShare}
-                >
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share Token Details
-                </Button>
+                {/* Share Button */}
+                <div className="flex justify-center pt-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-foreground"
+                    onClick={handleShare}
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Share Token Details
+                  </Button>
+                </div>
               </div>
 
               {/* Mobile-specific completion message */}

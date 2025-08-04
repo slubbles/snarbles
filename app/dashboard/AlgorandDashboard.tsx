@@ -2823,7 +2823,7 @@ export default function AlgorandDashboard() {
                           onClick={() => {
                             const explorerUrl = selectedNetwork === 'algorand-mainnet' 
                               ? `https://algoexplorer.io/asset/${token.assetId}`
-                              : `https://testnet.algoexplorer.io/asset/${token.assetId}`;
+                              : `https://testnet.explorer.perawallet.app/asset/${token.assetId}`;
                             window.open(explorerUrl, '_blank');
                           }}
                           className="border-gray-200 text-gray-700 hover:bg-gray-50"
