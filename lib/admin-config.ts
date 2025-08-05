@@ -20,7 +20,7 @@ export interface AdminConfig {
 // Default configuration
 const DEFAULT_CONFIG: AdminConfig = {
   fees: {
-    algorandMainnetFee: 10,     // 10 ALGO
+    algorandMainnetFee: 5,      // 5 ALGO (reduced from 10)
     algorandTestnetFee: 0,      // Free for testnet
     solanaMainnetFee: 0.1,      // 0.1 SOL
     solanaDevnetFee: 0,         // Free for devnet
