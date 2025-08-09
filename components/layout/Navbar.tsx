@@ -313,18 +313,6 @@ export default function Navbar() {
                     pathname === '/admin' ? 'w-full' : 'w-0 group-hover:w-full'
                   }`}></div>
                 </Link>
-
-                <Link
-                  href="/analytics"
-                  className={`text-muted-foreground hover:text-foreground transition-all duration-200 font-medium relative group ${
-                    pathname === '/analytics' ? 'text-red-500' : ''
-                  }`}
-                >
-                  Analytics
-                  <div className={`absolute -bottom-1 left-0 h-0.5 bg-red-500 transition-all duration-300 ${
-                    pathname === '/analytics' ? 'w-full' : 'w-0 group-hover:w-full'
-                  }`}></div>
-                </Link>
               </>
             )}
           </div>
@@ -805,17 +793,6 @@ export default function Navbar() {
                     }`}
                   >
                     Admin
-                  </Link>
-                  <Link
-                    href="/analytics"
-                    onClick={() => setIsMenuOpen(false)}
-                    className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${
-                      pathname === '/analytics'
-                        ? 'text-red-500 bg-red-500/10'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                    }`}
-                  >
-                    Analytics
                   </Link>
                 </>
               )}

@@ -745,7 +745,7 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
       return;
     }
     
-    const algoRequired = 0.1; // 0.1 ALGO for mainnet token creation
+    const algoRequired = 5; // 5 ALGO for mainnet token creation (updated from 0.1)
     
     // Check balance
     if (!walletBalance || walletBalance < algoRequired) {
@@ -1446,7 +1446,7 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
           <WalletAwarePaymentSelector 
             network={tokenData.network}
             creditsRequired={tokenData.network.includes('mainnet') ? 10 : 0}
-            nativeRequired={tokenData.network.includes('mainnet') ? 0.1 : 0}
+            nativeRequired={tokenData.network.includes('mainnet') ? 5 : 0}
           />
         </div>
 

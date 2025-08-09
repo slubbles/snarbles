@@ -1,7 +1,10 @@
 /**
  * Admin Configuration System
  * Allows the admin to configure platform fees and other settings
+ * Enhanced with environment-based security
  */
+
+import { ADMIN_CONFIG } from './admin-security';
 
 export interface AdminConfig {
   fees: {
@@ -17,7 +20,7 @@ export interface AdminConfig {
   };
 }
 
-// Default configuration
+// Default configuration using environment variables
 const DEFAULT_CONFIG: AdminConfig = {
   fees: {
     algorandMainnetFee: 5,      // 5 ALGO (reduced from 10)
@@ -25,10 +28,10 @@ const DEFAULT_CONFIG: AdminConfig = {
     solanaMainnetFee: 0.1,      // 0.1 SOL
     solanaDevnetFee: 0,         // Free for devnet
   },
-  adminWallet: 'PJEIDDKUOONTJOIV3BLZS7SZSAHCVKNNHTLKMASI6RTYSOZNSDY7MWGZ3M',
+  adminWallet: ADMIN_CONFIG.algorand.wallet,
   feeRecipients: {
-    algorand: 'PJEIDDKUOONTJOIV3BLZS7SZSAHCVKNNHTLKMASI6RTYSOZNSDY7MWGZ3M',
-    solana: '', // Add Solana address when needed
+    algorand: ADMIN_CONFIG.algorand.wallet,
+    solana: ADMIN_CONFIG.solana.wallet,
   }
 };
 
@@ -169,19 +172,28 @@ function isValidAlgorandAddress(address: string): boolean {
 
 /**
  * Check if the current user is an admin
- * Supports both Algorand and Solana wallet addresses
+ * Enhanced with environment-based security
  */
 export function isAdmin(walletAddress: string): boolean {
-  const config = getAdminConfig();
-  // Support both Algorand admin wallet and Solana admin wallet
-  const SOLANA_ADMIN = process.env.NEXT_PUBLIC_SOLANA_ADMIN_WALLET || 'SoLAdminWalletAddressHere'; // Use environment variable for Solana admin
-  return walletAddress === config.adminWallet || walletAddress === SOLANA_ADMIN;
+  try {
+    return walletAddress === ADMIN_CONFIG.algorand.wallet || 
+           walletAddress === ADMIN_CONFIG.solana.wallet;
+  } catch (error) {
+    console.error('Admin verification error:', error);
+    return false;
+  }
 }
 
 /**
  * Get admin wallet address
  */
 export function getAdminWallet(): string {
-  const config = getAdminConfig();
-  return config.adminWallet;
+  return ADMIN_CONFIG.algorand.wallet;
+}
+
+/**
+ * Get Solana admin wallet address
+ */
+export function getSolanaAdminWallet(): string {
+  return ADMIN_CONFIG.solana.wallet;
 }

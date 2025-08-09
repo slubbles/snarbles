@@ -12,7 +12,7 @@ export const PLATFORM_FEE_DESTINATION = 'PJEIDDKUOONTJOIV3BLZS7SZSAHCVKNNHTLKMAS
 export const ALGORAND_FEE_CONFIG_FALLBACK = {
   MAINNET: {
     enabled: true,
-    amount: 10_000_000, // 10 ALGO in microAlgos
+    amount: 5_000_000, // 5 ALGO in microAlgos (updated from 10)
     destination: PLATFORM_FEE_DESTINATION,
     description: 'Platform creation fee for Algorand Mainnet'
   },

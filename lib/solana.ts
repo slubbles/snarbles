@@ -49,8 +49,10 @@ export const dispatchWalletEvent = () => {
   }
 };
 
-// Admin wallet address - This is the authority from your deployed contract
-export const ADMIN_WALLET = new PublicKey('352YpA1YVHmN9Jirf5cDZdELWvsrP3DJVL7svAHJtmUj');
+// Admin wallet address - Environment-based configuration for security
+export const ADMIN_WALLET = new PublicKey(
+  process.env.NEXT_PUBLIC_ADMIN_SOLANA_WALLET || '352YpA1YVHmN9Jirf5cDZdELWvsrP3DJVL7svAHJtmUj'
+);
 
 // IDL from your smart contract
 export const IDL: Idl = {

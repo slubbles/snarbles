@@ -45,7 +45,7 @@ export interface PaymentResult {
 // Current pricing structure
 export const PRICING = {
   CREDITS_REQUIRED: 10,
-  ALGO_REQUIRED: 10,
+  ALGO_REQUIRED: 5,         // Updated to 5 ALGO (from 10)
   CREDIT_TO_ALGO_RATE: 0.5, // 1 credit = 0.5 ALGO
   ALGO_TO_CREDIT_RATE: 2,    // 1 ALGO = 2 credits
   packages: [
