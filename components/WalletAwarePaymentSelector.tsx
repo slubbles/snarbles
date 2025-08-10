@@ -266,7 +266,7 @@ export default function WalletAwarePaymentSelector({
   if (!walletInfo) {
     return (
       <Card className={className}>
-        <CardContent className="p-6">
+        <CardContent className="px-8 pt-10 pb-8">
           <div className="text-center">
             <Wallet className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-lg font-semibold mb-2">Connect Your Wallet</h3>
