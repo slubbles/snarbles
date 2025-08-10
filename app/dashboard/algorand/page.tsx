@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAlgorandWallet } from '@/components/providers/AlgorandWalletProvider';
 import { isAdmin as checkIsAdmin } from '@/lib/admin-config';
-import { DashboardLayout } from '@/components/dashboard/shared/DashboardLayout';
+import { DashboardLayout } from '@/components/dashboard/layout/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Wallet, ArrowRight } from 'lucide-react';
@@ -17,8 +17,8 @@ const AlgorandDashboard = dynamic(
   { 
     ssr: false,
     loading: () => (
-      <div className="min-h-screen app-background flex items-center justify-center">
-        <div className="glass-card p-8 text-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="bg-card border border-border rounded-lg p-8 text-center">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-500 mx-auto mb-4"></div>
           <p className="text-foreground text-lg font-semibold">Loading Algorand Dashboard...</p>
           <p className="text-muted-foreground mt-2">Please wait while we fetch your assets</p>
@@ -64,7 +64,7 @@ export default function AlgorandDashboardPage() {
       >
         <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="max-w-md mx-auto text-center">
-            <Card className="glass-card border-green-500/30 bg-green-500/5">
+            <Card className="bg-card border border-green-500/30">
               <CardHeader className="text-center">
                 <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto">
                   <Wallet className="w-8 h-8 text-green-500" />
@@ -78,7 +78,7 @@ export default function AlgorandDashboardPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
-                  <div className="text-sm text-green-600">
+                  <div className="text-sm text-green-400">
                     <p className="font-semibold mb-2">Supported Wallets:</p>
                     <ul className="list-disc list-inside space-y-1">
                       <li>Pera Wallet (Recommended)</li>

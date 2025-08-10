@@ -122,47 +122,6 @@ export default function CreateTokenPage() {
               Transform your idea into a real token in 30 seconds. 
               Simple, secure, and professional.
             </p>
-            
-            {/* Responsive Progress Indicator */}
-            <div className="mt-6 lg:mt-8 max-w-sm lg:max-w-md mx-auto">
-              <div className="flex items-center justify-between mb-2 lg:mb-3">
-                <span className="text-xs lg:text-sm text-muted-foreground">Setup Progress</span>
-                <span className="text-xs lg:text-sm font-semibold text-primary">{progressPercentage}%</span>
-              </div>
-              <div className="w-full bg-muted/30 rounded-full h-1.5 lg:h-2">
-                <div 
-                  className="bg-gradient-to-r from-primary to-primary/80 h-1.5 lg:h-2 rounded-full transition-all duration-500"
-                  style={{ width: `${progressPercentage}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile-Optimized Wallet Connection */}
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-3 lg:gap-4 mb-8 lg:mb-12">
-            <MultiWalletConnectionManager 
-              className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground px-6 lg:px-8 py-2.5 lg:py-3 rounded-lg font-semibold transition-colors text-sm lg:text-base"
-              preferredNetwork={tokenData.network.startsWith('solana') ? 'solana' : 'algorand'}
-              onConnectionChange={(connected, walletType, address) => {
-                if (connected && walletType) {
-                  if (walletType === 'solana' && !tokenData.network.startsWith('solana')) {
-                    setTokenData(prev => ({ ...prev, network: 'solana-devnet' }));
-                  } else if (walletType === 'algorand' && tokenData.network.startsWith('solana')) {
-                    setTokenData(prev => ({ ...prev, network: 'algorand-testnet' }));
-                  }
-                }
-              }}
-            />
-            
-            {/* Responsive Credits Display */}
-            {!isLoading && userCredits !== null && (
-              <div className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-muted/30 rounded-lg border border-border text-sm">
-                <CreditCard className="w-3 h-3 lg:w-4 lg:h-4 text-muted-foreground" />
-                <span className="text-foreground font-medium">
-                  {formatCredits(userCredits)} credits
-                </span>
-              </div>
-            )}
           </div>
 
           {/* Mobile-First Optimized Layout */}
@@ -184,57 +143,6 @@ export default function CreateTokenPage() {
                 {/* Mobile-optimized Preview */}
                 <div className="lg:sticky lg:top-8">
                   <TokenPreviewClean tokenData={tokenData} />
-                </div>
-                
-                {/* Collapsible Trust Indicators on Mobile */}
-                <div className="bg-card border border-border rounded-lg p-4 lg:p-6">
-                  <h3 className="text-base lg:text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                    <Shield className="w-4 h-4 lg:w-5 lg:h-5 text-primary" />
-                    Why Snarbles?
-                  </h3>
-                  
-                  <div className="space-y-3">
-                    {safetyFeatures.map((feature, index) => {
-                      const Icon = feature.icon;
-                      return (
-                        <div key={index} className="flex items-start gap-3 p-2 lg:p-3 rounded-lg hover:bg-muted/50 transition-colors">
-                          <Icon className="w-4 h-4 lg:w-5 lg:h-5 text-primary flex-shrink-0 mt-0.5" />
-                          <div>
-                            <h4 className="font-medium text-foreground text-xs lg:text-sm">{feature.title}</h4>
-                            <p className="text-xs text-muted-foreground hidden sm:block lg:text-xs">{feature.description}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Simple Pricing */}
-                <div className="bg-card border border-border rounded-lg p-4 lg:p-6">
-                  <h3 className="text-base lg:text-lg font-semibold text-foreground mb-4">
-                    Pricing
-                  </h3>
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center py-2">
-                      <span className="text-sm text-muted-foreground">Testnet</span>
-                      <span className="text-sm font-semibold text-green-500">Free</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-t border-border/50 pt-2">
-                      <span className="text-sm text-muted-foreground">Mainnet</span>
-                      <span className="text-sm font-semibold text-primary">5 credits</span>
-                    </div>
-                  </div>
-                  
-                  {/* Mobile Help Link */}
-                  <div className="mt-4 pt-4 border-t border-border/50">
-                    <Link 
-                      href="/credits" 
-                      className="text-xs text-primary hover:text-primary/80 transition-colors"
-                    >
-                      Need more credits? →
-                    </Link>
-                  </div>
                 </div>
                 
                 {/* Mobile-only Quick Actions */}

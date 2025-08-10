@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useAlgorandWallet } from '@/components/providers/AlgorandWalletProvider';
 import { DashboardLayout } from '@/components/dashboard/layout/DashboardLayout';
-import AnalyticsOverview from '@/components/dashboard/analytics/AnalyticsOverview';
+import TokenManagementPage from '@/components/dashboard/tokens/TokenManagementPage';
 
-export default function AlgorandAnalyticsPage() {
+export default function AlgorandTokensPage() {
   const [mounted, setMounted] = useState(false);
   const { connected: algorandConnected, address } = useAlgorandWallet();
 
@@ -27,12 +27,15 @@ export default function AlgorandAnalyticsPage() {
       walletAddress={address || undefined}
       isConnected={algorandConnected}
       stats={{
-        portfolioValue: 1420.75,
+        portfolioValue: 1250.75,
         totalTokens: 3,
-        totalTransactions: 127
+        totalTransactions: 45
       }}
     >
-      <AnalyticsOverview network="algorand" walletAddress={address || undefined} />
+      <TokenManagementPage 
+        network="algorand" 
+        walletAddress={address || undefined}
+      />
     </DashboardLayout>
   );
 }

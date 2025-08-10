@@ -20,13 +20,15 @@ interface MultiWalletConnectionManagerProps {
   className?: string;
   preferredNetwork?: 'algorand' | 'solana';
   showNetworkSelection?: boolean;
+  hideStatusWhenConnected?: boolean;
 }
 
 export default function MultiWalletConnectionManager({ 
   onConnectionChange, 
   className, 
   preferredNetwork = 'algorand',
-  showNetworkSelection = true 
+  showNetworkSelection = true,
+  hideStatusWhenConnected = false
 }: MultiWalletConnectionManagerProps) {
   const [selectedNetwork, setSelectedNetwork] = useState<'algorand' | 'solana'>(preferredNetwork);
   
@@ -149,7 +151,7 @@ export default function MultiWalletConnectionManager({
 
   const connectedWallet = getConnectedWalletInfo();
 
-  if (connectedWallet) {
+  if (connectedWallet && !hideStatusWhenConnected) {
     return (
       <Card className={`snarbles-glass border-emerald-500/30 ${className || ''}`}>
         <CardContent className="p-4">
