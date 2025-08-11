@@ -11,7 +11,7 @@ import { getCreditsBalance } from '@/lib/credit-system';
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
 import { useToast } from '@/hooks/use-toast';
 import { isMobile } from '@/lib/mobile-wallet-utils';
-import MobileWalletModal from '@/components/MobileWalletModal';
+import { SmartWalletModal } from '@/components/SmartWalletModal';
 import SolanaMobileWalletManager from '@/components/SolanaMobileWalletManager';
 import PeraWalletAppHandler from '@/components/PeraWalletAppHandler';
 
@@ -190,19 +190,10 @@ export default function CreateTokenPage() {
           )}
         </div>
         
-        {/* Mobile Wallet Modal */}
-        <MobileWalletModal
+        {/* Smart Wallet Modal */}
+        <SmartWalletModal
           isOpen={showMobileWalletModal}
           onClose={() => setShowMobileWalletModal(false)}
-          onWalletConnect={(walletType, connected) => {
-            if (connected) {
-              toast({
-                title: "Wallet Connected",
-                description: `Successfully connected to ${walletType === 'phantom' ? 'Phantom' : 'Pera'} wallet`,
-                duration: 3000,
-              });
-            }
-          }}
         />
       </div>
     </PeraWalletAppHandler>

@@ -6,13 +6,18 @@ import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import {
   PhantomWalletAdapter,
+  SolflareWalletAdapter,
+  CoinbaseWalletAdapter,
+  TrustWalletAdapter,
 } from '@solana/wallet-adapter-wallets';
 import { SOLANA_NETWORKS, CURRENT_SOLANA_NETWORK } from '@/lib/solana-data';
 import { AlgorandWalletProvider } from './AlgorandWalletProvider';
 import SolanaWalletErrorHandler from '@/components/SolanaWalletErrorHandler';
+import { mobileEducationManager } from '@/lib/mobile-education-events';
+import { isMobileConnectionError, isMobileDevice, needsWalletAppGuidance } from '@/lib/mobile-wallet-detection';
 
-// Import wallet adapter CSS - temporarily disabled due to CSP issues
-// import '@solana/wallet-adapter-react-ui/styles.css';
+// Import wallet adapter CSS 
+import '@solana/wallet-adapter-react-ui/styles.css';
 
 // Network Context for Solana network switching
 type SolanaNetworkType = typeof SOLANA_NETWORKS[keyof typeof SOLANA_NETWORKS];
@@ -114,17 +119,18 @@ function SolanaWalletProviderInner({ children }: { children: React.ReactNode }) 
   const endpoint = useMemo(() => currentNetwork.rpcUrl, [currentNetwork.rpcUrl]);
 
   // Enhanced wallet configuration with error handling and duplicate prevention
-  // Limited to Phantom and OKX wallets only
+  // Including popular Solana wallet adapters
   const wallets = useMemo(() => {
     console.log(`🔧 Configuring wallets for ${currentNetwork.name} (${network})`);
     
     try {
       // Create wallet adapters with explicit network configuration
-      // Only Phantom is configured through standard adapter
-      // OKX will be handled through custom detection
       const phantomAdapter = new PhantomWalletAdapter();
+      const solflareAdapter = new SolflareWalletAdapter();
+      const coinbaseAdapter = new CoinbaseWalletAdapter();
+      const trustAdapter = new TrustWalletAdapter();
       
-      const adapters = [phantomAdapter];
+      const adapters = [phantomAdapter, solflareAdapter, coinbaseAdapter, trustAdapter];
       
       // Add unique identifiers to prevent React key conflicts
       adapters.forEach((adapter, index) => {
@@ -133,7 +139,7 @@ function SolanaWalletProviderInner({ children }: { children: React.ReactNode }) 
       });
       
       console.log(`✅ Configured ${adapters.length} Solana wallet adapters`);
-      console.log(`📝 Supported wallets: Phantom (standard), OKX (custom detection)`);
+      console.log(`📝 Supported wallets: ${adapters.map(a => a.name).join(', ')}`);
       adapters.forEach((adapter, index) => {
         console.log(`  ${index + 1}. ${adapter.name} (${(adapter as any)._uniqueId})`);
       });
@@ -167,6 +173,16 @@ function SolanaWalletProviderInner({ children }: { children: React.ReactNode }) 
     console.error('Network:', currentNetwork.name);
     console.error('Full error:', error);
     console.groupEnd();
+
+    // Check if this should trigger mobile education
+    if (isMobileDevice() && needsWalletAppGuidance('solana') && isMobileConnectionError(error)) {
+      console.log('📱 Triggering mobile education for Solana wallet error');
+      mobileEducationManager.trigger({
+        walletType: 'solana',
+        error: errorMessage
+      });
+      return; // Don't show standard error if mobile education was triggered
+    }
 
     // Set user-friendly error message
     let userMessage = errorMessage;

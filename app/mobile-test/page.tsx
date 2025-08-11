@@ -17,7 +17,7 @@ import {
   Network
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { MobileWalletModal } from '@/components/MobileWalletModal';
+import { SmartWalletModal } from '@/components/SmartWalletModal';
 import { mobileAnalytics, type TouchTargetIssue } from '@/lib/mobile-analytics';
 
 interface TestResult {
@@ -563,13 +563,10 @@ export default function MobileTestingPage() {
         )}
       </div>
 
-      {/* Mobile Wallet Modal */}
-      <MobileWalletModal
+      {/* Smart Wallet Modal */}
+      <SmartWalletModal
         isOpen={isWalletModalOpen}
         onClose={() => setIsWalletModalOpen(false)}
-        onWalletConnect={(wallet, connected) => {
-          console.log(`Wallet ${wallet} connection: ${connected}`);
-        }}
       />
     </div>
   );

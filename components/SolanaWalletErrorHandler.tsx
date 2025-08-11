@@ -8,6 +8,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useWalletConnectionErrors } from '@/hooks/useWalletConnectionErrors';
+import { mobileEducationManager } from '@/lib/mobile-education-events';
 import { 
   AlertTriangle, 
   RefreshCw, 
@@ -78,6 +80,7 @@ export function SolanaWalletErrorHandler({ children }: SolanaWalletErrorHandlerP
   const [showDetailed, setShowDetailed] = useState(false);
   const [lastError, setLastError] = useState<WalletError | null>(null);
   const { toast } = useToast();
+  const { handleConnectionError } = useWalletConnectionErrors();
 
   // Detect wallet availability
   useEffect(() => {
@@ -151,6 +154,16 @@ export function SolanaWalletErrorHandler({ children }: SolanaWalletErrorHandlerP
     const handleError = (error: WalletError) => {
       setLastError(error);
       
+      // Check if this should trigger mobile education
+      if (handleConnectionError(error as Error, 'solana')) {
+        console.log('📱 Triggering mobile education for Solana wallet error');
+        mobileEducationManager.trigger({
+          walletType: 'solana',
+          error: error.message
+        });
+        return; // Don't show toast if mobile education was triggered
+      }
+      
       let errorMessage = 'Wallet connection failed';
       let actionable = false;
 
@@ -192,7 +205,7 @@ export function SolanaWalletErrorHandler({ children }: SolanaWalletErrorHandlerP
 
     // Error handling would be implemented based on wallet provider events
     // This is a placeholder for the error handling logic
-  }, [toast]);
+  }, [toast, handleConnectionError]);
 
   const getWalletStatusIcon = (status: WalletStatus) => {
     if (status.isConnected) return <CheckCircle className="w-4 h-4 text-green-500" />;

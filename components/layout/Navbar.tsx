@@ -6,7 +6,7 @@ import { Menu, X, Wallet, ChevronDown, Copy, Check, AlertTriangle, HelpCircle, C
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useWallet } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { WalletMultiButton, useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { useAlgorandWallet } from '@/components/providers/AlgorandWalletProvider';
 import { ADMIN_WALLET } from '@/lib/solana';
 import { isAdmin as checkIsAdmin } from '@/lib/admin-config';
@@ -14,10 +14,13 @@ import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
 import MainnetConnectionModal from '@/components/MainnetConnectionModal';
-import MobileWalletModal from '@/components/MobileWalletModal';
+import { SmartWalletModal } from '@/components/SmartWalletModal';
 import SolanaWalletManager from '@/components/SolanaWalletManager';
-import EnhancedSolanaWalletButton from '@/components/EnhancedSolanaWalletButton';
 import { isMobile } from '@/lib/mobile-wallet-utils';
+import MobileWalletGuidanceModal from '@/components/MobileWalletGuidanceModal';
+import { useWalletConnectionErrors } from '@/hooks/useWalletConnectionErrors';
+import MobileWalletDisconnect from '@/components/MobileWalletDisconnect';
+import { mobileEducationManager } from '@/lib/mobile-education-events';
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -32,9 +35,20 @@ export default function Navbar() {
   const [showMainnetModal, setShowMainnetModal] = useState<boolean>(false);
   const [showMobileWalletModal, setShowMobileWalletModal] = useState<boolean>(false);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
+  
+  // Mobile wallet guidance state - ONLY for mobile devices
+  const [showMobileGuidance, setShowMobileGuidance] = useState<{
+    show: boolean;
+    walletType: 'solana' | 'algorand';
+    error?: string;
+  }>({ show: false, walletType: 'solana' });
+  
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
+  
+  // Mobile wallet connection error handler
+  const { handleConnectionError } = useWalletConnectionErrors();
   
   // Wallet authentication
   const { 
@@ -48,6 +62,7 @@ export default function Navbar() {
   
   // Solana wallet
   const { connected: solanaConnected, publicKey: solanaPublicKey, disconnect: disconnectSolana } = useWallet();
+  const { setVisible: setWalletModalVisible } = useWalletModal();
   
   // Algorand wallet
   const { 
@@ -111,6 +126,20 @@ export default function Navbar() {
     loadCreditsBalance();
   }, [walletAddress, isAuthenticated, getCreditsBalance]);
 
+  // Listen for mobile education events from wallet components
+  useEffect(() => {
+    const unsubscribe = mobileEducationManager.subscribe((event) => {
+      console.log('📱 Mobile education event received:', event);
+      setShowMobileGuidance({
+        show: true,
+        walletType: event.walletType,
+        error: event.error
+      });
+    });
+
+    return unsubscribe;
+  }, []);
+
   // Core navigation items for desktop
   const coreNavLinks = [
     { name: 'Create Token', href: '/create' },
@@ -155,8 +184,19 @@ export default function Navbar() {
     try {
       await connectAlgorand();
       setShowWalletOptions(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to connect Algorand wallet:', error);
+      
+      // Check if this is a mobile connection error that needs guidance
+      if (handleConnectionError(error, 'algorand')) {
+        console.log('📱 Showing mobile guidance for Algorand wallet');
+        setShowMobileGuidance({
+          show: true,
+          walletType: 'algorand',
+          error: error.message
+        });
+        return;
+      }
       
       // Show the modal for mainnet connection issues
       if (algorandSelectedNetwork === 'algorand-mainnet') {
@@ -535,12 +575,38 @@ export default function Navbar() {
                           )}
                           {(!solanaConnected || !solanaPublicKey) && (
                             <div>
-                              <EnhancedSolanaWalletButton 
-                                className="!w-full"
-                                size="md"
-                                showStatus={true}
-                                variant="default"
-                              />
+                              <Button
+                                onClick={() => {
+                                  try {
+                                    // Trigger the standard Solana wallet modal
+                                    setWalletModalVisible(true);
+                                    setShowWalletOptions(false);
+                                  } catch (error: any) {
+                                    console.log('🔍 Solana wallet connection error:', error);
+                                    
+                                    // Check if this is a mobile connection error that needs guidance
+                                    if (handleConnectionError(error, 'solana')) {
+                                      console.log('📱 Showing mobile guidance for Solana wallet');
+                                      setShowMobileGuidance({
+                                        show: true,
+                                        walletType: 'solana',
+                                        error: error.message
+                                      });
+                                    } else {
+                                      // Standard error handling for non-mobile or other errors
+                                      toast({
+                                        title: "Connection Failed",
+                                        description: error.message || "Failed to connect Solana wallet",
+                                        variant: "destructive"
+                                      });
+                                    }
+                                  }
+                                }}
+                                className="w-full button-enhanced py-2 text-sm"
+                              >
+                                <Wallet className="w-4 h-4 mr-2" />
+                                Connect Solana Wallet
+                              </Button>
                             </div>
                           )}
                         </div>
@@ -656,17 +722,18 @@ export default function Navbar() {
                               <Button
                                 onClick={handleAlgorandConnect}
                                 disabled={!isPeraWalletReady || algorandIsConnecting}
+                                className="w-full button-enhanced py-2 text-sm"
                               >
                                 {algorandIsConnecting ? (
                                   <div className="flex items-center justify-center">
-                                    <div className="w-3 h-3 border-2 border-black border-t-transparent rounded-full animate-spin mr-1"></div>
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                                     <span>Connecting...</span>
                                   </div>
                                 ) : (
-                                  <div className="flex items-center justify-center">
-                                    <Wallet className="w-3 h-3 mr-1" />
-                                    <span>Connect Pera Wallet</span>
-                                  </div>
+                                  <>
+                                    <Wallet className="w-4 h-4 mr-2" />
+                                    Connect Pera Wallet
+                                  </>
                                 )}
                               </Button>
                               
@@ -716,10 +783,6 @@ export default function Navbar() {
                 />
               )}
 
-              {/* Hidden WalletMultiButton for fallback - ensure it doesn't interfere */}
-              <div className="hidden opacity-0 pointer-events-none">
-                <WalletMultiButton />
-              </div>
             </div>
           </div>
 
@@ -815,29 +878,31 @@ export default function Navbar() {
                     Connect Wallet
                   </Button>
                 ) : (
-                  <div className="space-y-2">
-                    {solanaConnected && (
-                      <div className="flex items-center justify-between p-3 bg-[#AB9FF2]/10 border border-[#AB9FF2]/20 rounded-lg">
-                        <div className="flex items-center space-x-2">
-                          <div className="w-6 h-6 rounded-full bg-[#AB9FF2] flex items-center justify-center">
-                            <span className="text-white font-bold text-xs">S</span>
-                          </div>
-                          <span className="text-sm font-medium">{formatAddress(solanaPublicKey!.toString())}</span>
-                        </div>
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      </div>
+                  <div className="space-y-3">
+                    {/* Solana Wallet Display with Disconnect */}
+                    {solanaConnected && solanaPublicKey && (
+                      <MobileWalletDisconnect
+                        walletType="solana"
+                        walletAddress={solanaPublicKey.toString()}
+                        onDisconnect={async () => {
+                          await disconnectSolana();
+                          setIsMenuOpen(false);
+                        }}
+                        isConnected={solanaConnected}
+                      />
                     )}
                     
-                    {algorandConnected && (
-                      <div className="flex items-center justify-between p-3 bg-[#22C55E]/10 border border-[#22C55E]/20 rounded-lg">
-                        <div className="flex items-center space-x-2">
-                          <div className="w-6 h-6 rounded-full bg-[#22C55E] flex items-center justify-center">
-                            <span className="text-white font-bold text-xs">A</span>
-                          </div>
-                          <span className="text-sm font-medium">{formatAddress(algorandAddress!)}</span>
-                        </div>
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      </div>
+                    {/* Algorand Wallet Display with Disconnect */}
+                    {algorandConnected && algorandAddress && (
+                      <MobileWalletDisconnect
+                        walletType="algorand"
+                        walletAddress={algorandAddress}
+                        onDisconnect={async () => {
+                          await handleAlgorandDisconnect();
+                          setIsMenuOpen(false);
+                        }}
+                        isConnected={algorandConnected}
+                      />
                     )}
                   </div>
                 )}
@@ -854,18 +919,17 @@ export default function Navbar() {
       />
       
       {/* Mobile Wallet Modal */}
-      <MobileWalletModal
+      <SmartWalletModal
         isOpen={showMobileWalletModal}
         onClose={() => setShowMobileWalletModal(false)}
-        onWalletConnect={(walletType, connected) => {
-          if (connected) {
-            toast({
-              title: "Wallet Connected",
-              description: `Successfully connected to ${walletType === 'phantom' ? 'Phantom' : 'Pera'} wallet`,
-              duration: 3000,
-            });
-          }
-        }}
+      />
+      
+      {/* Mobile Wallet Guidance Modal - ONLY for mobile devices */}
+      <MobileWalletGuidanceModal
+        isOpen={showMobileGuidance.show}
+        onClose={() => setShowMobileGuidance({ show: false, walletType: 'solana' })}
+        walletType={showMobileGuidance.walletType}
+        error={showMobileGuidance.error}
       />
     </nav>
   );
