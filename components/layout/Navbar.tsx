@@ -15,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
 import MainnetConnectionModal from '@/components/MainnetConnectionModal';
 import { SmartWalletModal } from '@/components/SmartWalletModal';
+import WalletManagementModal from '@/components/WalletManagementModal';
 import SolanaWalletManager from '@/components/SolanaWalletManager';
 import { isMobile } from '@/lib/mobile-wallet-utils';
 import MobileWalletGuidanceModal from '@/components/MobileWalletGuidanceModal';
@@ -919,7 +920,7 @@ export default function Navbar() {
       />
       
       {/* Mobile Wallet Modal */}
-      <SmartWalletModal
+      <WalletManagementModal
         isOpen={showMobileWalletModal}
         onClose={() => setShowMobileWalletModal(false)}
       />
