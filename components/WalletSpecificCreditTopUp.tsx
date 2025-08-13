@@ -512,7 +512,25 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
 
   const walletInfo = getWalletSpecificInfo();
 
-  if (!isAuthenticated || !walletInfo) {
+  // Show loading state while wallet is connecting
+  if (isLoading && !walletAddress) {
+    return (
+      <Card className="glass-card">
+        <CardContent className="p-8 text-center">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          </div>
+          <h3 className="text-xl font-bold text-foreground mb-3">Loading Wallet...</h3>
+          <p className="text-muted-foreground">
+            Checking wallet connection status
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show connect wallet message when not authenticated
+  if (!isAuthenticated || !walletAddress || !walletType || !walletInfo) {
     return (
       <Card className="glass-card">
         <CardContent className="p-8 text-center">
@@ -523,6 +541,15 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
           <p className="text-muted-foreground">
             Connect your Pera or Phantom wallet to top up credits
           </p>
+          {/* Debug info for development */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-4 p-3 bg-gray-800 rounded text-xs text-left">
+              <p>Debug: isAuthenticated = {String(isAuthenticated)}</p>
+              <p>Debug: walletAddress = {walletAddress || 'null'}</p>
+              <p>Debug: walletType = {walletType || 'null'}</p>
+              <p>Debug: walletInfo = {walletInfo ? 'present' : 'null'}</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     );

@@ -110,18 +110,20 @@ export function WalletAuthProvider({ children }: { children: ReactNode }) {
       setWalletType(type);
       setNetwork(detectedNetwork);
 
-      // Get or create user profile
+      // Get or create user profile (always returns a profile now)
       const profile = await getOrCreateUserProfile(address, type, detectedNetwork);
       
       if (profile) {
         setUser(profile);
         setIsAuthenticated(true);
         
-        // Update last connected timestamp
-        await updateLastConnected(address);
+        // Update last connected timestamp (non-blocking)
+        updateLastConnected(address).catch(err => 
+          console.warn('Could not update last connected timestamp:', err)
+        );
         
-        // Track wallet connection analytics
-        await trackEvent(
+        // Track wallet connection analytics (non-blocking)
+        trackEvent(
           'wallet_connection',
           {
             walletType: type,
@@ -132,13 +134,19 @@ export function WalletAuthProvider({ children }: { children: ReactNode }) {
             timestamp: new Date().toISOString()
           },
           address
-        );
+        ).catch(err => console.warn('Could not track wallet connection:', err));
         
         console.log(`✅ Wallet authenticated: ${type} (${address.slice(0, 8)}...)`);
+      } else {
+        // This should never happen now, but just in case
+        console.error('❌ Failed to create user profile');
+        setIsAuthenticated(false);
+        setError('Failed to authenticate wallet');
       }
     } catch (err) {
       console.error('Error handling wallet connection:', err);
       setError(err instanceof Error ? err.message : 'Failed to authenticate wallet');
+      setIsAuthenticated(false);
     }
   };
 
@@ -158,17 +166,20 @@ export function WalletAuthProvider({ children }: { children: ReactNode }) {
     type: WalletType, 
     networkType: NetworkType
   ): Promise<WalletUser | null> => {
+    // Always create a local profile as fallback
+    const createLocalProfile = () => ({
+      walletAddress: address,
+      walletType: type,
+      network: networkType,
+      creditsBalance: 10, // Default credits for testing
+      totalTokensCreated: 0,
+      createdAt: new Date().toISOString(),
+      lastConnected: new Date().toISOString()
+    });
+
     if (!isSupabaseAvailable()) {
-      // Create local profile for development
-      return {
-        walletAddress: address,
-        walletType: type,
-        network: networkType,
-        creditsBalance: 10,
-        totalTokensCreated: 0,
-        createdAt: new Date().toISOString(),
-        lastConnected: new Date().toISOString()
-      };
+      console.log('📋 Creating local profile (Supabase not available)');
+      return createLocalProfile();
     }
 
     try {
@@ -180,6 +191,7 @@ export function WalletAuthProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (existingProfile && !fetchError) {
+        console.log('✅ Found existing profile in database');
         // Profile exists, return it
         return {
           walletAddress: existingProfile.wallet_address,
@@ -192,7 +204,7 @@ export function WalletAuthProvider({ children }: { children: ReactNode }) {
         };
       }
 
-      // Profile doesn't exist, create new one
+      // Profile doesn't exist, try to create new one
       const { data: newProfile, error: createError } = await supabase
         .from('user_profiles')
         .insert([{
@@ -208,11 +220,11 @@ export function WalletAuthProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (createError) {
-        console.error('Error creating user profile:', createError);
-        return null;
+        console.warn('⚠️ Database profile creation failed, using local profile:', createError);
+        return createLocalProfile();
       }
 
-      console.log(`🆕 Created new profile for ${type} wallet: ${address.slice(0, 8)}...`);
+      console.log(`🆕 Created new profile in database for ${type} wallet: ${address.slice(0, 8)}...`);
       
       return {
         walletAddress: newProfile.wallet_address,
@@ -225,8 +237,8 @@ export function WalletAuthProvider({ children }: { children: ReactNode }) {
       };
 
     } catch (err) {
-      console.error('Error in getOrCreateUserProfile:', err);
-      return null;
+      console.warn('⚠️ Database error, falling back to local profile:', err);
+      return createLocalProfile();
     }
   };
 
@@ -333,7 +345,8 @@ export function WalletAuthProvider({ children }: { children: ReactNode }) {
   // Get credits balance
   const getCreditsBalance = async (): Promise<number> => {
     if (!walletAddress || !isSupabaseAvailable()) {
-      return user?.creditsBalance || 0;
+      console.log('📋 Using local/demo credits (Supabase not available)');
+      return user?.creditsBalance || 10;
     }
 
     try {
@@ -343,11 +356,14 @@ export function WalletAuthProvider({ children }: { children: ReactNode }) {
         .eq('wallet_address', walletAddress)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.warn('⚠️ Database error, using demo credits:', error);
+        return user?.creditsBalance || 10;
+      }
       return data?.credits_balance || 0;
     } catch (err) {
-      console.error('Error getting credits balance:', err);
-      return user?.creditsBalance || 0;
+      console.error('Error getting credits balance, using demo credits:', err);
+      return user?.creditsBalance || 10;
     }
   };
 

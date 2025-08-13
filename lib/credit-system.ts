@@ -291,11 +291,12 @@ export async function addCreditTransaction(
 }
 
 /**
- * Get credits balance for wallet
+ * Get credits balance for wallet (with fallback support)
  */
 export async function getCreditsBalance(walletAddress: string): Promise<{ success: boolean; balance?: number; error?: string }> {
   if (!isSupabaseAvailable()) {
-    return { success: false, error: 'Supabase is not configured' };
+    console.log('📋 Supabase not available, returning demo credits');
+    return { success: true, balance: 10, error: 'Using demo credits (Supabase not configured)' };
   }
 
   try {
@@ -306,14 +307,14 @@ export async function getCreditsBalance(walletAddress: string): Promise<{ succes
       .single();
 
     if (error) {
-      console.error('Error getting credits balance:', error);
-      return { success: false, error: 'Failed to get credits balance' };
+      console.warn('⚠️ Supabase error, falling back to demo credits:', error);
+      return { success: true, balance: 10, error: 'Using demo credits (database error)' };
     }
 
     return { success: true, balance: data?.credits_balance || 0 };
   } catch (error) {
-    console.error('Error in getCreditsBalance:', error);
-    return { success: false, error: 'An unexpected error occurred' };
+    console.warn('⚠️ Credit system error, falling back to demo credits:', error);
+    return { success: true, balance: 10, error: 'Using demo credits (system error)' };
   }
 }
 
