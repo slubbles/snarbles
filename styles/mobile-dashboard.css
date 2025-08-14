@@ -1,0 +1,320 @@
+/* Mobile-responsive fixes for dashboard components */
+
+/* Dashboard Layout Mobile Fixes */
+.dashboard-mobile-container {
+  @apply px-3 sm:px-4 lg:px-8;
+  @apply py-3 sm:py-6;
+}
+
+.dashboard-mobile-header {
+  @apply text-xl sm:text-2xl lg:text-3xl font-bold;
+}
+
+.dashboard-mobile-wallet {
+  @apply text-xs sm:text-sm;
+  @apply truncate max-w-[200px] sm:max-w-none;
+}
+
+/* Mobile Stats Cards */
+.dashboard-stats-grid {
+  @apply grid grid-cols-2 lg:grid-cols-4;
+  @apply gap-3 sm:gap-6;
+}
+
+.dashboard-stat-card {
+  @apply p-3 sm:p-4;
+}
+
+.dashboard-stat-title {
+  @apply text-xs sm:text-sm font-medium;
+}
+
+.dashboard-stat-value {
+  @apply text-lg sm:text-2xl font-bold;
+}
+
+.dashboard-stat-change {
+  @apply text-xs;
+}
+
+/* Mobile Tabs */
+.dashboard-tabs-mobile {
+  @apply grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6;
+  @apply h-auto sm:h-12;
+}
+
+.dashboard-tab-mobile {
+  @apply text-xs sm:text-sm;
+  @apply py-2 sm:py-3;
+  @apply px-2 sm:px-4;
+}
+
+.dashboard-tab-icon {
+  @apply w-3 h-3 sm:w-4 sm:h-4;
+  @apply sm:mr-2;
+}
+
+.dashboard-tab-text {
+  @apply hidden sm:inline;
+}
+
+.dashboard-tab-text-mobile {
+  @apply sm:hidden;
+}
+
+/* Mobile Token Cards */
+.token-card-mobile {
+  @apply flex flex-col sm:flex-row;
+  @apply space-y-3 sm:space-y-0;
+  @apply p-3 sm:p-4;
+}
+
+.token-avatar-mobile {
+  @apply w-10 h-10 sm:w-12 sm:h-12;
+  @apply rounded-full;
+}
+
+.token-info-mobile {
+  @apply min-w-0 flex-1;
+}
+
+.token-name-mobile {
+  @apply truncate text-sm sm:text-base font-semibold;
+}
+
+.token-symbol-mobile {
+  @apply text-xs sm:text-sm text-muted-foreground;
+}
+
+.token-balance-mobile {
+  @apply text-sm sm:text-base font-semibold;
+}
+
+.token-value-mobile {
+  @apply text-xs sm:text-sm text-muted-foreground;
+}
+
+.token-actions-mobile {
+  @apply flex gap-2;
+  @apply flex-wrap sm:flex-nowrap;
+}
+
+.token-action-btn-mobile {
+  @apply flex-1 sm:flex-none;
+  @apply text-xs sm:text-sm;
+  @apply py-1 px-2 sm:py-2 sm:px-3;
+}
+
+/* Mobile Analytics */
+.analytics-grid-mobile {
+  @apply grid grid-cols-1 lg:grid-cols-2;
+  @apply gap-4 lg:gap-6;
+}
+
+.analytics-card-mobile {
+  @apply p-4 sm:p-6;
+}
+
+.analytics-chart-mobile {
+  @apply h-48 sm:h-64 lg:h-80;
+}
+
+/* Mobile Portfolio */
+.portfolio-grid-mobile {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3;
+  @apply gap-4 lg:gap-6;
+}
+
+/* Mobile Transaction List */
+.transaction-item-mobile {
+  @apply flex items-center justify-between;
+  @apply p-2 sm:p-3;
+  @apply space-x-2 sm:space-x-3;
+}
+
+.transaction-info-mobile {
+  @apply flex items-center space-x-2;
+  @apply min-w-0 flex-1;
+}
+
+.transaction-type-mobile {
+  @apply text-xs sm:text-sm font-medium;
+  @apply capitalize;
+}
+
+.transaction-amount-mobile {
+  @apply text-xs sm:text-sm text-muted-foreground;
+  @apply truncate;
+}
+
+.transaction-time-mobile {
+  @apply text-xs text-muted-foreground;
+  @apply whitespace-nowrap;
+}
+
+/* Mobile Buttons */
+.btn-mobile {
+  @apply text-xs sm:text-sm;
+  @apply py-1 px-2 sm:py-2 sm:px-3;
+}
+
+.btn-icon-mobile {
+  @apply w-3 h-3 sm:w-4 sm:h-4;
+}
+
+/* Mobile Spacing */
+.section-spacing-mobile {
+  @apply mb-4 sm:mb-6 lg:mb-8;
+}
+
+.card-spacing-mobile {
+  @apply space-y-3 sm:space-y-4;
+}
+
+/* Mobile Text Responsiveness */
+.heading-mobile {
+  @apply text-lg sm:text-xl lg:text-2xl;
+}
+
+.subheading-mobile {
+  @apply text-base sm:text-lg lg:text-xl;
+}
+
+.body-mobile {
+  @apply text-sm sm:text-base;
+}
+
+.caption-mobile {
+  @apply text-xs sm:text-sm;
+}
+
+/* Mobile Modal/Dialog */
+.modal-mobile {
+  @apply mx-4 sm:mx-auto;
+  @apply max-w-sm sm:max-w-md lg:max-w-lg;
+}
+
+.modal-content-mobile {
+  @apply p-4 sm:p-6;
+}
+
+/* Mobile Network Badge */
+.network-badge-mobile {
+  @apply text-xs px-2 py-1;
+  @apply sm:text-sm sm:px-3 sm:py-1.5;
+}
+
+/* Mobile Wallet Address Display */
+.wallet-address-mobile {
+  @apply font-mono text-xs;
+  @apply break-all sm:break-normal;
+}
+
+/* Mobile Responsive Utilities */
+.hide-mobile {
+  @apply hidden sm:block;
+}
+
+.show-mobile {
+  @apply block sm:hidden;
+}
+
+.flex-mobile {
+  @apply flex-col sm:flex-row;
+}
+
+.gap-mobile {
+  @apply gap-2 sm:gap-4;
+}
+
+.padding-mobile {
+  @apply p-3 sm:p-4 lg:p-6;
+}
+
+.margin-mobile {
+  @apply m-2 sm:m-4 lg:m-6;
+}
+
+/* Mobile Scrolling */
+.scroll-mobile {
+  @apply overflow-x-auto;
+  scrollbar-width: thin;
+}
+
+.scroll-mobile::-webkit-scrollbar {
+  height: 4px;
+}
+
+.scroll-mobile::-webkit-scrollbar-track {
+  @apply bg-muted/20;
+}
+
+.scroll-mobile::-webkit-scrollbar-thumb {
+  @apply bg-muted/60 rounded;
+}
+
+/* Mobile Table */
+.table-mobile {
+  @apply w-full overflow-x-auto;
+}
+
+.table-mobile table {
+  @apply min-w-full;
+}
+
+.table-mobile th,
+.table-mobile td {
+  @apply px-2 py-2 sm:px-4 sm:py-3;
+  @apply text-xs sm:text-sm;
+}
+
+/* Mobile Form Elements */
+.input-mobile {
+  @apply text-sm sm:text-base;
+  @apply py-2 px-3 sm:py-3 sm:px-4;
+}
+
+.label-mobile {
+  @apply text-sm sm:text-base;
+}
+
+/* Mobile Loading States */
+.loading-mobile {
+  @apply h-16 sm:h-20 lg:h-24;
+  @apply animate-pulse bg-muted/20 rounded;
+}
+
+/* Enhanced mobile interactions */
+@media (max-width: 640px) {
+  .mobile-touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .mobile-tap-highlight {
+    -webkit-tap-highlight-color: rgba(118, 249, 53, 0.1);
+  }
+}
+
+/* High DPI mobile displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .mobile-crisp-edges {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Dark mode mobile adjustments */
+@media (prefers-color-scheme: dark) {
+  .mobile-dark-contrast {
+    @apply contrast-125 brightness-110;
+  }
+}
+
+/* Reduced motion for mobile */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-no-animation {
+    animation: none !important;
+    transition: none !important;
+  }
+}

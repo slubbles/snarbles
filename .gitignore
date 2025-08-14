@@ -27,6 +27,7 @@ yarn-error.log*
 # local env files
 .env
 .env*.local
+.env.production
 
 # vercel
 .vercel
@@ -34,3 +35,38 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# IDE files
+.vscode/settings.json
+.idea/
+
+# Database files
+*.db
+*.sqlite
+
+# Backup files
+*.bak
+*.backup
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# ESLint cache
+.eslintcache
+
+# Supabase
+.supabase/
+
+# Temporary files
+.tmp/
+temp/

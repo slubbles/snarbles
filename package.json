@@ -1,6 +1,25 @@
 {
-  "name": "snarbles-token-platform",
-  "version": "0.1.0",
+  "name": "snarbles",
+  "version": "1.0.0",
+  "description": "Professional token creation platform for Algorand and Solana blockchains. Create tokens in under 30 seconds with advanced features and analytics.",
+  "keywords": [
+    "blockchain",
+    "tokens",
+    "algorand",
+    "solana",
+    "defi",
+    "web3",
+    "nextjs",
+    "typescript",
+    "crypto",
+    "token-creation",
+    "dapp"
+  ],
+  "homepage": "https://snarbles.com",
+  "author": {
+    "name": "Snarbles",
+    "email": "contact@snarbles.com"
+  },
   "private": true,
   "engines": {
     "node": ">=20.18.0",

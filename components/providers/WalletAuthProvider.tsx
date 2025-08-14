@@ -350,17 +350,43 @@ export function WalletAuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      // Use select without .single() to avoid 406 errors when no rows exist
       const { data, error } = await supabase
         .from('user_profiles')
         .select('credits_balance')
-        .eq('wallet_address', walletAddress)
-        .single();
+        .eq('wallet_address', walletAddress);
 
       if (error) {
         console.warn('⚠️ Database error, using demo credits:', error);
         return user?.creditsBalance || 10;
       }
-      return data?.credits_balance || 0;
+
+      // If no profile exists, try to create one using RPC function
+      if (!data || data.length === 0) {
+        console.log('📝 No user profile found, creating one...');
+        try {
+          const { data: rpcResult, error: rpcError } = await supabase.rpc('add_credit_transaction', {
+            p_wallet_address: walletAddress,
+            p_type: 'initial',
+            p_amount: 10,
+            p_description: 'Initial credits for new user',
+            p_transaction_reference: `init_${Date.now()}`
+          });
+
+          if (rpcError) {
+            console.warn('⚠️ Could not create profile, using demo credits:', rpcError);
+            return 10;
+          }
+
+          console.log('✅ Profile created successfully');
+          return 10; // Return initial credits
+        } catch (createError) {
+          console.warn('⚠️ Profile creation failed, using demo credits:', createError);
+          return 10;
+        }
+      }
+
+      return data[0]?.credits_balance || 0;
     } catch (err) {
       console.error('Error getting credits balance, using demo credits:', err);
       return user?.creditsBalance || 10;

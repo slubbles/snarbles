@@ -64,19 +64,18 @@ export async function getUserProfile(walletAddress: string): Promise<{ success: 
     const { data, error } = await supabase
       .from('user_profiles')
       .select('*')
-      .eq('wallet_address', walletAddress)
-      .single();
+      .eq('wallet_address', walletAddress);
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        return { success: false, error: 'Profile not found for this wallet address' };
-      }
-      
       console.error('Error fetching user profile:', error);
       return { success: false, error: 'Failed to fetch user profile' };
     }
 
-    return { success: true, data: data as UserProfile };
+    if (!data || data.length === 0) {
+      return { success: false, error: 'Profile not found for this wallet address' };
+    }
+
+    return { success: true, data: data[0] as UserProfile };
   } catch (error) {
     console.error('Error in getUserProfile:', error);
     return { success: false, error: 'An unexpected error occurred' };
@@ -300,18 +299,43 @@ export async function getCreditsBalance(walletAddress: string): Promise<{ succes
   }
 
   try {
+    // Use select without .single() to avoid 406 errors when no rows exist
     const { data, error } = await supabase
       .from('user_profiles')
       .select('credits_balance')
-      .eq('wallet_address', walletAddress)
-      .single();
+      .eq('wallet_address', walletAddress);
 
     if (error) {
       console.warn('⚠️ Supabase error, falling back to demo credits:', error);
       return { success: true, balance: 10, error: 'Using demo credits (database error)' };
     }
 
-    return { success: true, balance: data?.credits_balance || 0 };
+    // If no profile exists, try to create one using RPC function
+    if (!data || data.length === 0) {
+      console.log('📝 No user profile found, attempting to create one...');
+      try {
+        const { data: rpcResult, error: rpcError } = await supabase.rpc('add_credit_transaction', {
+          p_wallet_address: walletAddress,
+          p_type: 'initial',
+          p_amount: 10,
+          p_description: 'Initial credits for new user',
+          p_transaction_reference: `init_${Date.now()}`
+        });
+
+        if (rpcError) {
+          console.warn('⚠️ Could not create profile, using demo credits:', rpcError);
+          return { success: true, balance: 10, error: 'Using demo credits (profile creation failed)' };
+        }
+
+        console.log('✅ User profile created successfully');
+        return { success: true, balance: 10 };
+      } catch (createError) {
+        console.warn('⚠️ Profile creation failed, using demo credits:', createError);
+        return { success: true, balance: 10, error: 'Using demo credits (profile creation failed)' };
+      }
+    }
+
+    return { success: true, balance: data[0]?.credits_balance || 0 };
   } catch (error) {
     console.warn('⚠️ Credit system error, falling back to demo credits:', error);
     return { success: true, balance: 10, error: 'Using demo credits (system error)' };

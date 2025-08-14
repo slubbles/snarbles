@@ -15,7 +15,9 @@ import {
   LogOut,
   DollarSign,
   TrendingUp,
-  Users
+  Users,
+  Menu,
+  X
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -25,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface DashboardHeaderProps {
   network: 'algorand' | 'solana';
@@ -32,6 +35,8 @@ interface DashboardHeaderProps {
   portfolioValue?: number;
   totalTokens?: number;
   onRefresh?: () => void;
+  onMenuToggle?: () => void;
+  isMobile?: boolean;
 }
 
 export function DashboardHeader({ 
@@ -39,7 +44,9 @@ export function DashboardHeader({
   walletAddress, 
   portfolioValue = 0,
   totalTokens = 0,
-  onRefresh 
+  onRefresh,
+  onMenuToggle,
+  isMobile = false
 }: DashboardHeaderProps) {
   const { toast } = useToast();
   const { disconnect: disconnectAlgorand } = useAlgorandWallet();
@@ -48,12 +55,14 @@ export function DashboardHeader({
   const networkInfo = {
     algorand: {
       name: 'Algorand',
+      shortName: 'ALGO',
       color: 'text-green-400',
       bgColor: 'bg-green-500/10',
       borderColor: 'border-green-500/20'
     },
     solana: {
       name: 'Solana',
+      shortName: 'SOL',
       color: 'text-purple-400',
       bgColor: 'bg-purple-500/10', 
       borderColor: 'border-purple-500/20'
@@ -62,9 +71,11 @@ export function DashboardHeader({
 
   const info = networkInfo[network];
 
-  const formatAddress = (address: string) => {
+  const formatAddress = (address: string, length: number = 8) => {
     if (!address) return '';
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+    const start = Math.floor(length / 2);
+    const end = Math.ceil(length / 2);
+    return `${address.slice(0, start)}...${address.slice(-end)}`;
   };
 
   const copyAddress = () => {
@@ -103,39 +114,72 @@ export function DashboardHeader({
   };
 
   return (
-    <header className="h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex items-center justify-between h-full px-6">
+    <header className={cn(
+      "border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+      isMobile ? "h-14 fixed top-0 left-0 right-0 z-30" : "h-16"
+    )}>
+      <div className={cn(
+        "flex items-center justify-between h-full",
+        isMobile ? "px-4" : "px-6"
+      )}>
         
+        {/* Mobile Menu Button */}
+        {isMobile && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onMenuToggle}
+            className="h-8 w-8 p-0 lg:hidden"
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
+        )}
+
         {/* Left Section - Portfolio Stats */}
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-muted-foreground" />
-              <div>
-                <div className="text-sm font-medium text-foreground">
-                  ${portfolioValue.toFixed(2)}
+        <div className={cn(
+          "flex items-center",
+          isMobile ? "gap-2" : "gap-6"
+        )}>
+          {/* Mobile: Show only totals */}
+          {isMobile ? (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-medium">{totalTokens}</span>
+              <span className="text-muted-foreground text-xs">Tokens</span>
+            </div>
+          ) : (
+            /* Desktop: Full stats */
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <DollarSign className="w-4 h-4 text-muted-foreground" />
+                <div>
+                  <div className="text-sm font-medium text-foreground">
+                    ${portfolioValue.toFixed(2)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">Portfolio Value</div>
                 </div>
-                <div className="text-xs text-muted-foreground">Portfolio Value</div>
+              </div>
+              
+              <div className="w-px h-8 bg-border" />
+              
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                <div>
+                  <div className="text-sm font-medium text-foreground">{totalTokens}</div>
+                  <div className="text-xs text-muted-foreground">Created Tokens</div>
+                </div>
               </div>
             </div>
-            
-            <div className="w-px h-8 bg-border" />
-            
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4 text-muted-foreground" />
-              <div>
-                <div className="text-sm font-medium text-foreground">{totalTokens}</div>
-                <div className="text-xs text-muted-foreground">Created Tokens</div>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Right Section - Wallet & Actions */}
-        <div className="flex items-center gap-4">
+        <div className={cn(
+          "flex items-center",
+          isMobile ? "gap-2" : "gap-4"
+        )}>
           
-          {/* Refresh Button */}
-          {onRefresh && (
+          {/* Refresh Button - Only on desktop */}
+          {onRefresh && !isMobile && (
             <Button 
               variant="ghost" 
               size="sm"
@@ -146,23 +190,36 @@ export function DashboardHeader({
             </Button>
           )}
 
-          {/* Notifications */}
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-            <Bell className="w-4 h-4" />
-          </Button>
+          {/* Notifications - Only on desktop */}
+          {!isMobile && (
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <Bell className="w-4 h-4" />
+            </Button>
+          )}
 
           {/* Network Badge */}
-          <Badge className={`${info.bgColor} ${info.color} ${info.borderColor} border`}>
-            {info.name}
+          <Badge className={cn(
+            `${info.bgColor} ${info.color} ${info.borderColor} border`,
+            isMobile ? "text-xs px-2 py-1" : ""
+          )}>
+            {isMobile ? info.shortName : info.name}
           </Badge>
 
           {/* Wallet Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2 h-9">
+              <Button 
+                variant="outline" 
+                className={cn(
+                  "flex items-center gap-2",
+                  isMobile ? "h-8 px-2" : "h-9"
+                )}
+              >
                 <Wallet className="w-4 h-4" />
-                <span className="hidden sm:inline">
-                  {formatAddress(walletAddress || '')}
+                <span className={cn(
+                  isMobile ? "text-xs" : "hidden sm:inline"
+                )}>
+                  {formatAddress(walletAddress || '', isMobile ? 6 : 8)}
                 </span>
               </Button>
             </DropdownMenuTrigger>
@@ -171,7 +228,7 @@ export function DashboardHeader({
                 <div className="text-sm font-medium text-foreground">
                   {info.name} Wallet
                 </div>
-                <div className="text-xs text-muted-foreground font-mono">
+                <div className="text-xs text-muted-foreground font-mono break-all">
                   {walletAddress}
                 </div>
               </div>
@@ -188,12 +245,18 @@ export function DashboardHeader({
                 View in Explorer
               </DropdownMenuItem>
               
-              <DropdownMenuSeparator />
+              {!isMobile && (
+                <>
+                  <DropdownMenuSeparator />
+                  
+                  <DropdownMenuItem>
+                    <Settings className="w-4 h-4 mr-2" />
+                    Wallet Settings
+                  </DropdownMenuItem>
+                </>
+              )}
               
-              <DropdownMenuItem>
-                <Settings className="w-4 h-4 mr-2" />
-                Wallet Settings
-              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               
               <DropdownMenuItem 
                 onClick={handleDisconnect}
