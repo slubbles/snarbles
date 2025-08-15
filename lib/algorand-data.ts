@@ -79,6 +79,9 @@ export async function getAlgorandEnhancedTokenInfo(walletAddress: string, networ
             const assetData = assetResult.data;
             const uiBalance = Number(asset.amount) / Math.pow(10, assetData.decimals || 0);
             
+            // Get real asset statistics
+            const statsResult = await getAlgorandAssetStatistics(assetId, network);
+            
             const tokenInfo: AlgorandTokenInfo = {
               assetId: assetId,
               name: assetData.assetName || `Asset ${(asset as any)['asset-id']}`,
@@ -98,11 +101,11 @@ export async function getAlgorandEnhancedTokenInfo(walletAddress: string, networ
               isFrozen: false, // This would need an account-specific check
               verified: true, // All found assets are considered verified
               explorerUrl: `${networkConfig.explorer}/asset/${assetId}`,
-              // Mock some additional data for demo purposes
-              value: `$${(Math.random() * 100).toFixed(2)}`,
-              change: `${Math.random() > 0.5 ? '+' : '-'}${(Math.random() * 10).toFixed(1)}%`,
-              holders: Math.floor(Math.random() * 1000) + 50,
-              marketCap: Math.floor(Math.random() * 100000) + 10000,
+              // Use real data when available
+              value: uiBalance > 0 ? `${uiBalance.toFixed(assetData.decimals || 0)} ${assetData.unitName || 'ASA'}` : '0',
+              change: undefined, // Remove mock price change data - should come from real price feeds
+              holders: statsResult.success ? statsResult.data?.holders : undefined,
+              marketCap: undefined, // Remove mock market cap - should come from real data
             };
             
             enhancedTokens.push(tokenInfo);
@@ -206,11 +209,9 @@ export async function getAlgorandWalletSummary(walletAddress: string, network: s
     let totalValue = algoBalance * 0.175; // More accurate ALGO price (~$0.175)
     if (tokensResult.status === 'fulfilled' && tokensResult.value.success && tokensResult.value.data) {
       totalTokens = tokensResult.value.data.length;
-      // Add mock value for tokens
-      totalValue += tokensResult.value.data.reduce((sum, token) => {
-        const value = parseFloat(token.value?.replace('$', '') || '0');
-        return sum + value;
-      }, 0);
+      // Calculate actual portfolio value from real token balances
+      // For now, just count the number of tokens since we don't have USD values
+      // In a real implementation, this would integrate with price feeds
     }
     
     let recentTransactions = 0;
@@ -466,6 +467,82 @@ function getTransactionReceiver(tx: any): string | undefined {
     return tx['asset-transfer-transaction'].receiver;
   }
   return undefined;
+}
+
+// Get real asset statistics from Algorand indexer
+export async function getAlgorandAssetStatistics(assetId: number, network: string): Promise<{
+  success: boolean;
+  data?: {
+    holders: number;
+    totalSupply: number;
+    circulatingSupply: number;
+    transactions24h: number;
+  };
+  error?: string;
+}> {
+  try {
+    console.log(`🔍 Fetching asset statistics for Asset ID: ${assetId}`);
+    
+    const indexerClient = getAlgorandIndexerClient(network);
+    
+    // Get asset information
+    const assetInfo = await indexerClient.lookupAssetByID(assetId).do();
+    
+    if (!assetInfo || !assetInfo.asset) {
+      throw new Error('Asset not found');
+    }
+    
+    // Get accounts holding this asset
+    const assetBalances = await indexerClient
+      .lookupAssetBalances(assetId)
+      .do();
+    
+    const holders = assetBalances.balances?.filter((balance: any) => 
+      balance.amount && Number(balance.amount) > 0
+    ).length || 0;
+    
+    const totalSupply = assetInfo.asset.params.total || 0;
+    
+    // Calculate circulating supply (total - reserves)
+    const reserveAccount = assetInfo.asset.params.reserve;
+    let reserveBalance = 0;
+    
+    if (reserveAccount && assetBalances.balances) {
+      const reserve = assetBalances.balances.find((balance: any) => 
+        balance.address === reserveAccount
+      );
+      reserveBalance = reserve ? Number(reserve.amount) : 0;
+    }
+    
+    const circulatingSupply = Number(totalSupply) - reserveBalance;
+    
+    // Get recent transactions for this asset (last 24 hours)
+    const yesterday = Math.floor((Date.now() - 24 * 60 * 60 * 1000) / 1000);
+    const recentTransactions = await indexerClient
+      .lookupAssetTransactions(assetId)
+      .afterTime(new Date(yesterday * 1000).toISOString())
+      .do();
+    
+    const transactions24h = recentTransactions.transactions?.length || 0;
+    
+    console.log(`✅ Asset ${assetId} statistics: ${holders} holders, ${transactions24h} transactions (24h)`);
+    
+    return {
+      success: true,
+      data: {
+        holders,
+        totalSupply: Number(totalSupply),
+        circulatingSupply,
+        transactions24h
+      }
+    };
+  } catch (error) {
+    console.error(`❌ Error fetching asset statistics for ${assetId}:`, error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch asset statistics'
+    };
+  }
 }
 
 // Helper to format transaction for display

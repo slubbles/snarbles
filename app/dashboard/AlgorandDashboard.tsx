@@ -22,6 +22,7 @@ import {
   getAlgorandEnhancedTokenInfo, 
   getAlgorandTransactionHistory, 
   getAlgorandWalletSummary,
+  getAlgorandWalletSummaryWithMarketData,
   AlgorandTokenInfo,
   AlgorandTransactionInfo
 } from '@/lib/algorand-data';
@@ -96,16 +97,16 @@ export default function AlgorandDashboard() {
     try {
       setRefreshing(true);
       
-      // Fetch wallet summary
-      const summaryResult = await getAlgorandWalletSummary(walletAddress, selectedNetwork);
+      // Fetch wallet summary with market data
+      const summaryResult = await getAlgorandWalletSummaryWithMarketData(walletAddress, selectedNetwork);
       if (summaryResult.success && summaryResult.data) {
         setWalletSummary({
           totalValue: summaryResult.data.totalValue || 0,
           totalTokens: summaryResult.data.totalTokens || 0,
           recentTransactions: summaryResult.data.recentTransactions || 0,
           algoBalance: summaryResult.data.algoBalance || 0,
-          algoValueUSD: 0, // This field may not exist in the API response
-          portfolioChange24h: 0 // This field may not exist in the API response
+          algoValueUSD: summaryResult.data.algoValueUSD || 0,
+          portfolioChange24h: summaryResult.data.portfolioChange24h || 0
         });
       }
       
@@ -267,6 +268,11 @@ export default function AlgorandDashboard() {
                   <div className="text-center">
                     <div className="text-lg sm:text-2xl font-bold text-primary">${walletSummary.totalValue.toFixed(2)}</div>
                     <div className="text-xs sm:text-sm text-muted-foreground">Portfolio Value</div>
+                    {walletSummary.portfolioChange24h !== 0 && (
+                      <div className={`text-xs ${walletSummary.portfolioChange24h > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {walletSummary.portfolioChange24h > 0 ? '+' : ''}${walletSummary.portfolioChange24h.toFixed(2)} (24h)
+                      </div>
+                    )}
                   </div>
                   <div className="text-center">
                     <div className="text-lg sm:text-2xl font-bold text-primary">{walletSummary.recentTransactions}</div>
@@ -274,7 +280,12 @@ export default function AlgorandDashboard() {
                   </div>
                   <div className="text-center">
                     <div className="text-lg sm:text-2xl font-bold text-primary">{walletSummary.algoBalance.toFixed(3)} ALGO</div>
-                    <div className="text-xs sm:text-sm text-muted-foreground">ALGO Balance</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">
+                      ALGO Balance
+                      {walletSummary.algoValueUSD > 0 && (
+                        <span className="block text-xs text-gray-500">${walletSummary.algoValueUSD.toFixed(2)} USD</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -336,21 +347,43 @@ export default function AlgorandDashboard() {
                     ) : tokens.length > 0 ? (
                       <div className="space-y-3">
                         {tokens.slice(0, 5).map((token) => (
-                          <div key={token.assetId} className="flex items-center justify-between p-3 bg-background/50 rounded-lg border border-primary/20">
+                          <div key={token.assetId} className="flex items-center justify-between p-3 bg-background/50 rounded-lg border border-primary/20 hover:border-primary/40 transition-colors">
                             <div className="flex items-center space-x-3">
                               <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                                <Coins className="w-5 h-5 text-primary" />
+                                {token.image ? (
+                                  <img src={token.image} alt={token.name} className="w-8 h-8 rounded-full" />
+                                ) : (
+                                  <Coins className="w-5 h-5 text-primary" />
+                                )}
                               </div>
                               <div>
-                                <p className="font-medium text-foreground">{token.name}</p>
+                                <div className="flex items-center gap-2">
+                                  <p className="font-medium text-foreground">{token.name}</p>
+                                  <a 
+                                    href={token.explorerUrl} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-primary hover:text-primary/80"
+                                    title="View on explorer"
+                                  >
+                                    ↗
+                                  </a>
+                                </div>
                                 <p className="text-sm text-muted-foreground">{token.symbol}</p>
                               </div>
                             </div>
                             <div className="text-right">
                               <p className="font-medium text-foreground">{token.uiBalance}</p>
-                              <Badge variant={token.verified ? "default" : "secondary"} className="text-xs">
-                                {token.verified ? "Verified" : "Unverified"}
-                              </Badge>
+                              <div className="flex flex-col gap-1">
+                                <Badge variant={token.verified ? "default" : "secondary"} className="text-xs">
+                                  {token.verified ? "Verified" : "Unverified"}
+                                </Badge>
+                                {token.holders && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {token.holders} holders
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         ))}
