@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useAlgorandWallet } from '@/components/providers/AlgorandWalletProvider';
+import { MCPTrackingService } from '@/lib/mcp-tracking-service';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,12 @@ export default function DashboardPage() {
   // All hooks must be called before any conditional returns
   useEffect(() => {
     setMounted(true);
+    
+    // Track dashboard access
+    MCPTrackingService.trackDashboardView(
+      algorandConnected ? algorandAddress || '' : publicKey?.toString() || '',
+      'main_dashboard'
+    );
   }, []);
 
   // Auto-redirect if only one wallet is connected

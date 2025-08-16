@@ -16,10 +16,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 // import { useWallet } from '@solana/wallet-adapter-react'; // Temporarily removed
 import { isSupabaseAvailable } from '@/lib/supabase-client';
 import { trackTokenCreation } from '@/lib/token-tracking';
+import { MCPTrackingService } from '@/lib/mcp-tracking-service';
 import { useAlgorandWallet } from '@/components/providers/AlgorandWalletProvider';
 import { createTokenOnChain } from '@/lib/solana';
 import { createAlgorandToken, supabaseHelpers } from '@/lib/algorand';
 import { SuccessConfetti } from '@/components/SuccessConfetti';
+import { NetworkMismatchAlert } from '@/components/NetworkMismatchAlert';
 import { TransactionTracker, createTokenCreationSteps, classifyError, formatErrorForUser } from '@/lib/error-handling';
 import { safeStringify, safeLog } from '@/lib/utils';
 import { calculateTokenCreationFees, formatFeeDisplay, type FeeSummary } from '@/lib/algorand-fees';
@@ -110,6 +112,85 @@ export default function TokenForm({ onTokenCreate, defaultNetwork = 'algorand-ma
     setTracker(newTracker);
   }, []);
 
+  // Listen for WebSocket/CSP errors that indicate network mismatch
+  useEffect(() => {
+    const handleConsoleError = (event: ErrorEvent) => {
+      const errorMessage = event.message?.toLowerCase() || '';
+      
+      // Check for WebSocket CSP violations indicating network mismatch
+      if (errorMessage.includes('websocket') || 
+          errorMessage.includes('ws error') || 
+          errorMessage.includes('refused to connect') ||
+          errorMessage.includes('csp violation') ||
+          errorMessage.includes('devnet.solana.com') ||
+          errorMessage.includes('content security policy')) {
+        
+        // Only show error if we're currently deploying a Solana token
+        if (isDeploying && network.includes('solana')) {
+          setError('Network configuration mismatch: You are trying to create a token on Solana Devnet but your wallet might be connected to Mainnet. Please switch your wallet to the correct network or contact support.');
+          
+          // Track the error with MCP
+          const walletAddress = network.includes('algorand') ? algorandAddress! : 'solana-address-placeholder';
+          if (walletAddress) {
+            MCPTrackingService.trackTokenCreationError(
+              walletAddress,
+              'Network configuration mismatch detected',
+              'network-check'
+            );
+          }
+          
+          // Show error toast
+          toast({
+            title: "Network Mismatch Detected",
+            description: "Please switch your wallet to the correct Solana network and try again.",
+            variant: "destructive",
+            duration: 8000
+          });
+          
+          setIsDeploying(false);
+        }
+      }
+    };
+
+    // Monitor console.error calls for WebSocket errors
+    const originalConsoleError = console.error;
+    console.error = (...args: any[]) => {
+      // Call original console.error
+      originalConsoleError(...args);
+      
+      // Check error content for network mismatch indicators
+      const errorContent = args.join(' ').toLowerCase();
+      if (isDeploying && network.includes('solana') && 
+          (errorContent.includes('ws error') || 
+           errorContent.includes('websocket') ||
+           errorContent.includes('refused to connect') ||
+           errorContent.includes('devnet.solana.com'))) {
+        
+        setError('Network configuration mismatch: You are trying to create a token on Solana Devnet but your wallet might be connected to Mainnet. Please switch your wallet to the correct network or contact support.');
+        setIsDeploying(false);
+        
+        // Track the error with MCP
+        const walletAddress = network.includes('algorand') ? algorandAddress! : 'solana-address-placeholder';
+        if (walletAddress) {
+          MCPTrackingService.trackTokenCreationError(
+            walletAddress,
+            'Console WebSocket error detected during token creation',
+            'console-monitor'
+          );
+        }
+      }
+    };
+
+    // Add event listener for console errors
+    window.addEventListener('error', handleConsoleError);
+    
+    // Cleanup listener and restore console
+    return () => {
+      window.removeEventListener('error', handleConsoleError);
+      console.error = originalConsoleError;
+    };
+  }, [isDeploying, network, algorandAddress, toast]);
+
   // Check for tokenomics data from URL and localStorage on mount
   useEffect(() => {
     // Get tokenomics param from URL
@@ -166,6 +247,15 @@ ${tokenomicsInfo.vestingSchedule?.enabled ? `- Vesting: Enabled (Team: ${tokenom
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    // Track form field interactions for UX analysis
+    MCPTrackingService.trackFormInteraction('token-creation', 'field_change', {
+      field_name: name,
+      field_value_length: value.length,
+      has_value: !!value.trim(),
+      form_completion: Object.values(formData).filter(v => !!v).length / Object.keys(formData).length
+    });
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -174,6 +264,24 @@ ${tokenomicsInfo.vestingSchedule?.enabled ? `- Vesting: Enabled (Team: ${tokenom
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Track form submission start
+    const walletAddress = algorandConnected ? algorandAddress : (solanaPublicKey ? String(solanaPublicKey) : undefined);
+    const currentNetwork = network.startsWith('algorand') ? 'algorand' : 'solana';
+    
+    if (walletAddress) {
+      MCPTrackingService.trackTokenCreationStart(walletAddress, currentNetwork);
+      MCPTrackingService.trackFormInteraction('token-creation', 'submit', {
+        token_name: formData.name,
+        token_symbol: formData.symbol,
+        network: currentNetwork,
+        has_logo: !!formData.logoUrl,
+        has_description: !!formData.description,
+        mintable: formData.mintable,
+        burnable: formData.burnable,
+        pausable: formData.pausable
+      });
+    }
 
     // Basic validation
     if (!formData.name || !formData.symbol || !formData.totalSupply) {
@@ -297,9 +405,9 @@ ${tokenomicsInfo.vestingSchedule?.enabled ? `- Vesting: Enabled (Team: ${tokenom
         
         // Create wallet interface for Solana token creation
         const walletInterface = {
-          publicKey: solanaPublicKey!,
-          signTransaction: signTransaction!,
-          signAllTransactions: signAllTransactions!
+          publicKey: solanaPublicKey as any, // Type assertion since solanaPublicKey is currently null for re-implementation
+          signTransaction: signTransaction as any,
+          signAllTransactions: signAllTransactions as any
         };
         
         // Create Solana token
@@ -353,6 +461,34 @@ ${tokenomicsInfo.vestingSchedule?.enabled ? `- Vesting: Enabled (Team: ${tokenom
         
         // Store result for UI display
         setResult(createResult);
+        
+        // Track successful token creation with MCP
+        if (walletAddress) {
+          const tokenAddress = isAlgorand 
+            ? (createResult as any).assetId?.toString() || (createResult as any).transactionId || ''
+            : (createResult as any).mintAddress || (createResult as any).tokenAddress || '';
+            
+          MCPTrackingService.trackTokenCreationSuccess(
+            walletAddress,
+            tokenAddress,
+            currentNetwork,
+            {
+              name: formData.name,
+              symbol: formData.symbol,
+              supply: formData.totalSupply,
+              decimals: parseInt(formData.decimals),
+              features: {
+                mintable: formData.mintable,
+                burnable: formData.burnable,
+                pausable: formData.pausable
+              },
+              has_logo: !!formData.logoUrl,
+              has_social_links: !!(formData.website || formData.twitter || formData.github)
+            }
+          );
+          
+          MCPTrackingService.trackConversion('token_creation_completed', walletAddress, 1);
+        }
         
         // Track token creation in Supabase if available
         if (supabaseTracking && createResult.success) {
@@ -429,10 +565,33 @@ ${tokenomicsInfo.vestingSchedule?.enabled ? `- Vesting: Enabled (Team: ${tokenom
         progressInterval.current = null;
       }
       
+      // Check for WebSocket/CSP network mismatch errors in console logs
+      const errorMessage = err instanceof Error ? err.message.toLowerCase() : String(err).toLowerCase();
+      let enhancedError = err;
+      
+      // Check if there are WebSocket CSP violations indicating network mismatch
+      if (errorMessage.includes('websocket') || 
+          errorMessage.includes('ws error') || 
+          errorMessage.includes('refused to connect') ||
+          errorMessage.includes('csp violation') ||
+          errorMessage.includes('devnet.solana.com') ||
+          errorMessage.includes('content security policy')) {
+        enhancedError = new Error('Network configuration mismatch: You are trying to create a token on Solana Devnet but your wallet might be connected to Mainnet. Please switch your wallet to the correct network or contact support.');
+      }
+      
       // Classify error for better user feedback
       const isAlgorand = network.startsWith('algorand');
-      const classifiedError = classifyError(err, isAlgorand ? 'algorand' : 'solana');
+      const classifiedError = classifyError(enhancedError, isAlgorand ? 'algorand' : 'solana');
       const userFriendlyError = formatErrorForUser(classifiedError);
+      
+      // Track token creation error with MCP
+      if (walletAddress) {
+        MCPTrackingService.trackTokenCreationError(
+          walletAddress,
+          userFriendlyError,
+          tracker?.getCurrentStep()?.id || 'unknown'
+        );
+      }
       
       setError(userFriendlyError);
       
@@ -977,21 +1136,36 @@ ${tokenomicsInfo.vestingSchedule?.enabled ? `- Vesting: Enabled (Team: ${tokenom
             </div>
 
             {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                <div className="space-y-2">
-                  <h5 className="mb-1 font-medium leading-none tracking-tight">Error Details:</h5>
-                  <AlertDescription className="whitespace-pre-line">
-                    <p>{error}</p>
-                    {error.toLowerCase().includes('insufficient') && (
-                      <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded">
-                        <p className="text-blue-700 font-semibold">💡 How to fix:</p>
-                        <p className="text-blue-600 text-sm">Make sure you have enough funds in your wallet to cover transaction fees.</p>
-                      </div>
-                    )}
-                  </AlertDescription>
-                </div>
-              </Alert>
+              <>
+                {error.toLowerCase().includes('network configuration mismatch') || 
+                 error.toLowerCase().includes('websocket') ||
+                 error.toLowerCase().includes('csp violation') ? (
+                  <NetworkMismatchAlert 
+                    network={network}
+                    onRetry={() => {
+                      setError('');
+                      // Optionally restart token creation
+                    }}
+                    onDismiss={() => setError('')}
+                  />
+                ) : (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                    <div className="space-y-2">
+                      <h5 className="mb-1 font-medium leading-none tracking-tight">Error Details:</h5>
+                      <AlertDescription className="whitespace-pre-line">
+                        <p>{error}</p>
+                        {error.toLowerCase().includes('insufficient') && (
+                          <div className="mt-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded">
+                            <p className="text-blue-700 font-semibold">💡 How to fix:</p>
+                            <p className="text-blue-600 text-sm">Make sure you have enough funds in your wallet to cover transaction fees.</p>
+                          </div>
+                        )}
+                      </AlertDescription>
+                    </div>
+                  </Alert>
+                )}
+              </>
             )}
 
             {/* Go to Tokenomics Button */}

@@ -8,6 +8,7 @@ import { WalletAuthProvider } from '@/components/providers/WalletAuthProvider';
 import ClientWalletProvider from '@/components/providers/ClientWalletProvider';
 import { SkipToMain } from '@/components/ui/accessibility';
 import ChunkErrorBoundary from '@/components/ChunkErrorBoundary';
+import { MCPAnalyticsProvider } from '@/components/providers/MCPAnalyticsProvider';
 
     export const metadata: Metadata = {
       title: 'Snarbles - Create Your Own Token in 30 Seconds',
@@ -123,6 +124,7 @@ function ServiceWorkerRegistration() {
           <body className="font-inter antialiased bg-background">
             <ServiceWorkerRegistration />
             <SkipToMain />
+            <MCPAnalyticsProvider />
             <ChunkErrorBoundary>
               <ClientWalletProvider>
                 <WalletAuthProvider>

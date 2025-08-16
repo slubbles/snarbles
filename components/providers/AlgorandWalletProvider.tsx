@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import * as algosdk from 'algosdk';
 import { getAlgorandNetwork, ALGORAND_NETWORKS } from '@/lib/algorand';
+import { MCPTrackingService } from '@/lib/mcp-tracking-service';
 
 // Import the actual PeraWalletConnect type
 import type { PeraWalletConnect } from '@perawallet/connect';
@@ -236,6 +237,13 @@ export function AlgorandWalletProvider({ children }: AlgorandWalletProviderProps
       if (accounts.length > 0) {
         setConnected(true);
         setAddress(accounts[0]);
+        
+        // Track wallet connection with MCP
+        MCPTrackingService.trackWalletConnection(
+          accounts[0],
+          'pera_wallet',
+          selectedNetwork
+        );
         
         // Dispatch a custom event when wallet connects
         const event = new CustomEvent('algorand-wallet-change', {

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Play, CheckCircle, TrendingUp, Zap, Sparkles } from 'lucide-react';
+import { ArrowRight, CheckCircle, TrendingUp, Zap, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
 const stats = [
@@ -14,12 +14,21 @@ const stats = [
 
 export default function HeroSection() {
   const [animationPhase, setAnimationPhase] = useState(0);
+  const [liveCount, setLiveCount] = useState(8392);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setAnimationPhase(prev => (prev + 1) % 3);
     }, 3000);
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    // Simulate live counter updates
+    const counterTimer = setInterval(() => {
+      setLiveCount(prev => prev + Math.floor(Math.random() * 3));
+    }, 8000);
+    return () => clearInterval(counterTimer);
   }, []);
 
   return (
@@ -64,7 +73,7 @@ export default function HeroSection() {
               —just your vision brought to life.
             </p>
             
-            {/* Creator avatars - exact match */}
+            {/* Enhanced creator avatars with live count */}
             <div className="flex items-center justify-center lg:justify-start mb-8">
               <div className="flex -space-x-3">
                 {['K', 'A', 'T', 'M', 'S'].map((letter, i) => (
@@ -75,57 +84,63 @@ export default function HeroSection() {
                 ))}
               </div>
               <div className="ml-4 text-left">
-                <div className="font-semibold" style={{ color: 'rgb(254, 254, 235)' }}>
-                  8,392
+                <div className="font-bold text-lg" style={{ color: 'rgb(254, 254, 235)' }}>
+                  {liveCount.toLocaleString()}
                 </div>
-                <div className="text-sm" style={{ color: 'rgb(166, 166, 166)' }}>
+                <div className="text-sm flex items-center" style={{ color: 'rgb(166, 166, 166)' }}>
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
                   innovators trust Snarbles
                 </div>
               </div>
             </div>
             
-            {/* CTA buttons - exact match */}
+            {/* Enhanced CTA buttons with urgency */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-8">
               <Link href="/create">
                 <Button 
                   size="lg" 
-                  className="button-enhanced hover:shadow-xl transition-all duration-300 relative z-10"
+                  className="button-enhanced hover:shadow-2xl hover:scale-105 transition-all duration-300 relative z-10 group"
                   style={{
                     background: 'linear-gradient(135deg, rgb(239, 68, 68) 0%, rgb(220, 38, 38) 100%)',
                     border: '1px solid rgba(239, 68, 68, 0.3)',
-                    boxShadow: 'rgba(239, 68, 68, 0.4) 0px 10px 30px 0px, rgba(239, 68, 68, 0.2) 0px 0px 0px 1px',
+                    boxShadow: 'rgba(239, 68, 68, 0.5) 0px 15px 40px 0px, rgba(239, 68, 68, 0.3) 0px 0px 0px 1px',
                     color: 'rgb(255, 255, 255)',
-                    fontWeight: 600,
-                    padding: '16px 32px',
-                    fontSize: '18px',
+                    fontWeight: 700,
+                    padding: '20px 40px',
+                    fontSize: '20px',
                     width: '100%',
-                    maxWidth: '300px'
+                    maxWidth: '350px',
+                    borderRadius: '16px'
                   }}
                 >
-                  <Zap className="mr-2 h-5 w-5" />
-                  Create Your Token Now
+                  <Zap className="mr-3 h-6 w-6 group-hover:animate-pulse" />
+                  🚀 Create Your Token Now
+                  <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full animate-pulse">
+                    FREE
+                  </div>
                 </Button>
               </Link>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                onClick={() => window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank')}
-                className="hover:shadow-lg transition-all duration-300 relative z-10"
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                  border: '2px solid rgba(239, 68, 68, 0.3)',
-                  borderRadius: '12px',
-                  boxShadow: 'rgba(0, 0, 0, 0.1) 0px 8px 24px 0px',
-                  color: 'rgb(254, 254, 235)',
-                  fontWeight: 600,
-                  padding: '16px 32px',
-                  fontSize: '18px',
-                  backdropFilter: 'blur(10px)'
-                }}
-              >
-                <Play className="mr-2 h-5 w-5" />
-                Watch Demo
-              </Button>
+              <Link href="/docs">
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="hover:shadow-lg hover:bg-white/5 transition-all duration-300 relative z-10"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    border: '2px solid rgba(239, 68, 68, 0.3)',
+                    borderRadius: '16px',
+                    boxShadow: 'rgba(0, 0, 0, 0.1) 0px 8px 24px 0px',
+                    color: 'rgb(254, 254, 235)',
+                    fontWeight: 600,
+                    padding: '20px 32px',
+                    fontSize: '18px',
+                    backdropFilter: 'blur(10px)'
+                  }}
+                >
+                  <ArrowRight className="mr-2 h-5 w-5" />
+                  Learn More
+                </Button>
+              </Link>
             </div>
             
             {/* Feature badges - exact match */}

@@ -46,12 +46,13 @@ import {
   ADMIN_CONFIG
 } from '@/lib/admin-security';
 import LiveAnalyticsDashboard from '@/components/dashboard/LiveAnalyticsDashboard';
+import { MCPAdminDashboard } from '@/components/admin/MCPAdminDashboard';
 import { 
   AlertTriangle, CheckCircle, Settings, Loader2, Shield, 
   Wallet, ArrowLeft, Rocket, BarChart3, Activity, 
   PieChart, Info, FileText, Crown, Zap, Sparkles,
   Database, Server, Lock, Users, DollarSign, Edit,
-  Save, X, History, TrendingUp, Coins, Globe
+  Save, X, History, TrendingUp, Coins, Globe, Brain
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -987,7 +988,7 @@ export default function AdminPage() {
 
           {/* Tab Navigation */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 snarbles-glass-subtle snarbles-border-glow">
+            <TabsList className="grid w-full grid-cols-3 snarbles-glass-subtle snarbles-border-glow">
               <TabsTrigger 
                 value="control-center" 
                 className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
@@ -1001,6 +1002,13 @@ export default function AdminPage() {
               >
                 <BarChart3 className="w-4 h-4" />
                 Platform-Wide Analytics
+              </TabsTrigger>
+              <TabsTrigger 
+                value="mcp-analytics" 
+                className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                <Brain className="w-4 h-4" />
+                MCP Intelligence
               </TabsTrigger>
             </TabsList>
 
@@ -2017,6 +2025,25 @@ export default function AdminPage() {
                     </div>
                   </div>
                 )}
+              </div>
+            </TabsContent>
+
+            {/* Tab 3: MCP Intelligence */}
+            <TabsContent value="mcp-analytics" className="space-y-8 mt-8">
+              <div className="snarbles-card-premium p-8 snarbles-glow-red">
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl snarbles-gradient-red flex items-center justify-center">
+                      <Brain className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="snarbles-subheading text-2xl">MCP Intelligence Dashboard</h3>
+                      <p className="snarbles-body">Real-time insights powered by Model Context Protocol</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <MCPAdminDashboard />
               </div>
             </TabsContent>
           </Tabs>

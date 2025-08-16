@@ -49,6 +49,13 @@ const SOLANA_ERROR_PATTERNS = {
     action: 'Check your internet connection and try again',
     severity: 'medium' as const
   },
+  NETWORK_MISMATCH: {
+    patterns: ['refused to connect', 'websocket', 'ws error', 'csp violation', 'connect-src', 'devnet.solana.com', 'content security policy'],
+    code: 'NETWORK_MISMATCH',
+    userMessage: 'Network configuration mismatch detected',
+    action: 'You are trying to create a token on Solana Devnet but your wallet might be connected to Mainnet. Please switch your wallet to the correct network or contact support.',
+    severity: 'high' as const
+  },
   ACCOUNT_NOT_FOUND: {
     patterns: ['account not found', 'invalid account', 'account does not exist'],
     code: 'ACCOUNT_NOT_FOUND',

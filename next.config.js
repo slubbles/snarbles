@@ -1,12 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Only enable static export for production builds
-  ...(process.env.NODE_ENV === 'production' && {
-    output: 'export',
-    trailingSlash: true,
-    skipTrailingSlashRedirect: true,
-    distDir: 'out',
-  }),
+  // Disable static export to allow API routes
+  // ...(process.env.NODE_ENV === 'production' && {
+  //   output: 'export',
+  //   trailingSlash: true,
+  //   skipTrailingSlashRedirect: true,
+  //   distDir: 'out',
+  // }),
   poweredByHeader: false,
   reactStrictMode: false,
   images: {
