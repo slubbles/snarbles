@@ -40,55 +40,80 @@ export default function MobileTestingPage() {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
     // Detect device information
     const detectDevice = () => {
-      // Get device info from mobile analytics
-      const analyticsDeviceInfo = mobileAnalytics.getDeviceInfo();
-      
-      const info = {
-        userAgent: navigator.userAgent,
-        viewport: {
-          width: window.innerWidth,
-          height: window.innerHeight,
-          devicePixelRatio: window.devicePixelRatio
-        },
-        screen: {
-          width: window.screen.width,
-          height: window.screen.height,
-          availWidth: window.screen.availWidth,
-          availHeight: window.screen.availHeight
-        },
-        isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
-        isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
-        isAndroid: /Android/.test(navigator.userAgent),
-        isTablet: /iPad|Android(?=.*Tablet)/.test(navigator.userAgent),
-        isInAppBrowser: navigator.userAgent.includes('FB_IAB') || 
-                       navigator.userAgent.includes('FBAN') || 
-                       navigator.userAgent.includes('Instagram'),
-        connection: (navigator as any).connection,
-        online: navigator.onLine,
-        cookieEnabled: navigator.cookieEnabled,
-        language: navigator.language,
-        platform: navigator.platform,
-        webgl: (() => {
-          try {
-            const canvas = document.createElement('canvas');
-            return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
-          } catch (e) {
-            return false;
-          }
-        })(),
-        // Add analytics data
-        analyticsDeviceInfo
-      };
-      
-      setDeviceInfo(info);
-      
-      // Track page visit
-      mobileAnalytics.trackMobileError('mobile_test_page_loaded', { 
-        url: window.location.href,
-        deviceType: analyticsDeviceInfo?.isMobile ? 'mobile' : 'desktop'
-      });
+      try {
+        // Get device info from mobile analytics
+        const analyticsDeviceInfo = mobileAnalytics.getDeviceInfo();
+        
+        const info = {
+          userAgent: navigator.userAgent,
+          viewport: {
+            width: window.innerWidth,
+            height: window.innerHeight,
+            devicePixelRatio: window.devicePixelRatio
+          },
+          screen: {
+            width: window.screen.width,
+            height: window.screen.height,
+            availWidth: window.screen.availWidth,
+            availHeight: window.screen.availHeight
+          },
+          isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+          isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
+          isAndroid: /Android/.test(navigator.userAgent),
+          isTablet: /iPad|Android(?=.*Tablet)/.test(navigator.userAgent),
+          isInAppBrowser: navigator.userAgent.includes('FB_IAB') || 
+                         navigator.userAgent.includes('FBAN') || 
+                         navigator.userAgent.includes('Instagram'),
+          connection: (navigator as any).connection,
+          online: navigator.onLine,
+          cookieEnabled: navigator.cookieEnabled,
+          language: navigator.language,
+          platform: navigator.platform,
+          webgl: (() => {
+            try {
+              const canvas = document.createElement('canvas');
+              return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
+            } catch (e) {
+              return false;
+            }
+          })(),
+          // Add analytics data
+          analyticsDeviceInfo
+        };
+        
+        setDeviceInfo(info);
+        
+        // Track page visit
+        mobileAnalytics.trackMobileError('mobile_test_page_loaded', { 
+          url: window.location.href,
+          deviceType: analyticsDeviceInfo?.isMobile ? 'mobile' : 'desktop'
+        });
+      } catch (error) {
+        console.error('Device detection failed:', error);
+        // Set minimal device info if detection fails
+        setDeviceInfo({
+          userAgent: 'Unknown',
+          viewport: { width: 0, height: 0, devicePixelRatio: 1 },
+          screen: { width: 0, height: 0, availWidth: 0, availHeight: 0 },
+          isMobile: false,
+          isIOS: false,
+          isAndroid: false,
+          isTablet: false,
+          isInAppBrowser: false,
+          connection: null,
+          online: true,
+          cookieEnabled: false,
+          language: 'en',
+          platform: 'Unknown',
+          webgl: false,
+          analyticsDeviceInfo: null
+        });
+      }
     };
 
     detectDevice();
@@ -160,13 +185,34 @@ export default function MobileTestingPage() {
 
   const testPageLoad = async () => {
     return new Promise((resolve) => {
-      const perfEntries = performance.getEntriesByType('navigation')[0] as any;
-      resolve({
-        loadTime: perfEntries.loadEventEnd - perfEntries.loadEventStart,
-        domContentLoaded: perfEntries.domContentLoadedEventEnd - perfEntries.domContentLoadedEventStart,
-        firstPaint: performance.getEntriesByName('first-paint')[0]?.startTime || 0,
-        firstContentfulPaint: performance.getEntriesByName('first-contentful-paint')[0]?.startTime || 0
-      });
+      if (typeof window === 'undefined' || !performance) {
+        resolve({
+          loadTime: 0,
+          domContentLoaded: 0,
+          firstPaint: 0,
+          firstContentfulPaint: 0,
+          note: 'Performance API not available'
+        });
+        return;
+      }
+
+      try {
+        const perfEntries = performance.getEntriesByType('navigation')[0] as any;
+        resolve({
+          loadTime: perfEntries?.loadEventEnd - perfEntries?.loadEventStart || 0,
+          domContentLoaded: perfEntries?.domContentLoadedEventEnd - perfEntries?.domContentLoadedEventStart || 0,
+          firstPaint: performance.getEntriesByName('first-paint')[0]?.startTime || 0,
+          firstContentfulPaint: performance.getEntriesByName('first-contentful-paint')[0]?.startTime || 0
+        });
+      } catch (error) {
+        resolve({
+          loadTime: 0,
+          domContentLoaded: 0,
+          firstPaint: 0,
+          firstContentfulPaint: 0,
+          error: 'Performance measurement failed'
+        });
+      }
     });
   };
 
@@ -200,32 +246,60 @@ export default function MobileTestingPage() {
 
   const testFormInteraction = async () => {
     return new Promise((resolve) => {
-      // Create test form elements
-      const input = document.createElement('input');
-      input.style.position = 'absolute';
-      input.style.left = '-9999px';
-      input.type = 'text';
-      document.body.appendChild(input);
-      
-      // Test focus and input
-      input.focus();
-      input.value = 'test';
-      
-      const canFocus = document.activeElement === input;
-      const canInput = input.value === 'test';
-      
-      document.body.removeChild(input);
-      
-      resolve({
-        canFocus,
-        canInput,
-        touchKeyboard: deviceInfo?.isMobile && canFocus
-      });
+      if (typeof window === 'undefined' || !document) {
+        resolve({
+          canFocus: false,
+          canInput: false,
+          touchKeyboard: false,
+          note: 'Document API not available'
+        });
+        return;
+      }
+
+      try {
+        // Create test form elements
+        const input = document.createElement('input');
+        input.style.position = 'absolute';
+        input.style.left = '-9999px';
+        input.type = 'text';
+        document.body.appendChild(input);
+        
+        // Test focus and input
+        input.focus();
+        input.value = 'test';
+        
+        const canFocus = document.activeElement === input;
+        const canInput = input.value === 'test';
+        
+        document.body.removeChild(input);
+        
+        resolve({
+          canFocus,
+          canInput,
+          touchKeyboard: deviceInfo?.isMobile && canFocus
+        });
+      } catch (error) {
+        resolve({
+          canFocus: false,
+          canInput: false,
+          touchKeyboard: false,
+          error: 'Form interaction test failed'
+        });
+      }
     });
   };
 
   const testNetwork = async () => {
     return new Promise(async (resolve) => {
+      if (typeof window === 'undefined' || !navigator) {
+        resolve({
+          online: false,
+          error: 'Navigator API not available',
+          note: 'Server-side rendering'
+        });
+        return;
+      }
+
       try {
         const startTime = Date.now();
         const response = await fetch('/api/health', { method: 'HEAD' });

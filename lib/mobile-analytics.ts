@@ -57,8 +57,12 @@ class MobileAnalytics {
   constructor() {
     this.sessionId = this.generateSessionId();
     this.startTime = Date.now();
-    this.detectDevice();
-    this.setupPerformanceMonitoring();
+    
+    // Only run browser-specific code on client side
+    if (typeof window !== 'undefined') {
+      this.detectDevice();
+      this.setupPerformanceMonitoring();
+    }
   }
 
   private generateSessionId(): string {
@@ -66,58 +70,80 @@ class MobileAnalytics {
   }
 
   private detectDevice(): void {
-    this.deviceInfo = {
-      isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
-      isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
-      isAndroid: /Android/.test(navigator.userAgent),
-      isTablet: /iPad|Android(?=.*Tablet)/.test(navigator.userAgent),
-      isInAppBrowser: navigator.userAgent.includes('FB_IAB') || 
-                     navigator.userAgent.includes('FBAN') || 
-                     navigator.userAgent.includes('Instagram') ||
-                     navigator.userAgent.includes('Twitter') ||
-                     navigator.userAgent.includes('TikTok'),
-      viewport: {
-        width: window.innerWidth,
-        height: window.innerHeight,
-        devicePixelRatio: window.devicePixelRatio
-      },
-      connection: (navigator as any).connection,
-      userAgent: navigator.userAgent,
-      platform: navigator.platform
-    };
+    // Only run on client side
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+      return;
+    }
+
+    try {
+      this.deviceInfo = {
+        isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+        isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
+        isAndroid: /Android/.test(navigator.userAgent),
+        isTablet: /iPad|Android(?=.*Tablet)/.test(navigator.userAgent),
+        isInAppBrowser: navigator.userAgent.includes('FB_IAB') || 
+                       navigator.userAgent.includes('FBAN') || 
+                       navigator.userAgent.includes('Instagram') ||
+                       navigator.userAgent.includes('Twitter') ||
+                       navigator.userAgent.includes('TikTok'),
+        viewport: {
+          width: window.innerWidth,
+          height: window.innerHeight,
+          devicePixelRatio: window.devicePixelRatio
+        },
+        connection: (navigator as any).connection,
+        userAgent: navigator.userAgent,
+        platform: navigator.platform
+      };
+    } catch (error) {
+      console.error('Device detection failed:', error);
+      this.deviceInfo = null;
+    }
   }
 
   private setupPerformanceMonitoring(): void {
-    // Monitor page performance
-    if (typeof window !== 'undefined' && 'performance' in window) {
-      window.addEventListener('load', () => {
-        setTimeout(() => {
-          this.trackPagePerformance();
-        }, 100);
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+
+    try {
+      // Monitor page performance
+      if ('performance' in window) {
+        window.addEventListener('load', () => {
+          setTimeout(() => {
+            this.trackPagePerformance();
+          }, 100);
+        });
+      }
+
+      // Monitor touch interactions - only if we have device info and document exists
+      if (this.deviceInfo?.isMobile && typeof document !== 'undefined') {
+        document.addEventListener('touchstart', this.trackTouchInteraction.bind(this), { passive: true });
+        document.addEventListener('touchend', this.trackTouchInteraction.bind(this), { passive: true });
+      }
+
+      // Monitor viewport changes (orientation, etc.)
+      window.addEventListener('resize', () => {
+        this.trackViewportChange();
       });
-    }
 
-    // Monitor touch interactions
-    if (this.deviceInfo?.isMobile) {
-      document.addEventListener('touchstart', this.trackTouchInteraction.bind(this), { passive: true });
-      document.addEventListener('touchend', this.trackTouchInteraction.bind(this), { passive: true });
-    }
-
-    // Monitor viewport changes (orientation, etc.)
-    window.addEventListener('resize', () => {
-      this.trackViewportChange();
-    });
-
-    // Monitor network changes
-    if ((navigator as any).connection) {
-      (navigator as any).connection.addEventListener('change', () => {
-        this.trackNetworkChange();
-      });
+      // Monitor network changes
+      if (typeof navigator !== 'undefined' && (navigator as any).connection) {
+        (navigator as any).connection.addEventListener('change', () => {
+          this.trackNetworkChange();
+        });
+      }
+    } catch (error) {
+      console.error('Performance monitoring setup failed:', error);
     }
   }
 
   // Track page performance metrics
   trackPagePerformance(): void {
+    // Only run on client side
+    if (typeof window === 'undefined' || typeof performance === 'undefined') {
+      return;
+    }
+
     try {
       const perfEntries = performance.getEntriesByType('navigation')[0] as any;
       const paintEntries = performance.getEntriesByType('paint');
@@ -137,7 +163,7 @@ class MobileAnalytics {
       });
 
       // Send to service worker for caching
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator && navigator.serviceWorker.controller) {
         navigator.serviceWorker.controller.postMessage({
           type: 'MOBILE_PERFORMANCE',
           metrics,
@@ -246,27 +272,37 @@ class MobileAnalytics {
 
   // Validate touch targets on the current page
   validateTouchTargets(): TouchTargetIssue[] {
-    const interactiveElements = document.querySelectorAll(
-      'button, a, input, select, textarea, [role="button"], [tabindex="0"]'
-    );
+    // Only run on client side
+    if (typeof document === 'undefined') {
+      return [];
+    }
 
-    const issues: TouchTargetIssue[] = [];
+    try {
+      const interactiveElements = document.querySelectorAll(
+        'button, a, input, select, textarea, [role="button"], [tabindex="0"]'
+      );
 
-    interactiveElements.forEach((element, index) => {
-      const rect = element.getBoundingClientRect();
-      const minSize = Math.min(rect.width, rect.height);
-      
-      issues.push({
-        element: `${element.tagName}${element.id ? '#' + element.id : ''}${element.className ? '.' + element.className.split(' ')[0] : ''}`,
-        size: minSize,
-        minSize: 44,
-        valid: minSize >= 44,
-        position: { x: rect.left, y: rect.top }
+      const issues: TouchTargetIssue[] = [];
+
+      interactiveElements.forEach((element, index) => {
+        const rect = element.getBoundingClientRect();
+        const minSize = Math.min(rect.width, rect.height);
+        
+        issues.push({
+          element: `${element.tagName}${element.id ? '#' + element.id : ''}${element.className ? '.' + element.className.split(' ')[0] : ''}`,
+          size: minSize,
+          minSize: 44,
+          valid: minSize >= 44,
+          position: { x: rect.left, y: rect.top }
+        });
       });
-    });
 
-    this.trackTouchTargets(issues);
-    return issues;
+      this.trackTouchTargets(issues);
+      return issues;
+    } catch (error) {
+      console.error('Touch target validation failed:', error);
+      return [];
+    }
   }
 
   // Send analytics data
