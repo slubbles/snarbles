@@ -1,9 +1,23 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Safe Supabase client creation with fallback
+const createSupabaseClient = () => {
+  try {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.warn('Supabase environment variables not configured');
+      return null;
+    }
+    return createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    );
+  } catch (error) {
+    console.error('Failed to create Supabase client:', error);
+    return null;
+  }
+};
+
+const supabase = createSupabaseClient();
 
 export class MCPAnalyticsService {
   /**
@@ -11,6 +25,11 @@ export class MCPAnalyticsService {
    */
   static async getPlatformInsights(timeframe: '24h' | '7d' | '30d' = '7d') {
     try {
+      if (!supabase) {
+        console.warn('Supabase not configured, returning null');
+        return null;
+      }
+
       const { data: events, error } = await supabase
         .from('analytics_events')
         .select('*')
@@ -38,6 +57,8 @@ export class MCPAnalyticsService {
    * Analyze user behavior patterns for optimization
    */
   static async getUserBehaviorInsights() {
+    if (!supabase) return null;
+    
     const { data: events, error } = await supabase
       .from('analytics_events')
       .select('*')
@@ -57,6 +78,8 @@ export class MCPAnalyticsService {
    * Get real-time token creation metrics
    */
   static async getTokenCreationMetrics() {
+    if (!supabase) return null;
+    
     const { data: tokens, error } = await supabase
       .from('tokens')
       .select('*')
@@ -93,6 +116,8 @@ export class MCPAnalyticsService {
    * Monitor platform performance in real-time
    */
   static async getPerformanceMetrics() {
+    if (!supabase) return null;
+    
     const { data: events, error } = await supabase
       .from('analytics_events')
       .select('*')

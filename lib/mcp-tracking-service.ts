@@ -1,9 +1,23 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Safe Supabase client creation with fallback
+const createSupabaseClient = () => {
+  try {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.warn('Supabase environment variables not configured');
+      return null;
+    }
+    return createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    );
+  } catch (error) {
+    console.error('Failed to create Supabase client:', error);
+    return null;
+  }
+};
+
+const supabase = createSupabaseClient();
 
 interface AnalyticsEvent {
   event_name: string;
@@ -32,6 +46,11 @@ export class MCPTrackingService {
    */
   static async track(event: AnalyticsEvent): Promise<void> {
     try {
+      if (!supabase) {
+        console.warn('Analytics tracking skipped - Supabase not configured');
+        return;
+      }
+
       const enhancedEvent = {
         ...event,
         session_id: this.sessionId,
@@ -323,7 +342,7 @@ export class MCPTrackingService {
   }
 
   private static async flushEvents(): Promise<void> {
-    if (this.eventQueue.length === 0) return;
+    if (this.eventQueue.length === 0 || !supabase) return;
 
     const eventsToFlush = [...this.eventQueue];
     this.eventQueue = [];
@@ -359,6 +378,8 @@ export class MCPTrackingService {
    */
   static async getRealtimeMetrics(): Promise<any> {
     try {
+      if (!supabase) return null;
+      
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
       
       const { data, error } = await supabase
