@@ -1,12 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Disable static export to allow API routes
-  // ...(process.env.NODE_ENV === 'production' && {
-  //   output: 'export',
-  //   trailingSlash: true,
-  //   skipTrailingSlashRedirect: true,
-  //   distDir: 'out',
-  // }),
+  // Use standard build output for Netlify with API routes
   poweredByHeader: false,
   reactStrictMode: false,
   images: {

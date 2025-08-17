@@ -13,6 +13,7 @@ import { MCPAnalyticsProvider } from '@/components/providers/MCPAnalyticsProvide
     export const metadata: Metadata = {
       title: 'Snarbles - Create Your Own Token in 30 Seconds',
       description: 'Launch your cryptocurrency token instantly with Snarbles. No coding required.',
+      metadataBase: new URL('https://snarbles.com'),
       keywords: 'token creation, cryptocurrency, blockchain, solana, defi, web3',
       authors: [{ name: 'Snarbles Team' }],
       creator: 'Snarbles',
@@ -20,7 +21,7 @@ import { MCPAnalyticsProvider } from '@/components/providers/MCPAnalyticsProvide
       openGraph: {
         title: 'Snarbles - Create Your Own Token in 30 Seconds',
         description: 'Launch your cryptocurrency token instantly with Snarbles. No coding required.',
-        url: 'https://snarbles.xyz',
+        url: 'https://snarbles.com',
         siteName: 'Snarbles',
         images: [
           {

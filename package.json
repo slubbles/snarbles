@@ -28,6 +28,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:netlify": "./scripts/netlify-build.sh",
     "build:production": "cross-env NODE_ENV=production next build",
     "build:prod": "cross-env NODE_ENV=production next build",
     "start": "next start",

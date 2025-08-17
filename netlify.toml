@@ -1,17 +1,22 @@
 # Netlify configuration for Snarbles Token Platform
 [build]
-  command = "npm run build"
-  publish = "out"
+  command = "npm run build:netlify"
+  publish = ".next"
   
 [build.environment]
   NEXT_TELEMETRY_DISABLED = "1"
   NODE_VERSION = "20.18.0"
+  NPM_FLAGS = "--legacy-peer-deps"
 
-# Handle SPA routing for Next.js app router
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# Essential Next.js plugin for API routes and SSR
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Handle Next.js routing (only needed for static exports)
+# [[redirects]]
+#   from = "/*"
+#   to = "/index.html"
+#   status = 200
   
 # Set security headers
 [[headers]]
