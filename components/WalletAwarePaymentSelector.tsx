@@ -22,13 +22,15 @@ interface WalletAwarePaymentSelectorProps {
   nativeRequired: number; // ALGO or SOL required
   network: string;
   className?: string;
+  onOpenCreditsTopUp?: () => void;
 }
 
 export default function WalletAwarePaymentSelector({
   creditsRequired,
   nativeRequired,
   network,
-  className = ''
+  className = '',
+  onOpenCreditsTopUp
 }: WalletAwarePaymentSelectorProps) {
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
   const [isLoadingCredits, setIsLoadingCredits] = useState(false);
@@ -463,7 +465,13 @@ export default function WalletAwarePaymentSelector({
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => window.open('/credits', '_blank')}
+                  onClick={() => {
+                    if (selectedMethod === 'credits' && onOpenCreditsTopUp) {
+                      onOpenCreditsTopUp();
+                    } else {
+                      window.open('/credits', '_blank');
+                    }
+                  }}
                   className="flex items-center gap-2"
                 >
                   <Zap className="w-4 h-4" />

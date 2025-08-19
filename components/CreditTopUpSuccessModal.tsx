@@ -3,13 +3,15 @@ import React, { useEffect, useState } from 'react';
 interface CreditTopUpSuccessModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onTopUpAgain?: () => void; // Add top up again callback
   topUpDetails: {
     algoAmount: number;
     creditsReceived: number;
     bonusCredits?: number;
     transactionId: string;
     newBalance?: number;
-    paymentMethod?: 'ALGO' | 'USDT'; // Add payment method
+    paymentMethod?: 'ALGO' | 'USDT';
+    network?: string; // Add network for USDT transactions
   };
 }
 
@@ -30,6 +32,7 @@ const ConfettiPiece = ({ delay, duration, color }: { delay: number; duration: nu
 export default function CreditTopUpSuccessModal({ 
   isOpen, 
   onClose, 
+  onTopUpAgain,
   topUpDetails 
 }: CreditTopUpSuccessModalProps) {
   const [showDetails, setShowDetails] = useState(false);
@@ -58,7 +61,31 @@ export default function CreditTopUpSuccessModal({
 
   const formatCredits = (amount: number) => amount.toLocaleString('en-US');
 
-  const explorerUrl = `https://allo.info/tx/${topUpDetails.transactionId}`;
+  // Get the appropriate explorer URL based on payment method
+  const getExplorerUrl = () => {
+    if (isUSDT && topUpDetails.network) {
+      // Different explorers for different networks
+      switch (topUpDetails.network.toLowerCase()) {
+        case 'ethereum':
+          return `https://etherscan.io/tx/${topUpDetails.transactionId}`;
+        case 'polygon':
+          return `https://polygonscan.com/tx/${topUpDetails.transactionId}`;
+        case 'bsc':
+        case 'binance smart chain':
+          return `https://bscscan.com/tx/${topUpDetails.transactionId}`;
+        case 'solana':
+          return `https://solscan.io/tx/${topUpDetails.transactionId}`;
+        case 'algorand':
+          return `https://allo.info/tx/${topUpDetails.transactionId}`;
+        default:
+          return `https://etherscan.io/tx/${topUpDetails.transactionId}`;
+      }
+    }
+    // Default to Algorand for ALGO payments
+    return `https://allo.info/tx/${topUpDetails.transactionId}`;
+  };
+
+  const explorerUrl = getExplorerUrl();
 
   const confettiColors = ['rgb(239, 68, 68)', 'rgb(59, 130, 246)', 'rgb(34, 197, 94)', 'rgb(168, 85, 247)', 'rgb(249, 115, 22)', 'rgb(236, 72, 153)'];
 
@@ -98,7 +125,7 @@ export default function CreditTopUpSuccessModal({
         }
       `}</style>
 
-      <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="fixed inset-0 z-40 overflow-y-auto">
         {/* Confetti */}
         {showConfetti && (
           <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -204,7 +231,12 @@ export default function CreditTopUpSuccessModal({
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400 font-['Inter']">Network:</span>
-                      <span className="text-white font-['Inter']">Algorand Mainnet</span>
+                      <span className="text-white font-['Inter']">
+                        {isUSDT 
+                          ? (topUpDetails.network || 'Multi-Network USDT') 
+                          : 'Algorand Mainnet'
+                        }
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400 font-['Inter']">Status:</span>
@@ -217,7 +249,13 @@ export default function CreditTopUpSuccessModal({
                       className="inline-flex items-center hover:opacity-80 transition-all duration-300 font-['Inter']"
                       style={{ color: 'rgb(239, 68, 68)' }}
                     >
-                      View on Allo.info →
+                      View on {isUSDT && topUpDetails.network 
+                        ? (topUpDetails.network === 'Solana' ? 'Solscan' : 
+                           topUpDetails.network === 'Ethereum' ? 'Etherscan' :
+                           topUpDetails.network === 'Polygon' ? 'Polygonscan' :
+                           topUpDetails.network === 'BSC' ? 'BSCScan' : 'Explorer')
+                        : 'Allo.info'
+                      } →
                     </a>
                   </div>
                 )}
@@ -236,6 +274,20 @@ export default function CreditTopUpSuccessModal({
               >
                 ✨ Awesome!
               </button>
+              
+              {/* Top Up Again Button */}
+              {onTopUpAgain && (
+                <button
+                  onClick={() => {
+                    onClose();
+                    onTopUpAgain();
+                  }}
+                  className="flex-1 rounded-xl border border-blue-600/30 px-4 py-3 text-center font-medium text-blue-300 hover:bg-blue-800/20 hover:border-blue-500/50 transition-all duration-300 font-['Inter']"
+                >
+                  🔄 Top Up Again
+                </button>
+              )}
+              
               <a
                 href="/create"
                 className="flex-1 rounded-xl border border-gray-700 px-4 py-3 text-center font-medium text-gray-300 hover:bg-gray-800/50 hover:border-gray-600 transition-all duration-300 font-['Inter']"

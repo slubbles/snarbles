@@ -43,9 +43,10 @@ interface TokenData {
 interface TokenFormCleanProps {
   tokenData: TokenData;
   setTokenData: (data: TokenData) => void;
+  onOpenCreditsTopUp?: () => void;
 }
 
-export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCleanProps) {
+export default function TokenFormClean({ tokenData, setTokenData, onOpenCreditsTopUp }: TokenFormCleanProps) {
   const [isDeploying, setIsDeploying] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [showTransactionModal, setShowTransactionModal] = useState(false);
@@ -823,7 +824,7 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
   };
 
   // Get the reason why the form is not ready
-  const getFormNotReadyReason = () => {
+  const getFormNotReadyReason = (): string | null => {
     if (!isAuthenticated) {
       return "Connect your wallet to create a token";
     }
@@ -868,7 +869,7 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
       }
       
       if (selectedPaymentMethod === 'credits' && userCredits < creditsRequired) {
-        return `Insufficient credits. Need ${creditsRequired}, have ${userCredits}. Top up credits first.`;
+        return `Insufficient credits. Need ${creditsRequired}, have ${userCredits}. Use the Top Up Credits button above.`;
       }
       
       if (selectedPaymentMethod === 'algo_direct' && (walletBalance === null || walletBalance < algoRequired)) {
@@ -1372,15 +1373,32 @@ export default function TokenFormClean({ tokenData, setTokenData }: TokenFormCle
 
         {/* Payment Section - Mobile optimized */}
         <div className="bg-card border border-border rounded-lg p-4 lg:p-6">
-          <h2 className="text-lg lg:text-xl font-semibold text-foreground mb-4 lg:mb-6 flex items-center gap-2">
-            <CreditCard className="w-4 h-4 lg:w-5 lg:h-5 text-primary" />
-            Payment Method
-          </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 lg:mb-6">
+            <h2 className="text-lg lg:text-xl font-semibold text-foreground flex items-center gap-2">
+              <CreditCard className="w-4 h-4 lg:w-5 lg:h-5 text-primary" />
+              Payment Method
+            </h2>
+            
+            {/* Top Up Credits Button */}
+            {onOpenCreditsTopUp && (
+              <Button
+                onClick={onOpenCreditsTopUp}
+                variant="outline"
+                size="sm"
+                className="border-primary/50 text-primary hover:bg-primary/10 hover:border-primary transition-all"
+                aria-label="Open credits top-up modal to purchase more credits"
+              >
+                <CreditCard className="w-4 h-4 mr-2" aria-hidden="true" />
+                Top Up Credits
+              </Button>
+            )}
+          </div>
           
           <WalletAwarePaymentSelector 
             network={tokenData.network}
             creditsRequired={tokenData.network.includes('mainnet') ? 10 : 0}
             nativeRequired={tokenData.network.includes('mainnet') ? 5 : 0}
+            onOpenCreditsTopUp={onOpenCreditsTopUp}
           />
         </div>
 

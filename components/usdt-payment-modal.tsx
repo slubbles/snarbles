@@ -26,6 +26,7 @@ import {
   Shield,
   DollarSign
 } from 'lucide-react';
+import { SuccessConfetti } from '@/components/SuccessConfetti';
 
 // Import our EVM wallet integration
 import {
@@ -103,6 +104,7 @@ export default function USDTPaymentModal({
   });
   const [gasEstimate, setGasEstimate] = useState<any>(null);
   const [copied, setCopied] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   // Derived values
   const amountNumber = parseFloat(amount) || 0;
@@ -262,6 +264,9 @@ export default function USDTPaymentModal({
         // Complete the payment
         onPaymentComplete(creditsToReceive);
         
+        // Trigger confetti for success
+        setShowConfetti(true);
+        
         showToast(
           "Payment Successful!",
           `${creditsToReceive} credits added to your account`
@@ -344,7 +349,15 @@ export default function USDTPaymentModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <>
+      {/* Success Confetti */}
+      <SuccessConfetti 
+        show={showConfetti} 
+        duration={4000}
+        onComplete={() => setShowConfetti(false)}
+      />
+      
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto glass-card border-border bg-background">
         <CardHeader className="border-b border-border">
           <CardTitle className="flex items-center gap-2 text-foreground">
@@ -662,5 +675,6 @@ export default function USDTPaymentModal({
         </CardFooter>
       </Card>
     </div>
+    </>
   );
 }

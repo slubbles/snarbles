@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import { SuccessConfetti } from '@/components/SuccessConfetti';
 
 interface TransactionStep {
   id: string;
@@ -62,6 +63,7 @@ export function EnhancedTransactionModal({
 }: EnhancedTransactionModalProps) {
   const [progress, setProgress] = useState(0);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const { toast } = useToast();
 
   const steps: TransactionStep[] = [
@@ -107,17 +109,21 @@ export function EnhancedTransactionModal({
     // Show success animation when complete
     if (currentStep >= 3 && !showSuccess) {
       setShowSuccess(true);
+      setShowConfetti(true);
       
-      // Trigger confetti if available
-      if (typeof window !== 'undefined' && window.confetti) {
-        window.confetti({
+      // Trigger confetti celebration (dynamic import for better compatibility)
+      import('canvas-confetti').then((confetti) => {
+        confetti.default({
           particleCount: 100,
           spread: 70,
           origin: { y: 0.6 }
         });
-      }
+      }).catch(() => {
+        // Fallback if confetti fails to load
+        console.log('🎉 Transaction success! (confetti unavailable)');
+      });
     }
-  }, [currentStep]);
+  }, [currentStep, showSuccess]);
 
   const copyToClipboard = async (text: string, label: string) => {
     await navigator.clipboard.writeText(text);
@@ -151,7 +157,15 @@ export function EnhancedTransactionModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <>
+      {/* Success Confetti */}
+      <SuccessConfetti 
+        show={showConfetti} 
+        duration={4000}
+        onComplete={() => setShowConfetti(false)}
+      />
+      
+      <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -287,5 +301,6 @@ export function EnhancedTransactionModal({
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 }

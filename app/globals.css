@@ -1400,6 +1400,27 @@ body {
   gap: 0.75rem;
 }
 
+/* Remove unwanted highlights and focus indicators */
+* {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-focus-ring-color: transparent !important;
+  -moz-outline: none !important;
+}
+
+*:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Prevent browser developer tools highlighting */
+*[data-inspector-highlight],
+*[data-webkit-inspector-highlight] {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
 @media (max-width: 640px) {
   .mobile-grid-responsive {
     grid-template-columns: 1fr;

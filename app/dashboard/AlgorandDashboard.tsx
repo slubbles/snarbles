@@ -14,10 +14,13 @@ import {
   Coins, 
   DollarSign,
   BarChart3,
-  Activity
+  Activity,
+  Users,
+  Settings
 } from 'lucide-react';
 import { useAlgorandWallet } from '@/components/providers/AlgorandWalletProvider';
 import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 import { 
   getAlgorandEnhancedTokenInfo, 
   getAlgorandTransactionHistory, 
@@ -237,6 +240,31 @@ export default function AlgorandDashboard() {
                 </>
               )}
             </Button>
+            
+            {/* Quick Navigation Links */}
+            <Link href="/dashboard/algorand/holders">
+              <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm">
+                <Users className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Holders</span>
+                <span className="sm:hidden">👥</span>
+              </Button>
+            </Link>
+            
+            <Link href="/dashboard/algorand/transactions">
+              <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm">
+                <Activity className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Transactions</span>
+                <span className="sm:hidden">📊</span>
+              </Button>
+            </Link>
+            
+            <Link href="/dashboard/algorand/settings">
+              <Button variant="outline" size="sm" className="h-8 sm:h-9 text-xs sm:text-sm">
+                <Settings className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Settings</span>
+                <span className="sm:hidden">⚙️</span>
+              </Button>
+            </Link>
           </div>
         </div>
 
@@ -287,6 +315,79 @@ export default function AlgorandDashboard() {
                       )}
                     </div>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card className="glass-card">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-foreground text-sm sm:text-base flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-primary" />
+                  Quick Actions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <Link href="/dashboard/algorand/holders">
+                    <Button variant="outline" className="w-full h-auto p-4 flex flex-col items-center gap-2 hover:bg-primary/10">
+                      <Users className="w-6 h-6 text-primary" />
+                      <div className="text-center">
+                        <div className="font-medium text-sm">Token Holders</div>
+                        <div className="text-xs text-muted-foreground">Analyze distribution</div>
+                      </div>
+                    </Button>
+                  </Link>
+                  
+                  <Link href="/dashboard/algorand/transactions">
+                    <Button variant="outline" className="w-full h-auto p-4 flex flex-col items-center gap-2 hover:bg-primary/10">
+                      <Activity className="w-6 h-6 text-primary" />
+                      <div className="text-center">
+                        <div className="font-medium text-sm">Transactions</div>
+                        <div className="text-xs text-muted-foreground">View history</div>
+                      </div>
+                    </Button>
+                  </Link>
+                  
+                  <Link href="/dashboard/algorand/settings">
+                    <Button variant="outline" className="w-full h-auto p-4 flex flex-col items-center gap-2 hover:bg-primary/10">
+                      <Settings className="w-6 h-6 text-primary" />
+                      <div className="text-center">
+                        <div className="font-medium text-sm">Settings</div>
+                        <div className="text-xs text-muted-foreground">Configure dashboard</div>
+                      </div>
+                    </Button>
+                  </Link>
+                  
+                  <Link href="/create">
+                    <Button variant="outline" className="w-full h-auto p-4 flex flex-col items-center gap-2 hover:bg-primary/10">
+                      <Coins className="w-6 h-6 text-primary" />
+                      <div className="text-center">
+                        <div className="font-medium text-sm">Create Token</div>
+                        <div className="text-xs text-muted-foreground">Launch new asset</div>
+                      </div>
+                    </Button>
+                  </Link>
+                  
+                  <Link href="/analytics">
+                    <Button variant="outline" className="w-full h-auto p-4 flex flex-col items-center gap-2 hover:bg-primary/10">
+                      <BarChart3 className="w-6 h-6 text-primary" />
+                      <div className="text-center">
+                        <div className="font-medium text-sm">Analytics</div>
+                        <div className="text-xs text-muted-foreground">Market insights</div>
+                      </div>
+                    </Button>
+                  </Link>
+                  
+                  <Link href="/dashboard">
+                    <Button variant="outline" className="w-full h-auto p-4 flex flex-col items-center gap-2 hover:bg-primary/10">
+                      <RefreshCw className="w-6 h-6 text-primary" />
+                      <div className="text-center">
+                        <div className="font-medium text-sm">All Networks</div>
+                        <div className="text-xs text-muted-foreground">Switch networks</div>
+                      </div>
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>

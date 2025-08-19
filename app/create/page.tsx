@@ -14,6 +14,9 @@ import { isMobile } from '@/lib/mobile-wallet-utils';
 import { SmartWalletModal } from '@/components/SmartWalletModal';
 import SolanaMobileWalletManager from '@/components/SolanaMobileWalletManager';
 import PeraWalletAppHandler from '@/components/PeraWalletAppHandler';
+import CreditTopUpNew from '@/components/CreditTopUpNew';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 export default function CreateTokenPage() {
   const searchParams = useSearchParams();
@@ -38,6 +41,7 @@ export default function CreateTokenPage() {
   const [userCredits, setUserCredits] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showMobileWalletModal, setShowMobileWalletModal] = useState(false);
+  const [showCreditTopUpModal, setShowCreditTopUpModal] = useState(false);
   const [isMobileDevice, setIsMobileDevice] = useState(false);
   const { toast } = useToast();
   const { user, isAuthenticated, walletAddress } = useWalletAuth();
@@ -67,6 +71,14 @@ export default function CreateTokenPage() {
 
   const formatCredits = (credits: number): string => {
     return credits.toString();
+  };
+
+  const handleTopUpModalClose = () => {
+    setShowCreditTopUpModal(false);
+    // Reload credits balance after top-up
+    setTimeout(() => {
+      loadUserCredits();
+    }, 1000); // Small delay to ensure the purchase is processed
   };
 
   const progressPercentage = Math.round(
@@ -101,7 +113,7 @@ export default function CreateTokenPage() {
       <div className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-12">
           
-          {/* Mobile-Optimized Header */}
+          {/* Header */}
           <div className="text-center mb-8 lg:mb-16">
             <Link 
               href="/" 
@@ -122,6 +134,8 @@ export default function CreateTokenPage() {
               Transform your idea into a real token in 30 seconds. 
               Simple, secure, and professional.
             </p>
+
+
           </div>
 
           {/* Mobile-First Optimized Layout */}
@@ -134,6 +148,7 @@ export default function CreateTokenPage() {
                 <TokenFormClean 
                   tokenData={tokenData}
                   setTokenData={setTokenData}
+                  onOpenCreditsTopUp={() => setShowCreditTopUpModal(true)}
                 />
               </div>
 
@@ -195,6 +210,48 @@ export default function CreateTokenPage() {
           isOpen={showMobileWalletModal}
           onClose={() => setShowMobileWalletModal(false)}
         />
+
+        {/* Credits Top-Up Modal */}
+        <Dialog open={showCreditTopUpModal} onOpenChange={handleTopUpModalClose}>
+          <DialogContent 
+            className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto z-[60] p-4 sm:p-6"
+            aria-describedby="credits-modal-description"
+          >
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <CreditCard className="w-5 h-5 text-primary" aria-hidden="true" />
+                Top Up Credits
+              </DialogTitle>
+              <p 
+                id="credits-modal-description"
+                className="text-muted-foreground mt-2 text-sm sm:text-base"
+              >
+                Purchase credits to create tokens on mainnet networks. 1 credit = 1 mainnet token creation.
+              </p>
+            </DialogHeader>
+            
+            {/* Quick Info Banner */}
+            <div className="mt-4 p-3 sm:p-4 bg-primary/5 border border-primary/20 rounded-lg">
+              <div className="flex items-start gap-3">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                  <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-foreground mb-1 text-sm sm:text-base">Token Creation Costs</h4>
+                  <ul className="text-xs sm:text-sm text-muted-foreground space-y-1">
+                    <li>• <strong>Testnet tokens:</strong> Free (Algorand Testnet, Solana Devnet)</li>
+                    <li>• <strong>Mainnet tokens:</strong> 10 credits (Algorand Mainnet)</li>
+                    <li>• <strong>Credits never expire</strong> and can be used across all supported networks</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 sm:mt-6">
+              <CreditTopUpNew onClose={handleTopUpModalClose} />
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </PeraWalletAppHandler>
   );

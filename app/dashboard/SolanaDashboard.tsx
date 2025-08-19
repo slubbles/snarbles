@@ -71,7 +71,9 @@ import PerformanceMonitor from '@/components/dashboard/PerformanceMonitor';
 
 import { isSupabaseAvailable } from '@/lib/supabase-client';
 import { useToast } from '@/hooks/use-toast';
+import { SuccessConfetti } from '@/components/SuccessConfetti';
 import { ADMIN_WALLET } from '@/lib/solana';
+import Link from 'next/link';
 
 // Enhanced components
 import EnhancedTokenManagement, { UniversalTokenInfo, TokenOperationData } from '@/components/dashboard/EnhancedTokenManagement';
@@ -138,6 +140,7 @@ export default function SolanaDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [actionError, setActionError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
+  const [showConfetti, setShowConfetti] = useState(false);
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [showTokenHistory, setShowTokenHistory] = useState(true);
 
@@ -583,6 +586,7 @@ export default function SolanaDashboard() {
       
       if (mintResult.success) {
         setActionSuccess(`Successfully minted ${actionAmount} ${selectedToken.symbol} tokens`);
+        setShowConfetti(true);
         toast({
           title: "Success",
           description: `Minted ${actionAmount} ${selectedToken.symbol} tokens`,
@@ -664,6 +668,7 @@ export default function SolanaDashboard() {
       
       if (burnResult.success) {
         setActionSuccess(`Successfully burned ${actionAmount} ${selectedToken.symbol} tokens`);
+        setShowConfetti(true);
         toast({
           title: "Success",
           description: `Burned ${actionAmount} ${selectedToken.symbol} tokens`,
@@ -776,6 +781,7 @@ export default function SolanaDashboard() {
       
       if (transferResult.success) {
         setActionSuccess(`Successfully transferred ${actionAmount} ${selectedToken.symbol} tokens`);
+        setShowConfetti(true);
         toast({
           title: "Success",
           description: `Transferred ${actionAmount} ${selectedToken.symbol} tokens to ${transferRecipient.slice(0, 8)}...`,
@@ -880,7 +886,15 @@ export default function SolanaDashboard() {
   }
 
   return (
-    <div className="min-h-screen app-background">
+    <>
+      {/* Success Confetti */}
+      <SuccessConfetti 
+        show={showConfetti} 
+        duration={4000}
+        onComplete={() => setShowConfetti(false)}
+      />
+      
+      <div className="min-h-screen app-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8 space-y-4 lg:space-y-0">
@@ -915,15 +929,44 @@ export default function SolanaDashboard() {
               <Copy className="w-4 h-4 mr-2" />
               Copy Address
             </Button>
-            <Button
-              variant={viewMode === 'enhanced' ? 'default' : 'outline'}
-              onClick={() => setViewMode(viewMode === 'enhanced' ? 'legacy' : 'enhanced')}
-              className="h-9"
-            >
-              <Star className="w-4 h-4 mr-2" />
-              {viewMode === 'enhanced' ? 'Enhanced' : 'Legacy'} View
-            </Button>
           </div>
+        </div>
+
+        {/* Quick Navigation */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <Link href="/dashboard/solana/analytics">
+            <Card className="glass-card hover:shadow-lg transition-all cursor-pointer border-purple-500/30 hover:border-purple-500/50">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
+                    <Users className="w-6 h-6 text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">Token Analytics</h3>
+                    <p className="text-sm text-muted-foreground">View detailed token analytics and metrics</p>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-muted-foreground ml-auto" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/dashboard/solana/tokens">
+            <Card className="glass-card hover:shadow-lg transition-all cursor-pointer border-purple-500/30 hover:border-purple-500/50">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
+                    <Activity className="w-6 h-6 text-green-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">SPL Tokens</h3>
+                    <p className="text-sm text-muted-foreground">Manage your SPL tokens and view balances</p>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-muted-foreground ml-auto" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
 
         {/* Enhanced Network Status & Quick Actions - More prominent */}
@@ -1628,6 +1671,7 @@ export default function SolanaDashboard() {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

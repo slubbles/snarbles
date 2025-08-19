@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { SuccessConfetti } from '@/components/SuccessConfetti';
 import { CheckCircle, Clock, AlertCircle, CreditCard, Shield, Zap } from 'lucide-react';
 
 interface PaymentProcessingModalProps {
@@ -24,6 +25,14 @@ export default function PaymentProcessingModal({
   transactionHash,
   paymentDetails
 }: PaymentProcessingModalProps) {
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  // Trigger confetti when payment is completed
+  useEffect(() => {
+    if (currentStep === 'completed' && !showConfetti) {
+      setShowConfetti(true);
+    }
+  }, [currentStep, showConfetti]);
   if (!isOpen) return null;
 
   const steps = [
@@ -77,6 +86,13 @@ export default function PaymentProcessingModal({
 
   return (
     <>
+      {/* Success Confetti */}
+      <SuccessConfetti 
+        show={showConfetti} 
+        duration={4000}
+        onComplete={() => setShowConfetti(false)}
+      />
+      
       <style jsx>{`
         .modal-backdrop {
           position: fixed;
@@ -86,7 +102,7 @@ export default function PaymentProcessingModal({
           bottom: 0;
           background: rgba(0, 0, 0, 0.9);
           backdrop-filter: blur(12px);
-          z-index: 999;
+          z-index: 55;
           animation: fadeIn 0.3s ease;
         }
 

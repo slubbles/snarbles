@@ -592,6 +592,83 @@ export function formatCredits(amount: number): string {
 }
 
 /**
+ * Purchase credits with USDT payment
+ */
+export async function purchaseCreditsWithUSDT(
+  walletAddress: string,
+  usdtAmount: number,
+  creditsAmount: number,
+  transactionHash: string,
+  network: string,
+  walletType: 'algorand' | 'solana' = 'algorand'
+): Promise<{ success: boolean; newBalance?: number; error?: string }> {
+  if (!isSupabaseAvailable()) {
+    return { success: false, error: 'Supabase is not configured' };
+  }
+
+  try {
+    console.log(`💳 [purchaseCreditsWithUSDT] Processing purchase for ${walletAddress}:`, {
+      usdtAmount,
+      creditsAmount,
+      transactionHash,
+      network
+    });
+
+    // First, get current balance
+    const balanceResult = await getCreditsBalance(walletAddress);
+    if (!balanceResult.success) {
+      console.error('❌ Failed to get current balance:', balanceResult.error);
+      return { success: false, error: 'Failed to get current balance' };
+    }
+
+    const currentBalance = balanceResult.balance || 0;
+    const newBalance = currentBalance + creditsAmount;
+
+    console.log(`📊 Balance update: ${currentBalance} + ${creditsAmount} = ${newBalance}`);
+
+    // Update credits balance
+    const updateResult = await updateCreditsBalance(walletAddress, newBalance);
+    if (!updateResult.success) {
+      console.error('❌ Failed to update balance:', updateResult.error);
+      return { success: false, error: 'Failed to update balance' };
+    }
+
+    // Add transaction record
+    const transactionResult = await addCreditTransaction(
+      walletAddress,
+      'purchase',
+      creditsAmount,
+      `USDT Credit Purchase - ${usdtAmount} USDT → ${creditsAmount} Credits`,
+      {
+        transactionHash,
+        paymentMethod: 'USDT',
+        paymentAddress: walletAddress,
+        status: 'completed',
+        metadata: {
+          usdtAmount,
+          network,
+          walletType,
+          exchangeRate: '1 USDT = 1 Credit'
+        }
+      }
+    );
+
+    if (!transactionResult.success) {
+      console.error('❌ Failed to add transaction record:', transactionResult.error);
+      // Balance was updated but transaction record failed - this is not critical
+      console.warn('⚠️ Balance updated but transaction record failed');
+    }
+
+    console.log(`✅ Credit purchase completed successfully! New balance: ${newBalance}`);
+    return { success: true, newBalance };
+
+  } catch (error) {
+    console.error('❌ Error in purchaseCreditsWithUSDT:', error);
+    return { success: false, error: 'An unexpected error occurred during credit purchase' };
+  }
+}
+
+/**
  * Format network name for display
  */
 export function formatNetworkName(network: string): string {

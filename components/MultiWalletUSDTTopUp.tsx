@@ -42,6 +42,9 @@ import {
   WalletType
 } from '@/lib/multi-wallet-usdt-system';
 
+// Import credit system
+import { purchaseCreditsWithUSDT } from '@/lib/credit-system';
+
 // Import wallet-specific integrations
 import { 
   getSolanaUSDTBalance, 
@@ -61,6 +64,7 @@ import {
 interface MultiWalletUSDTTopUpProps {
   userAddress?: string;
   onCreditsUpdated?: () => void;
+  onClose?: () => void;
 }
 
 // Connected wallet detection
@@ -70,7 +74,7 @@ interface ConnectedWallets {
   metamask: boolean;
 }
 
-export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: MultiWalletUSDTTopUpProps) {
+export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated, onClose }: MultiWalletUSDTTopUpProps) {
   // Wallet connections
   const solanaWallet = useWallet();
   const algorandWallet = useAlgorandWallet();
@@ -95,6 +99,7 @@ export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: 
   const [showOptInModal, setShowOptInModal] = useState(false);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
+  const [paymentStep, setPaymentStep] = useState<'idle' | 'approval' | 'processing' | 'confirming' | 'completed'>('idle');
   
   const { toast } = useToast();
 
@@ -257,12 +262,21 @@ export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: 
     setIsProcessing(true);
     setError('');
     setSuccess('');
+    setPaymentStep('approval');
     
     try {
       let result;
+      let walletAddress = '';
       
       switch (selectedNetwork.walletType) {
         case 'phantom':
+          setPaymentStep('approval');
+          toast({
+            title: 'Approve Transaction',
+            description: 'Please approve the USDT transfer in your Phantom wallet',
+            variant: 'default'
+          });
+          
           result = await executeSolanaUSDTTransfer(
             {
               publicKey: solanaWallet.publicKey!,
@@ -272,9 +286,17 @@ export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: 
             amount,
             selectedNetwork.isTestnet || false
           );
+          walletAddress = solanaWallet.publicKey?.toString() || '';
           break;
           
         case 'pera':
+          setPaymentStep('approval');
+          toast({
+            title: 'Approve Transaction',
+            description: 'Please approve the USDT transfer in your Pera wallet',
+            variant: 'default'
+          });
+          
           result = await executeAlgorandUSDTTransfer(
             {
               address: algorandWallet.address!,
@@ -283,9 +305,17 @@ export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: 
             amount,
             selectedNetwork.isTestnet || false
           );
+          walletAddress = algorandWallet.address || '';
           break;
           
         case 'metamask':
+          setPaymentStep('approval');
+          toast({
+            title: 'Approve Transaction',
+            description: 'Please approve the USDT transfer in your MetaMask wallet',
+            variant: 'default'
+          });
+          
           // Use the multi-wallet system for EVM payments
           const evmWallet = await connectEVMWallet();
           if (evmWallet) {
@@ -295,6 +325,7 @@ export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: 
               amount,
               evmWallet
             );
+            walletAddress = evmWallet.address || '';
           } else {
             result = { success: false, error: 'Failed to connect EVM wallet' };
           }
@@ -304,21 +335,51 @@ export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: 
           result = { success: false, error: 'Unsupported wallet type' };
       }
       
-      if (result.success) {
-        setSuccess(`Payment successful! Transaction: ${result.transactionHash}`);
+      if (result.success && result.transactionHash) {
+        setPaymentStep('processing');
         toast({
-          title: 'Payment Successful',
-          description: `${amount} USDT payment completed. ${calculateCreditsFromUSDT(amount)} credits added.`,
+          title: 'Transaction Submitted',
+          description: 'Processing your payment and adding credits...',
           variant: 'default'
         });
         
-        // Refresh data
-        await loadNetworkData();
-        if (onCreditsUpdated) onCreditsUpdated();
+        // Add credits to user account
+        setPaymentStep('confirming');
+        const creditsToAdd = calculateCreditsFromUSDT(amount);
+        const creditResult = await purchaseCreditsWithUSDT(
+          walletAddress,
+          amount,
+          creditsToAdd,
+          result.transactionHash,
+          selectedNetwork.isTestnet ? 'testnet' : 'mainnet',
+          selectedNetwork.walletType === 'phantom' ? 'solana' : 'algorand'
+        );
         
-        // Close modal after delay
-        setTimeout(() => setShowPaymentModal(false), 3000);
+        if (creditResult.success) {
+          setPaymentStep('completed');
+          setSuccess(`Payment successful! ${creditsToAdd} credits added to your account. Transaction: ${result.transactionHash.slice(0, 10)}...`);
+          toast({
+            title: 'Payment Successful! 🎉',
+            description: `${amount} USDT payment completed. ${creditsToAdd} credits added to your account.`,
+            variant: 'default'
+          });
+          
+          // Refresh data
+          await loadNetworkData();
+          if (onCreditsUpdated) onCreditsUpdated();
+          
+          // Don't auto-close modals - let user close manually
+        } else {
+          setPaymentStep('idle');
+          setError(`Payment completed but failed to add credits: ${creditResult.error}`);
+          toast({
+            title: 'Credits Error',
+            description: 'Payment was successful but there was an issue adding credits. Please contact support.',
+            variant: 'destructive'
+          });
+        }
       } else {
+        setPaymentStep('idle');
         setError(result.error || 'Payment failed');
         toast({
           title: 'Payment Failed',
@@ -327,6 +388,7 @@ export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: 
         });
       }
     } catch (error) {
+      setPaymentStep('idle');
       const errorMsg = error instanceof Error ? error.message : 'Payment failed';
       setError(errorMsg);
       toast({
@@ -439,7 +501,7 @@ export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: 
           {/* Network Selection */}
           <div className="space-y-3">
             <Label className="text-foreground font-semibold">Select Payment Network</Label>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {networks.map((network) => (
                 <button
                   key={network.id}
@@ -475,7 +537,7 @@ export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: 
                 <div>
                   <p className="font-semibold text-foreground">{selectedNetwork.displayName}</p>
                   <p className="text-sm text-muted-foreground">
-                    Balance: {balance.toFixed(6)} USDT
+                    Balance: <span className="font-medium">{balance.toFixed(6)} USDT</span>
                   </p>
                 </div>
               </div>
@@ -510,10 +572,10 @@ export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: 
                   min={USDT_PRICING.MIN_USDT_AMOUNT}
                   max={USDT_PRICING.MAX_USDT_AMOUNT}
                   step="0.01"
-                  className="bg-background border-border text-foreground focus:border-primary"
+                  className="bg-background border-border text-foreground focus:border-primary text-lg h-12"
                 />
                 <p className="text-sm text-muted-foreground">
-                  You'll receive {creditsAmount} credits
+                  You'll receive <span className="font-medium text-foreground">{creditsAmount} credits</span>
                 </p>
               </TabsContent>
               
@@ -526,10 +588,10 @@ export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: 
                   min={USDT_PRICING.MIN_USDT_AMOUNT}
                   max={USDT_PRICING.MAX_USDT_AMOUNT}
                   step="1"
-                  className="bg-background border-border text-foreground focus:border-primary"
+                  className="bg-background border-border text-foreground focus:border-primary text-lg h-12"
                 />
                 <p className="text-sm text-muted-foreground">
-                  Cost: {usdtAmount} USDT
+                  Cost: <span className="font-medium text-foreground">{usdtAmount} USDT</span>
                 </p>
               </TabsContent>
             </Tabs>
@@ -542,7 +604,7 @@ export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: 
                   variant="outline"
                   size="sm"
                   onClick={() => handleQuickAmount(amount)}
-                  className="text-xs border-border hover:bg-muted"
+                  className="text-xs border-border hover:bg-muted hover:border-primary"
                 >
                   ${amount}
                 </Button>
@@ -552,25 +614,28 @@ export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: 
 
           {/* Payment Button */}
           <Button
-            onClick={() => setShowPaymentModal(true)}
+            onClick={() => {
+              setShowPaymentModal(true);
+              // Don't close parent modal - keep it open for better UX
+            }}
             disabled={!selectedNetwork || parseFloat(usdtAmount) <= 0}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 font-semibold"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 font-semibold text-lg"
           >
-            <CreditCard className="w-4 h-4 mr-2" />
+            <CreditCard className="w-5 h-5 mr-2" />
             Pay {usdtAmount} USDT → Get {creditsAmount} Credits
           </Button>
 
           {/* Error/Success Messages */}
           {error && (
-            <Alert className="border-primary bg-primary/10">
-              <AlertCircle className="h-4 w-4 text-primary" />
+            <Alert className="border-red-500/30 bg-red-500/10">
+              <AlertCircle className="h-4 w-4 text-red-500" />
               <AlertDescription className="text-foreground">{error}</AlertDescription>
             </Alert>
           )}
 
           {success && (
-            <Alert className="border-primary bg-primary/10">
-              <CheckCircle className="h-4 w-4 text-primary" />
+            <Alert className="border-green-500/30 bg-green-500/10">
+              <CheckCircle className="h-4 w-4 text-green-500" />
               <AlertDescription className="text-foreground">{success}</AlertDescription>
             </Alert>
           )}
@@ -579,46 +644,129 @@ export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: 
 
       {/* Payment Confirmation Modal */}
       <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
-        <DialogContent className="glass-card border-border">
+        <DialogContent className="sm:max-w-2xl max-w-[95vw] max-h-[90vh] overflow-y-auto glass-card border-border z-[70]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-foreground">
-              <span className="text-xl">{selectedNetwork && getWalletIcon(selectedNetwork.walletType)}</span>
+            <DialogTitle className="flex items-center gap-2 text-foreground text-xl">
+              <span className="text-2xl">{selectedNetwork && getWalletIcon(selectedNetwork.walletType)}</span>
               Confirm USDT Payment
             </DialogTitle>
-            <DialogDescription className="text-muted-foreground">
+            <DialogDescription className="text-muted-foreground text-base">
               Review your payment details before confirming
             </DialogDescription>
           </DialogHeader>
 
           {selectedNetwork && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-muted-foreground">Network</p>
-                  <p className="font-semibold text-foreground">{selectedNetwork.displayName}</p>
+            <div className="space-y-6">
+              {/* Payment Progress Indicator */}
+              <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30">
+                <div className="flex items-center space-x-4">
+                  <div className={`w-3 h-3 rounded-full ${paymentStep === 'idle' ? 'bg-muted-foreground' : 'bg-primary'}`} />
+                  <span className="text-sm font-medium">Ready</span>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">Wallet</p>
-                  <p className="font-semibold text-foreground">{getWalletName(selectedNetwork.walletType)}</p>
+                <div className="flex items-center space-x-4">
+                  <div className={`w-3 h-3 rounded-full ${
+                    paymentStep === 'approval' ? 'bg-primary animate-pulse' : 
+                    ['processing', 'confirming', 'completed'].includes(paymentStep) ? 'bg-primary' : 'bg-muted-foreground'
+                  }`} />
+                  <span className="text-sm font-medium">Wallet Approval</span>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">Amount</p>
-                  <p className="font-semibold text-foreground">{usdtAmount} USDT</p>
+                <div className="flex items-center space-x-4">
+                  <div className={`w-3 h-3 rounded-full ${
+                    paymentStep === 'processing' ? 'bg-primary animate-pulse' : 
+                    ['confirming', 'completed'].includes(paymentStep) ? 'bg-primary' : 'bg-muted-foreground'
+                  }`} />
+                  <span className="text-sm font-medium">Processing</span>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">Credits</p>
-                  <p className="font-semibold text-foreground">{creditsAmount} Credits</p>
+                <div className="flex items-center space-x-4">
+                  <div className={`w-3 h-3 rounded-full ${
+                    paymentStep === 'confirming' ? 'bg-primary animate-pulse' : 
+                    paymentStep === 'completed' ? 'bg-primary' : 'bg-muted-foreground'
+                  }`} />
+                  <span className="text-sm font-medium">Adding Credits</span>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">Network Fee</p>
-                  <p className="font-semibold text-foreground">{estimatedFee.toFixed(6)} {selectedNetwork.nativeCurrency?.symbol || 'ALGO'}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Balance</p>
-                  <p className="font-semibold text-foreground">{balance.toFixed(6)} USDT</p>
+                <div className="flex items-center space-x-4">
+                  <div className={`w-3 h-3 rounded-full ${paymentStep === 'completed' ? 'bg-green-500' : 'bg-muted-foreground'}`} />
+                  <span className="text-sm font-medium">Complete</span>
                 </div>
               </div>
 
+              {/* Current Step Message */}
+              {paymentStep !== 'idle' && (
+                <div className="p-4 rounded-xl bg-primary/10 border border-primary/20">
+                  <div className="flex items-center gap-3">
+                    {paymentStep === 'approval' && (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                        <div>
+                          <p className="font-semibold text-foreground">Waiting for wallet approval</p>
+                          <p className="text-sm text-muted-foreground">Please approve the transaction in your {getWalletName(selectedNetwork.walletType)} wallet</p>
+                        </div>
+                      </>
+                    )}
+                    {paymentStep === 'processing' && (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                        <div>
+                          <p className="font-semibold text-foreground">Transaction submitted</p>
+                          <p className="text-sm text-muted-foreground">Processing your USDT payment...</p>
+                        </div>
+                      </>
+                    )}
+                    {paymentStep === 'confirming' && (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                        <div>
+                          <p className="font-semibold text-foreground">Adding credits</p>
+                          <p className="text-sm text-muted-foreground">Updating your account balance...</p>
+                        </div>
+                      </>
+                    )}
+                    {paymentStep === 'completed' && (
+                      <>
+                        <CheckCircle className="w-5 h-5 text-green-500" />
+                        <div>
+                          <p className="font-semibold text-foreground">Payment completed!</p>
+                          <p className="text-sm text-muted-foreground">Credits have been added to your account</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Payment Details Grid */}
+              <div className="grid grid-cols-2 gap-6 text-sm">
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-muted-foreground mb-1">Network</p>
+                    <p className="font-semibold text-foreground text-base">{selectedNetwork.displayName}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground mb-1">Amount</p>
+                    <p className="font-semibold text-foreground text-lg">{usdtAmount} USDT</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground mb-1">Network Fee</p>
+                    <p className="font-semibold text-foreground">{estimatedFee.toFixed(6)} {selectedNetwork.nativeCurrency?.symbol || 'ALGO'}</p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-muted-foreground mb-1">Wallet</p>
+                    <p className="font-semibold text-foreground text-base">{getWalletName(selectedNetwork.walletType)}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground mb-1">Credits</p>
+                    <p className="font-semibold text-foreground text-lg">{creditsAmount} Credits</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground mb-1">Balance</p>
+                    <p className="font-semibold text-foreground">{balance.toFixed(6)} USDT</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Error/Success Messages */}
               {error && (
                 <Alert className="border-red-500/30 bg-red-500/10">
                   <AlertCircle className="h-4 w-4" />
@@ -635,38 +783,56 @@ export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated }: 
             </div>
           )}
 
-          <DialogFooter>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowPaymentModal(false)}
-              className="border-border hover:bg-muted"
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handlePayment}
-              disabled={isProcessing}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground"
-            >
-              {isProcessing ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="w-4 h-4 mr-2" />
-                  Confirm Payment
-                </>
-              )}
-            </Button>
+          <DialogFooter className="flex gap-3">
+            {paymentStep === 'completed' ? (
+              <Button 
+                onClick={() => {
+                  setShowPaymentModal(false);
+                  if (onClose) onClose();
+                }}
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Close & Return
+              </Button>
+            ) : (
+              <>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowPaymentModal(false)}
+                  disabled={isProcessing}
+                  className="border-border hover:bg-muted"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handlePayment}
+                  disabled={isProcessing || paymentStep !== 'idle'}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {paymentStep === 'approval' && 'Waiting for Approval...'}
+                      {paymentStep === 'processing' && 'Processing...'}
+                      {paymentStep === 'confirming' && 'Adding Credits...'}
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Confirm Payment
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Opt-in Modal */}
       <Dialog open={showOptInModal} onOpenChange={setShowOptInModal}>
-        <DialogContent className="glass-card border-border">
+        <DialogContent className="glass-card border-border z-[70]">
           <DialogHeader>
             <DialogTitle className="text-foreground">Opt-in to USDT</DialogTitle>
             <DialogDescription className="text-muted-foreground">

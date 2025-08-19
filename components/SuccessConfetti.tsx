@@ -1,75 +1,108 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
 
-// Dynamically import react-confetti with error handling
-const Confetti = dynamic(() => import('react-confetti').catch(() => {
-  // Fallback component if react-confetti fails to load
-  return { default: () => null };
-}), {
-  ssr: false,
-  loading: () => null
-});
+// Simple confetti effect using CSS animations (no external dependencies)
+const ConfettiPiece = ({ 
+  delay, 
+  duration, 
+  color, 
+  size = 2 
+}: { 
+  delay: number; 
+  duration: number; 
+  color: string;
+  size?: number;
+}) => (
+  <div
+    className="absolute rounded"
+    style={{
+      backgroundColor: color,
+      width: `${size}px`,
+      height: `${size}px`,
+      left: `${Math.random() * 100}%`,
+      animationDelay: `${delay}ms`,
+      animationDuration: `${duration}ms`,
+      animation: `confetti-fall ${duration}ms ease-out ${delay}ms forwards`
+    }}
+  />
+);
 
 interface SuccessConfettiProps {
   show: boolean;
   duration?: number;
+  particleCount?: number;
   onComplete?: () => void;
 }
 
 export function SuccessConfetti({ 
   show, 
-  duration = 5000, 
+  duration = 4000, 
+  particleCount = 80,
   onComplete 
 }: SuccessConfettiProps) {
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-  const [isComplete, setIsComplete] = useState(false);
+  const [isActive, setIsActive] = useState(false);
 
-  // Calculate window dimensions
   useEffect(() => {
-    if (typeof window !== 'undefined' && show) {
-      const updateDimensions = () => {
-        setDimensions({
-          width: window.innerWidth,
-          height: window.innerHeight
-        });
-      };
-
-      updateDimensions();
-      window.addEventListener('resize', updateDimensions);
-
+    if (show) {
+      setIsActive(true);
+      
       // Set timer to stop confetti
       const timer = setTimeout(() => {
-        setIsComplete(true);
+        setIsActive(false);
         if (onComplete) onComplete();
       }, duration);
 
-      return () => {
-        window.removeEventListener('resize', updateDimensions);
-        clearTimeout(timer);
-      };
+      return () => clearTimeout(timer);
     }
   }, [show, duration, onComplete]);
 
-  if (!show || isComplete || dimensions.width === 0) return null;
+  if (!show || !isActive) return null;
+
+  const confettiColors = [
+    'rgb(239, 68, 68)',   // Design system primary
+    'rgb(59, 130, 246)',  // Blue
+    'rgb(34, 197, 94)',   // Green  
+    'rgb(168, 85, 247)',  // Purple
+    'rgb(249, 115, 22)',  // Orange
+    'rgb(236, 72, 153)',  // Pink
+    'rgb(245, 158, 11)',  // Amber
+    'rgb(99, 102, 241)'   // Indigo
+  ];
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-50">
-      <Confetti
-        width={dimensions.width}
-        height={dimensions.height}
-        recycle={false}
-        numberOfPieces={200}
-        gravity={0.2}
-        colors={['#EF4444', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899']}
-        confettiSource={{
-          x: dimensions.width / 2,
-          y: dimensions.height / 3,
-          w: 0,
-          h: 0
-        }}
-      />
-    </div>
+    <>
+      <style jsx>{`
+        @keyframes confetti-fall {
+          0% {
+            transform: translateY(-100vh) rotate(0deg) scale(1);
+            opacity: 1;
+          }
+          10% {
+            opacity: 1;
+          }
+          50% {
+            transform: translateY(50vh) rotate(360deg) scale(0.8);
+            opacity: 0.8;
+          }
+          100% {
+            transform: translateY(100vh) rotate(720deg) scale(0.3);
+            opacity: 0;
+          }
+        }
+      `}</style>
+      
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-[9999]">
+        {Array.from({ length: particleCount }).map((_, i) => (
+          <ConfettiPiece
+            key={i}
+            delay={Math.random() * 2000}
+            duration={2000 + Math.random() * 2000}
+            color={confettiColors[Math.floor(Math.random() * confettiColors.length)]}
+            size={2 + Math.random() * 4}
+          />
+        ))}
+      </div>
+    </>
   );
 }

@@ -233,6 +233,7 @@ export function getNetworksByWalletType(walletType: WalletType): USDTNetwork[] {
 }
 
 // Get available networks based on connected wallets
+// RESTRICTED: Only Algorand mainnet is supported for USDT payments
 export function getAvailableNetworks(connectedWallets: {
   phantom?: boolean;
   pera?: boolean;
@@ -240,17 +241,19 @@ export function getAvailableNetworks(connectedWallets: {
 }): USDTNetwork[] {
   const availableNetworks: USDTNetwork[] = [];
   
-  if (connectedWallets.phantom) {
-    availableNetworks.push(...getNetworksByWalletType('phantom'));
-  }
-  
+  // Only allow Algorand mainnet USDT payments
+  // Snarbles currently only supports Algorand mainnet infrastructure
   if (connectedWallets.pera) {
-    availableNetworks.push(...getNetworksByWalletType('pera'));
+    const algorandMainnet = SUPPORTED_USDT_NETWORKS.find(
+      network => network.id === 'algorand-mainnet' && network.walletType === 'pera'
+    );
+    if (algorandMainnet) {
+      availableNetworks.push(algorandMainnet);
+    }
   }
   
-  if (connectedWallets.metamask) {
-    availableNetworks.push(...getNetworksByWalletType('metamask'));
-  }
+  // Note: Phantom (Solana) and MetaMask (EVM) networks are disabled
+  // until Snarbles expands to support additional mainnet infrastructures
   
   return availableNetworks;
 }

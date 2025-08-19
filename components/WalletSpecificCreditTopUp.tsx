@@ -556,30 +556,55 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
   }
 
   return (
-    <div className="space-y-8">
-      {/* Current Balance - Enhanced */}
-      <Card className="glass-card border-primary/10">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-xl font-bold text-foreground flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <CreditCard className="w-5 h-5 text-primary" />
+    <div className="space-y-10">
+      {/* Enhanced Current Balance Section */}
+      <Card className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-blue-500/5 border-primary/20">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-blue-500/10 opacity-50" />
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-blue-500 to-purple-500" />
+        
+        <CardHeader className="relative pb-6">
+          <CardTitle className="text-2xl font-bold text-foreground flex items-center gap-4">
+            <div className="relative">
+              <div className="absolute inset-0 w-12 h-12 bg-primary/30 rounded-full blur-lg animate-pulse" />
+              <div className="relative w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30">
+                <CreditCard className="w-6 h-6 text-white" />
+              </div>
             </div>
-            Current Balance
+            Your Wallet Balance
           </CardTitle>
+          <p className="text-muted-foreground text-lg">Monitor your available resources across all supported assets</p>
         </CardHeader>
-        <CardContent>
+        
+        <CardContent className="relative">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center p-6 bg-primary/5 border border-primary/10 rounded-xl hover:scale-105 transition-transform">
-              <div className="text-3xl font-bold text-primary mb-2">{userBalance}</div>
-              <div className="text-sm text-muted-foreground font-medium">Credits Available</div>
+            {/* Credits Balance */}
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl blur-lg group-hover:blur-xl transition-all duration-300 opacity-50" />
+              <div className="relative text-center p-8 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-2xl hover:scale-[1.02] transition-all duration-300 backdrop-blur-sm">
+                <div className="text-4xl font-bold text-primary mb-3 tabular-nums">{userBalance}</div>
+                <div className="text-sm text-primary/80 font-semibold uppercase tracking-wider">Credits Available</div>
+                <div className="mt-2 text-xs text-muted-foreground">Ready to use</div>
+              </div>
             </div>
-            <div className="text-center p-6 bg-muted/10 border border-border rounded-xl hover:scale-105 transition-transform">
-              <div className="text-2xl font-bold text-foreground mb-2">{nativeBalance.toFixed(3)}</div>
-              <div className="text-sm text-muted-foreground font-medium">{walletInfo.nativeCurrency} Balance</div>
+            
+            {/* Native Currency Balance */}
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-blue-500/10 rounded-2xl blur-lg group-hover:blur-xl transition-all duration-300 opacity-50" />
+              <div className="relative text-center p-8 bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-transparent border border-blue-500/20 rounded-2xl hover:scale-[1.02] transition-all duration-300 backdrop-blur-sm">
+                <div className="text-3xl font-bold text-blue-400 mb-3 tabular-nums">{nativeBalance.toFixed(3)}</div>
+                <div className="text-sm text-blue-400/80 font-semibold uppercase tracking-wider">{walletInfo.nativeCurrency} Balance</div>
+                <div className="mt-2 text-xs text-muted-foreground">For purchases</div>
+              </div>
             </div>
-            <div className="text-center p-6 bg-muted/10 border border-border rounded-xl hover:scale-105 transition-transform">
-              <div className="text-2xl font-bold text-foreground mb-2">{usdtBalance.toFixed(2)}</div>
-              <div className="text-sm text-muted-foreground font-medium">{walletInfo.stablecoin} Balance</div>
+            
+            {/* USDT Balance */}
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/20 to-green-500/10 rounded-2xl blur-lg group-hover:blur-xl transition-all duration-300 opacity-50" />
+              <div className="relative text-center p-8 bg-gradient-to-br from-green-500/10 via-green-500/5 to-transparent border border-green-500/20 rounded-2xl hover:scale-[1.02] transition-all duration-300 backdrop-blur-sm">
+                <div className="text-3xl font-bold text-green-400 mb-3 tabular-nums">{usdtBalance.toFixed(2)}</div>
+                <div className="text-sm text-green-400/80 font-semibold uppercase tracking-wider">{walletInfo.stablecoin} Balance</div>
+                <div className="mt-2 text-xs text-muted-foreground">Stable value</div>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -595,257 +620,434 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
         </Alert>
       )}
 
-      {/* Enhanced Payment Options - Side by Side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* ALGO/SOL Direct Payment */}
-        <Card className="glass-card border-green-500/10">
-          <CardHeader className="pb-6">
-            <CardTitle className="text-xl font-bold text-foreground flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                <span className="text-xl">{walletInfo.icon}</span>
+      {/* Enhanced Payment Options - Modern Layout */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
+        {/* Native Currency Packages */}
+        <Card className="relative overflow-hidden bg-gradient-to-br from-green-500/5 via-background to-emerald-500/5 border-green-500/20">
+          <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 via-transparent to-emerald-500/10 opacity-30" />
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-emerald-500" />
+          
+          <CardHeader className="relative pb-8">
+            <CardTitle className="text-2xl font-bold text-foreground flex items-center gap-4">
+              <div className="relative">
+                <div className="absolute inset-0 w-12 h-12 bg-green-500/30 rounded-full blur-lg animate-pulse" />
+                <div className="relative w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-green-500/30">
+                  <span className="text-2xl">{walletInfo.icon}</span>
+                </div>
               </div>
-              {walletInfo.nativeCurrency} Credit Packages
+              <div>
+                <div className="text-2xl font-bold">{walletInfo.nativeCurrency} Packages</div>
+                <p className="text-green-400 text-sm font-medium">Direct payments • Instant delivery</p>
+              </div>
             </CardTitle>
-            <p className="text-muted-foreground">
-              Pay directly with {walletInfo.nativeCurrency} from your {walletInfo.name}
+            <p className="text-muted-foreground text-lg leading-relaxed">
+              Purchase credits using {walletInfo.nativeCurrency} directly from your {walletInfo.name} wallet
             </p>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-4">
-              {PRICING.packages.map((pkg, index) => (
-                <Card key={index} className={`relative glass-card border transition-all hover:scale-[1.02] ${
-                  pkg.popular 
-                    ? 'border-primary/30 bg-primary/5' 
-                    : 'border-border hover:border-primary/20'
-                }`}>
-                  {pkg.popular && (
-                    <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground">
-                      Most Popular
+          
+          <CardContent className="relative space-y-6">
+            {PRICING.packages.map((pkg, index) => (
+              <Card key={index} className={`relative group transition-all duration-300 hover:scale-[1.02] ${
+                pkg.popular 
+                  ? 'border-primary/40 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent shadow-lg shadow-primary/20' 
+                  : 'border-border/50 hover:border-green-500/30 bg-gradient-to-r from-muted/5 to-transparent hover:shadow-lg hover:shadow-green-500/10'
+              }`}>
+                {pkg.popular && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
+                    <Badge className="bg-gradient-to-r from-primary to-primary/80 text-white font-bold px-4 py-1 shadow-lg animate-pulse">
+                      🔥 Most Popular
                     </Badge>
-                  )}
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-2xl font-bold text-foreground">{pkg.credits} Credits</div>
-                        {pkg.bonus > 0 && (
-                          <Badge variant="secondary" className="mt-1 bg-green-500/10 text-green-400 border-green-500/20">
-                            +{pkg.bonus} Bonus
-                          </Badge>
-                        )}
+                  </div>
+                )}
+                
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-3">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-bold text-foreground">{pkg.credits}</span>
+                        <span className="text-lg text-muted-foreground">Credits</span>
                       </div>
-                      <div className="text-right">
-                        <div className="text-xl font-bold text-primary mb-2">
-                          {pkg.priceALGO} {walletInfo.nativeCurrency}
+                      
+                      {pkg.bonus > 0 && (
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-green-500/20 text-green-400 border-green-500/30 font-semibold">
+                            <Zap className="w-3 h-3 mr-1" />
+                            +{pkg.bonus} Bonus Credits
+                          </Badge>
                         </div>
-                        <Button 
-                          onClick={() => handleNativePayment(index)}
-                          disabled={isPurchasing || nativeBalance < pkg.priceALGO}
-                          className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-                          size="sm"
-                        >
-                          {isPurchasing ? (
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          ) : (
-                            `Buy with ${walletInfo.nativeCurrency}`
-                          )}
-                        </Button>
-                        {nativeBalance < pkg.priceALGO && (
-                          <p className="text-xs text-destructive mt-2 font-medium">
-                            Insufficient balance
-                          </p>
-                        )}
+                      )}
+                      
+                      <div className="text-sm text-muted-foreground">
+                        Perfect for {Math.floor(pkg.credits / 10)} token{Math.floor(pkg.credits / 10) !== 1 ? 's' : ''}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            
-            {/* Custom ALGO Amount */}
-            <div className="mt-6 p-6 border border-primary/20 rounded-lg bg-primary/5">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="font-semibold text-foreground">Custom Amount</h4>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowCustomInput(!showCustomInput)}
-                  className="text-primary border-primary/20"
-                >
-                  {showCustomInput ? 'Hide' : 'Custom Amount'}
-                </Button>
-              </div>
-              
-              {showCustomInput && (
-                <div className="space-y-4">
-                  <div className="space-y-3">
-                    <Label htmlFor="custom-algo" className="text-sm font-semibold text-foreground">
-                      {walletInfo.nativeCurrency} Amount (Min: 1 {walletInfo.nativeCurrency})
-                    </Label>
-                    <Input
-                      id="custom-algo"
-                      type="number"
-                      value={customAlgoAmount}
-                      onChange={(e) => setCustomAlgoAmount(e.target.value)}
-                      placeholder="Enter ALGO amount"
-                      min="1"
-                      max={nativeBalance}
-                      className="bg-background border-border text-foreground text-lg"
-                    />
-                    {customAlgoAmount && parseFloat(customAlgoAmount) >= 1 && (
-                      <div className="p-3 bg-background/50 rounded-lg border border-border">
-                        <div className="text-sm text-muted-foreground mb-2">Credits Breakdown:</div>
-                        {(() => {
-                          const calculation = calculateCreditsFromAlgo(parseFloat(customAlgoAmount));
-                          return (
-                            <div className="space-y-1 text-sm">
-                              <div className="flex justify-between">
-                                <span>Base Credits:</span>
-                                <span className="font-semibold">{calculation.credits}</span>
-                              </div>
-                              {calculation.bonus > 0 && (
-                                <div className="flex justify-between text-green-400">
-                                  <span>Bonus Credits:</span>
-                                  <span className="font-semibold">+{calculation.bonus}</span>
-                                </div>
-                              )}
-                              <div className="border-t border-border pt-1 flex justify-between font-bold">
-                                <span>Total Credits:</span>
-                                <span className="text-primary">{calculation.total}</span>
-                              </div>
-                            </div>
-                          );
-                        })()}
+                    
+                    <div className="text-right space-y-4">
+                      <div className="space-y-1">
+                        <div className="text-2xl font-bold text-primary">
+                          {pkg.priceALGO} {walletInfo.nativeCurrency}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          ≈ ${(pkg.priceALGO * 0.15).toFixed(2)} USD
+                        </div>
                       </div>
+                      
+                      <Button 
+                        onClick={() => handleNativePayment(index)}
+                        disabled={isPurchasing || nativeBalance < pkg.priceALGO}
+                        className={`font-semibold transition-all duration-300 ${
+                          pkg.popular 
+                            ? 'bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 text-white shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:scale-105' 
+                            : 'bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/30 hover:border-green-500/50'
+                        }`}
+                        size="lg"
+                      >
+                        {isPurchasing ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <>
+                            <Coins className="w-4 h-4 mr-2" />
+                            Buy Now
+                          </>
+                        )}
+                      </Button>
+                      {nativeBalance < pkg.priceALGO && (
+                        <p className="text-xs text-destructive font-medium">
+                          Insufficient balance
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            
+            {/* Enhanced Custom Amount Section */}
+            <Card className="relative overflow-hidden border-primary/30 bg-gradient-to-r from-primary/5 via-primary/3 to-transparent">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-bold text-lg text-foreground flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-primary" />
+                    Custom Amount
+                  </h4>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowCustomInput(!showCustomInput)}
+                    className="text-primary border-primary/30 hover:bg-primary/10"
+                  >
+                    {showCustomInput ? 'Hide Options' : 'Show Custom'}
+                  </Button>
+                </div>
+                
+                {showCustomInput && (
+                  <div className="space-y-6">
+                    <div className="space-y-4">
+                      <Label htmlFor="custom-algo" className="text-sm font-semibold text-foreground flex items-center gap-2">
+                        <Coins className="w-4 h-4" />
+                        {walletInfo.nativeCurrency} Amount (Min: 1 {walletInfo.nativeCurrency})
+                      </Label>
+                      <Input
+                        id="custom-algo"
+                        type="number"
+                        value={customAlgoAmount}
+                        onChange={(e) => setCustomAlgoAmount(e.target.value)}
+                        placeholder={`Enter ${walletInfo.nativeCurrency} amount`}
+                        min="1"
+                        max={nativeBalance}
+                        className="bg-background/50 border-primary/20 text-foreground text-lg h-12 focus:ring-2 focus:ring-primary/30"
+                      />
+                      {customAlgoAmount && parseFloat(customAlgoAmount) >= 1 && (
+                        <Card className="border-primary/20 bg-gradient-to-r from-primary/10 to-transparent">
+                          <CardContent className="p-4">
+                            <div className="text-sm text-muted-foreground mb-3 font-semibold">Credits Preview:</div>
+                            {(() => {
+                              const calculation = calculateCreditsFromAlgo(parseFloat(customAlgoAmount));
+                              return (
+                                <div className="space-y-2 text-sm">
+                                  <div className="flex justify-between">
+                                    <span>Base Credits:</span>
+                                    <span className="font-semibold">{calculation.credits}</span>
+                                  </div>
+                                  {calculation.bonus > 0 && (
+                                    <div className="flex justify-between text-green-400">
+                                      <span>Bonus Credits:</span>
+                                      <span className="font-semibold">+{calculation.bonus}</span>
+                                    </div>
+                                  )}
+                                  <div className="border-t border-primary/20 pt-2 flex justify-between font-bold text-lg">
+                                    <span>Total Credits:</span>
+                                    <span className="text-primary">{calculation.total}</span>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </CardContent>
+                        </Card>
+                      )}
+                    </div>
+
+                    <Button 
+                      onClick={() => handleNativePayment('custom', parseFloat(customAlgoAmount))}
+                      disabled={
+                        isPurchasing || 
+                        !customAlgoAmount ||
+                        parseFloat(customAlgoAmount) < 1 ||
+                        parseFloat(customAlgoAmount) > nativeBalance
+                      }
+                      className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 text-white font-bold py-4 text-lg shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-all duration-300 hover:scale-[1.02]"
+                      size="lg"
+                    >
+                      {isPurchasing ? (
+                        <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                      ) : (
+                        <>
+                          <Zap className="w-5 h-5 mr-3" />
+                          Buy {customAlgoAmount || '0'} {walletInfo.nativeCurrency} Worth
+                        </>
+                      )}
+                    </Button>
+                    {customAlgoAmount && parseFloat(customAlgoAmount) > nativeBalance && (
+                      <p className="text-xs text-destructive text-center font-medium bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+                        Insufficient balance (Available: {nativeBalance.toFixed(2)} {walletInfo.nativeCurrency})
+                      </p>
                     )}
                   </div>
-
-                  <Button 
-                    onClick={() => handleNativePayment('custom', parseFloat(customAlgoAmount))}
-                    disabled={
-                      isPurchasing || 
-                      !customAlgoAmount ||
-                      parseFloat(customAlgoAmount) < 1 ||
-                      parseFloat(customAlgoAmount) > nativeBalance
-                    }
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-4"
-                    size="lg"
-                  >
-                    {isPurchasing ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      `Buy with ${customAlgoAmount || '0'} ${walletInfo.nativeCurrency}`
-                    )}
-                  </Button>
-                  {customAlgoAmount && parseFloat(customAlgoAmount) > nativeBalance && (
-                    <p className="text-xs text-destructive text-center font-medium">
-                      Insufficient balance (Available: {nativeBalance.toFixed(2)} {walletInfo.nativeCurrency})
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
+                )}
+              </CardContent>
+            </Card>
           </CardContent>
         </Card>
 
-        {/* USDT Custom Amount Payment */}
-        <Card className="glass-card border-blue-500/10">
-          <CardHeader className="pb-6">
-            <CardTitle className="text-xl font-bold text-foreground flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-                <DollarSign className="w-5 h-5 text-blue-400" />
+        {/* Enhanced USDT Payment Section */}
+        <Card className="relative overflow-hidden bg-gradient-to-br from-blue-500/5 via-background to-cyan-500/5 border-blue-500/20">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-transparent to-cyan-500/10 opacity-30" />
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-cyan-500" />
+          
+          <CardHeader className="relative pb-8">
+            <CardTitle className="text-2xl font-bold text-foreground flex items-center gap-4">
+              <div className="relative">
+                <div className="absolute inset-0 w-12 h-12 bg-blue-500/30 rounded-full blur-lg animate-pulse" />
+                <div className="relative w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                  <DollarSign className="w-6 h-6 text-white" />
+                </div>
               </div>
-              {walletInfo.stablecoin} Flexible Amount
+              <div>
+                <div className="text-2xl font-bold">{walletInfo.stablecoin} Payments</div>
+                <p className="text-blue-400 text-sm font-medium">Stable value • 1:1 credit ratio</p>
+              </div>
             </CardTitle>
-            <p className="text-muted-foreground">
-              Pay any amount with {walletInfo.stablecoin} (1 {walletInfo.stablecoin} = 1 Credit)
+            <p className="text-muted-foreground text-lg leading-relaxed">
+              Pay with {walletInfo.stablecoin} for guaranteed 1:1 credit conversion. Perfect for precise amounts.
             </p>
           </CardHeader>
-          <CardContent className="space-y-6">
+          
+          <CardContent className="relative space-y-8">
             {walletType === 'algorand' && !isOptedIn && (
-              <Alert className="border-blue-500/20 bg-blue-500/5">
-                <Info className="h-5 w-5 text-blue-500" />
-                <AlertDescription className="text-blue-600 dark:text-blue-300">
-                  First-time USDt users: We'll automatically enable USDt payments for you in one simple step.
-                </AlertDescription>
+              <Alert className="border-blue-500/30 bg-gradient-to-r from-blue-500/10 to-cyan-500/10">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+                    <Info className="h-4 w-4 text-blue-400" />
+                  </div>
+                  <AlertDescription className="text-blue-300 font-medium">
+                    First-time USDt user? We'll automatically enable USDt payments in one simple step.
+                  </AlertDescription>
+                </div>
               </Alert>
             )}
 
-            <div className="space-y-4">
-              <div className="space-y-3">
-                <Label htmlFor="usdt-amount" className="text-sm font-semibold text-foreground">
-                  {walletInfo.stablecoin} Amount
-                </Label>
-                <Input
-                  id="usdt-amount"
-                  type="number"
-                  value={usdtAmount}
-                  onChange={(e) => setUSDTAmount(e.target.value)}
-                  placeholder="Enter amount"
-                  min="1"
-                  max={usdtBalance}
-                  className="bg-background border-border text-foreground text-lg"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Available: {usdtBalance.toFixed(2)} {walletInfo.stablecoin}</span>
-                  <span>Credits: {creditsAmount}</span>
-                </div>
-              </div>
-
-              <Button 
-                onClick={handleUSDTPaymentClick}
-                disabled={
-                  isPurchasing || 
-                  parseFloat(usdtAmount) <= 0 || 
-                  parseFloat(usdtAmount) > usdtBalance
-                }
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-4"
-                size="lg"
-              >
-                {isPurchasing ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : !isOptedIn && walletType === 'algorand' ? (
-                  <div className="flex flex-col items-center">
-                    <span>Enable {walletInfo.stablecoin} & Pay {usdtAmount} {walletInfo.stablecoin}</span>
-                    <span className="text-xs opacity-75">(One-time setup + payment)</span>
+            {/* Amount Input Section */}
+            <Card className="border-blue-500/20 bg-gradient-to-r from-blue-500/5 to-transparent">
+              <CardContent className="p-6 space-y-6">
+                <div className="space-y-4">
+                  <Label htmlFor="usdt-amount" className="text-lg font-bold text-foreground flex items-center gap-2">
+                    <Coins className="w-5 h-5" />
+                    {walletInfo.stablecoin} Amount
+                  </Label>
+                  
+                  <div className="relative">
+                    <Input
+                      id="usdt-amount"
+                      type="number"
+                      value={usdtAmount}
+                      onChange={(e) => setUSDTAmount(e.target.value)}
+                      placeholder={`Enter ${walletInfo.stablecoin} amount`}
+                      min="1"
+                      max={usdtBalance}
+                      className="bg-background/50 border-blue-500/20 text-foreground text-xl h-14 pl-12 focus:ring-2 focus:ring-blue-500/30"
+                    />
+                    <DollarSign className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-blue-400" />
                   </div>
-                ) : (
-                  `Pay ${usdtAmount} ${walletInfo.stablecoin}`
-                )}
-              </Button>
+                  
+                  {/* Balance and Credits Info */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-background/30 rounded-lg border border-blue-500/20">
+                      <div className="text-xs text-muted-foreground font-medium">Available Balance</div>
+                      <div className="text-lg font-bold text-blue-400">{usdtBalance.toFixed(2)} {walletInfo.stablecoin}</div>
+                    </div>
+                    <div className="p-4 bg-background/30 rounded-lg border border-green-500/20">
+                      <div className="text-xs text-muted-foreground font-medium">Credits You'll Get</div>
+                      <div className="text-lg font-bold text-green-400">{creditsAmount}</div>
+                    </div>
+                  </div>
+                  
+                  {/* Quick Amount Buttons */}
+                  <div className="space-y-3">
+                    <div className="text-sm font-medium text-muted-foreground">Quick Select:</div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[10, 25, 50, 100].map((amount) => (
+                        <Button
+                          key={amount}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setUSDTAmount(amount.toString())}
+                          className={`border-blue-500/30 hover:bg-blue-500/10 ${
+                            usdtAmount === amount.toString() ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : ''
+                          }`}
+                          disabled={amount > usdtBalance}
+                        >
+                          ${amount}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
 
-              <div className="text-center text-xs text-muted-foreground">
-                Est. network fee: {estimatedFee.toFixed(4)} {walletInfo.nativeCurrency}
-              </div>
-            </div>
+                <Button 
+                  onClick={handleUSDTPaymentClick}
+                  disabled={
+                    isPurchasing || 
+                    parseFloat(usdtAmount) <= 0 || 
+                    parseFloat(usdtAmount) > usdtBalance
+                  }
+                  className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-4 text-lg shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 hover:scale-[1.02]"
+                  size="lg"
+                >
+                  {isPurchasing ? (
+                    <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                  ) : (
+                    <>
+                      <DollarSign className="w-5 h-5 mr-3" />
+                      Pay {usdtAmount || '0'} {walletInfo.stablecoin}
+                    </>
+                  )}
+                </Button>
+                
+                {parseFloat(usdtAmount) > usdtBalance && (
+                  <p className="text-xs text-destructive text-center font-medium bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+                    Insufficient balance (Available: {usdtBalance.toFixed(2)} {walletInfo.stablecoin})
+                  </p>
+                )}
+                
+                {estimatedFee > 0 && (
+                  <div className="text-xs text-muted-foreground text-center">
+                    Estimated network fee: {estimatedFee.toFixed(4)} {walletInfo.nativeCurrency}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </CardContent>
-        </Card>
       </div>
 
       {/* Enhanced Benefits Section */}
-      <Card className="glass-card border-green-500/10">
-        <CardHeader className="pb-6">
-          <CardTitle className="text-xl font-bold text-foreground flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
-              <Zap className="w-5 h-5 text-green-400" />
+      <Card className="relative overflow-hidden bg-gradient-to-br from-green-500/5 via-background to-emerald-500/5 border-green-500/20">
+        <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 via-transparent to-emerald-500/10 opacity-30" />
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 to-emerald-500" />
+        
+        <CardHeader className="relative pb-8">
+          <CardTitle className="text-2xl font-bold text-foreground flex items-center gap-4">
+            <div className="relative">
+              <div className="absolute inset-0 w-12 h-12 bg-green-500/30 rounded-full blur-lg animate-pulse" />
+              <div className="relative w-12 h-12 rounded-full bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center shadow-lg shadow-green-500/30">
+                <Zap className="w-6 h-6 text-white" />
+              </div>
             </div>
-            Why Use Credits?
+            <div>
+              <div className="text-2xl font-bold">Why Use Credits?</div>
+              <p className="text-green-400 text-sm font-medium">Benefits • Features • Advantages</p>
+            </div>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="flex items-start gap-4 p-4 rounded-lg bg-muted/10 hover:bg-muted/20 transition-colors">
-              <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0">
-                <CheckCircle className="w-5 h-5 text-green-400" />
+        
+        <CardContent className="relative">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <div className="flex items-start gap-4 p-6 rounded-2xl bg-gradient-to-br from-green-500/10 to-transparent border border-green-500/20 hover:scale-[1.02] transition-all duration-300">
+                <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="w-6 h-6 text-green-400" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-lg text-foreground mb-2">Instant Token Creation</h4>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Create tokens immediately without waiting for payment confirmations. Your credits are ready to use instantly.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h4 className="font-semibold text-foreground mb-1">Instant Token Creation</h4>
-                <p className="text-sm text-muted-foreground">
-                  Create tokens immediately without waiting for payments
-                </p>
+              
+              <div className="flex items-start gap-4 p-6 rounded-2xl bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/20 hover:scale-[1.02] transition-all duration-300">
+                <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                  <Shield className="w-6 h-6 text-blue-400" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-lg text-foreground mb-2">Secure & Reliable</h4>
+                  <p className="text-muted-foreground leading-relaxed">
+                    All payments are processed on-chain with full transparency. Credits never expire and are always available.
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="flex items-start gap-4 p-4 rounded-lg bg-muted/10 hover:bg-muted/20 transition-colors">
-              <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+            
+            <div className="space-y-6">
+              <div className="flex items-start gap-4 p-6 rounded-2xl bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/20 hover:scale-[1.02] transition-all duration-300">
+                <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="w-6 h-6 text-purple-400" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-lg text-foreground mb-2">Cost Effective</h4>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Better rates with bulk purchases and bonus credits. Save money compared to individual payments.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-4 p-6 rounded-2xl bg-gradient-to-br from-yellow-500/10 to-transparent border border-yellow-500/20 hover:scale-[1.02] transition-all duration-300">
+                <div className="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center flex-shrink-0">
+                  <Coins className="w-6 h-6 text-yellow-400" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-lg text-foreground mb-2">Multi-Chain Support</h4>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Use credits across all supported networks. One credit system for Algorand, Solana, and more.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Feature Highlights */}
+          <div className="mt-10 p-6 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-2xl">
+            <h4 className="font-bold text-xl text-foreground mb-4 text-center">Platform Highlights</h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div className="space-y-2">
+                <div className="text-2xl font-bold text-primary">10</div>
+                <div className="text-sm text-muted-foreground">Credits per Token</div>
+              </div>
+              <div className="space-y-2">
+                <div className="text-2xl font-bold text-green-400">1:1</div>
+                <div className="text-sm text-muted-foreground">USDT to Credit Ratio</div>
+              </div>
+              <div className="space-y-2">
+                <div className="text-2xl font-bold text-blue-400">∞</div>
+                <div className="text-sm text-muted-foreground">Credit Expiration</div>
+              </div>
+              <div className="space-y-2">
+                <div className="text-2xl font-bold text-purple-400">24/7</div>
+                <div className="text-sm text-muted-foreground">Platform Availability</div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
                 <Shield className="w-5 h-5 text-blue-400" />
               </div>
               <div>
