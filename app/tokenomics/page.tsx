@@ -26,6 +26,16 @@ import {
   Zap
 } from 'lucide-react';
 
+// Type definition for distribution map
+type DistributionMap = {
+  team: { label: string; value: number; color: string };
+  investors: { label: string; value: number; color: string };
+  community: { label: string; value: number; color: string };
+  liquidity: { label: string; value: number; color: string };
+  marketing: { label: string; value: number; color: string };
+  reserve: { label: string; value: number; color: string };
+};
+
 // Simple explanations for each allocation type
 const allocationExplanations = {
   team: {
@@ -214,13 +224,13 @@ function TokenomicsPage() {
     </div>
   );
 
-  const getHealthScoreColor = (score) => {
+  const getHealthScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600 bg-green-50 border-green-200';
     if (score >= 60) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
     return 'text-red-600 bg-red-50 border-red-200';
   };
 
-  const getHealthScoreIcon = (score) => {
+  const getHealthScoreIcon = (score: number) => {
     if (score >= 80) return <Check className="w-5 h-5" />;
     if (score >= 60) return <AlertTriangle className="w-5 h-5" />;
     return <AlertTriangle className="w-5 h-5" />;
@@ -332,13 +342,13 @@ function TokenomicsPage() {
                   </div>
                   <Slider
                     value={[data.value]}
-                    onValueChange={(value) => updateDistribution(key, value[0])}
+                    onValueChange={(value) => updateDistribution(key as keyof DistributionMap, value[0])}
                     max={80}
                     step={1}
                     className="w-full"
                   />
                   <div className="text-xs text-muted-foreground">
-                    {allocationExplanations[key]?.recommendation}
+                    {allocationExplanations[key as keyof typeof allocationExplanations]?.recommendation}
                   </div>
                 </div>
               ))}

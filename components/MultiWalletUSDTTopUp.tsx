@@ -65,6 +65,7 @@ interface MultiWalletUSDTTopUpProps {
   userAddress?: string;
   onCreditsUpdated?: () => void;
   onClose?: () => void;
+  onTopUpSuccess?: (details: any) => void;
 }
 
 // Connected wallet detection
@@ -74,7 +75,7 @@ interface ConnectedWallets {
   metamask: boolean;
 }
 
-export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated, onClose }: MultiWalletUSDTTopUpProps) {
+export default function MultiWalletUSDTTopUp({ userAddress, onCreditsUpdated, onClose, onTopUpSuccess }: MultiWalletUSDTTopUpProps) {
   // Wallet connections
   const solanaWallet = useWallet();
   const algorandWallet = useAlgorandWallet();

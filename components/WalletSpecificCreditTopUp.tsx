@@ -947,7 +947,7 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
               </CardContent>
             </Card>
           </CardContent>
-      </div>
+        </Card>
 
       {/* Enhanced Benefits Section */}
       <Card className="relative overflow-hidden bg-gradient-to-br from-green-500/5 via-background to-emerald-500/5 border-green-500/20">
@@ -1046,8 +1046,10 @@ export default function WalletSpecificCreditTopUp({ userAddress, onCreditsUpdate
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        
+          <div className="space-y-4">
+            <div className="flex items-start gap-4 p-4 rounded-lg bg-muted/10 hover:bg-muted/20 transition-colors">
+              <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
                 <Shield className="w-5 h-5 text-blue-400" />
               </div>
               <div>
