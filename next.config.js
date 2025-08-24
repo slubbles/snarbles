@@ -3,22 +3,39 @@ const nextConfig = {
   // Use standard build output for Netlify with API routes
   poweredByHeader: false,
   reactStrictMode: false,
+  // Enhanced image optimization for better SEO
   images: {
     domains: ['api.dicebear.com', 'images.unsplash.com'],
-    unoptimized: true,
+    unoptimized: false,
     formats: ['image/webp', 'image/avif'],
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
-  },    
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
+  },
+  // SEO and performance optimizations
+  compress: true,
+  generateEtags: true,
+  onDemandEntries: {
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 2,
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },
   pageExtensions: ['ts', 'tsx', 'js', 'jsx'],
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
-    optimizeCss: false,
-    scrollRestoration: false,
+    optimizeCss: true, // Enable CSS optimization for better performance
+    scrollRestoration: true,
     forceSwcTransforms: true,
+    webVitalsAttribution: ['CLS', 'LCP'],
   },
   // Add security headers for Solana WebSocket connections and GitHub Codespaces
   async headers() {
@@ -54,8 +71,65 @@ const nextConfig = {
           {
             key: 'X-Content-Type-Options',
             value: 'nosniff'
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin'
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()'
+          },
+          // SEO-beneficial headers
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on'
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains'
           }
         ]
+      },
+      // Specific headers for static assets
+      {
+        source: '/images/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable'
+          }
+        ]
+      },
+      // Headers for API routes
+      {
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=60, s-maxage=86400'
+          }
+        ]
+      }
+    ]
+  },
+  // Add redirects for SEO
+  async redirects() {
+    return [
+      {
+        source: '/home',
+        destination: '/',
+        permanent: true,
+      },
+      {
+        source: '/tokenomics-designer',
+        destination: '/tokenomics',
+        permanent: true,
+      },
+      {
+        source: '/analytics-dashboard',
+        destination: '/dashboard',
+        permanent: true,
       }
     ]
   },

@@ -1,5 +1,6 @@
 import './globals.css';
 import type { Metadata } from 'next';
+import { Inter } from "next/font/google";
 import Footer from '@/components/layout/Footer';
 import NavbarOptimized from '@/components/layout/Navbar';
 import BoltBadge from '@/components/BoltBadge';
@@ -9,49 +10,49 @@ import ClientWalletProvider from '@/components/providers/ClientWalletProvider';
 import { SkipToMain } from '@/components/ui/accessibility';
 import ChunkErrorBoundary from '@/components/ChunkErrorBoundary';
 import { MCPAnalyticsProvider } from '@/components/providers/MCPAnalyticsProvider';
+import { generateMetadata as generateSEOMetadata, generateStructuredData, faqStructuredData } from "@/lib/seo";
 
-    export const metadata: Metadata = {
-      title: 'Snarbles - Create Your Own Token in 30 Seconds',
-      description: 'Launch your cryptocurrency token instantly with Snarbles. No coding required.',
-      metadataBase: new URL('https://snarbles.com'),
-      keywords: 'token creation, cryptocurrency, blockchain, solana, defi, web3',
-      authors: [{ name: 'Snarbles Team' }],
-      creator: 'Snarbles',
-      publisher: 'Snarbles',
-      openGraph: {
-        title: 'Snarbles - Create Your Own Token in 30 Seconds',
-        description: 'Launch your cryptocurrency token instantly with Snarbles. No coding required.',
-        url: 'https://snarbles.com',
-        siteName: 'Snarbles',
-        images: [
-          {
-            url: '/pSsNHPck_400x400.jpg',
-            width: 360,
-            height: 360,
-            alt: 'Snarbles Token Platform',
-          },
-        ],
-        locale: 'en_US',
-        type: 'website',
-      },
-      twitter: {
-        card: 'summary_large_image',
-        title: 'Snarbles - Create Your Own Token in 30 Seconds',
-        description: 'Launch your cryptocurrency token instantly with Snarbles. No coding required.',
-        images: ['/pSsNHPck_400x400.jpg'],
-      },
-      robots: {
-        index: true,
-        follow: true,
-        googleBot: {
-          index: true,
-          follow: true,
-          'max-video-preview': -1,
-          'max-image-preview': 'large',
-          'max-snippet': -1,
-        },
-      },
-    };
+const inter = Inter({ 
+  subsets: ["latin"],
+  display: 'swap',
+  preload: true,
+});
+
+export const metadata: Metadata = generateSEOMetadata({
+  title: "Snarbles - AI-Powered Blockchain Analytics & Tokenomics Platform",
+  description: "Professional blockchain analytics, AI-powered insights, and comprehensive tokenomics tools for DeFi, NFTs, and crypto projects. Real-time data, advanced charts, and actionable intelligence.",
+  keywords: [
+    'blockchain analytics',
+    'cryptocurrency analysis', 
+    'DeFi analytics',
+    'NFT analytics',
+    'tokenomics',
+    'crypto intelligence',
+    'blockchain data',
+    'Web3 analytics',
+    'smart contract analysis',
+    'crypto market insights'
+  ],
+  url: '/',
+  priority: 1.0,
+  changefreq: 'daily'
+});
+
+// Generate structured data for the homepage
+const homepageStructuredData = generateStructuredData({
+  '@type': 'WebSite',
+  name: 'Snarbles',
+  description: 'AI-Powered Blockchain Analytics & Tokenomics Platform',
+  url: 'https://snarbles.xyz',
+});
+
+const organizationStructuredData = generateStructuredData({
+  '@type': 'Organization',
+  name: 'Snarbles',
+  description: 'Leading blockchain analytics and tokenomics platform',
+  url: 'https://snarbles.xyz',
+  image: 'https://snarbles.xyz/images/snarbles-logo.png',
+});
 
 // Service worker registration component
 function ServiceWorkerRegistration() {
@@ -98,50 +99,79 @@ function ServiceWorkerRegistration() {
   return null;
 }
 
-    export default function RootLayout({
-      children,
-    }: {
-      children: React.ReactNode;
-    }) {
-      return (
-        <html lang="en" suppressHydrationWarning>
-          <head>
-            <link rel="preconnect" href="https://fonts.googleapis.com" />
-            <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-            <link 
-              href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" 
-              rel="stylesheet" 
-            />
-            <link rel="icon" href="/favicon2.png" />
-            <link rel="apple-touch-icon" href="/favicon2.png" />
-            <link rel="manifest" href="/manifest.json" />
-            <meta name="theme-color" content="#EF4444" />
-            <link rel="dns-prefetch" href="https://api.devnet.solana.com" />
-            <link rel="dns-prefetch" href="https://testnet-api.algonode.cloud" />
-            <link rel="dns-prefetch" href="https://mainnet-api.algonode.cloud" />
-            <link rel="dns-prefetch" href="https://testnet-idx.algonode.cloud" />
-            <link rel="dns-prefetch" href="https://mainnet-idx.algonode.cloud" />
-          </head>
-          <body className="font-inter antialiased bg-background">
-            <ServiceWorkerRegistration />
-            <SkipToMain />
-            <MCPAnalyticsProvider />
-            <ChunkErrorBoundary>
-              <ClientWalletProvider>
-                <WalletAuthProvider>
-                  <div className="relative min-h-screen">
-                    <NavbarOptimized />
-                    <BoltBadge />
-                    <main id="main-content" className="pt-16" role="main">
-                      {children}
-                    </main>
-                    <Footer />    
-                  </div>
-                  <Toaster />
-                </WalletAuthProvider>
-              </ClientWalletProvider>
-            </ChunkErrorBoundary>
-          </body>
-        </html>
-      );
-    }
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Enhanced SEO Meta Tags */}
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="theme-color" content="#3b82f6" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="HandheldFriendly" content="True" />
+        <meta name="MobileOptimized" content="320" />
+        
+        {/* DNS Prefetch and Preconnect */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://api.algorand.com" />
+        <link rel="dns-prefetch" href="https://mainnet-api.algonode.cloud" />
+        <link rel="dns-prefetch" href="https://api.solana.com" />
+        
+        {/* Optimized Font Loading */}
+        <link 
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" 
+          rel="stylesheet" 
+        />
+        
+        {/* Favicon and App Icons */}
+        <link rel="icon" href="/favicon2.png" />
+        <link rel="apple-touch-icon" href="/favicon2.png" />
+        <link rel="manifest" href="/manifest.json" />
+        
+        {/* Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: homepageStructuredData }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: organizationStructuredData }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqStructuredData) }}
+        />
+        
+        {/* Performance Hints */}
+        <link rel="preload" href="/fonts/inter-var.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+      </head>
+      <body className={`${inter.className} antialiased`}>
+        <ChunkErrorBoundary>
+          <WalletAuthProvider>
+            <ClientWalletProvider>
+              <MCPAnalyticsProvider />
+              <SkipToMain />
+              <div className="flex min-h-screen flex-col">
+                <NavbarOptimized />
+                <main className="flex-1">
+                  {children}
+                </main>
+                <Footer />
+              </div>
+              <BoltBadge />
+              <Toaster />
+              <ServiceWorkerRegistration />
+            </ClientWalletProvider>
+          </WalletAuthProvider>
+        </ChunkErrorBoundary>
+      </body>
+    </html>
+  );
+}
