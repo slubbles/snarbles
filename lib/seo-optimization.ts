@@ -44,8 +44,9 @@ export function trackCoreWebVitals() {
   let cls = 0
   new PerformanceObserver((list) => {
     for (const entry of list.getEntries()) {
-      if (!entry.hadRecentInput) {
-        cls += (entry as any).value
+      const layoutShiftEntry = entry as any
+      if (!layoutShiftEntry.hadRecentInput) {
+        cls += layoutShiftEntry.value
       }
     }
     // Send to analytics
@@ -65,8 +66,8 @@ export function trackCoreWebVitals() {
     }
     
     // Send to analytics
-    if (typeof gtag !== 'undefined') {
-      gtag('event', 'timing_complete', {
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'timing_complete', {
         name: 'LCP',
         value: Math.round(lcp)
       })
@@ -83,8 +84,8 @@ export function trackCoreWebVitals() {
       }
       
       // Send to analytics
-      if (typeof gtag !== 'undefined') {
-        gtag('event', 'timing_complete', {
+      if (typeof window !== 'undefined' && (window as any).gtag) {
+        (window as any).gtag('event', 'timing_complete', {
           name: 'FID',
           value: Math.round(fid)
         })

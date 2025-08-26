@@ -399,76 +399,59 @@ export const industryStructuredData = {
 
 // FAQ structured data for common questions
 export const faqStructuredData = {
-  '@type': 'FAQPage',
-  name: 'Snarbles Token Creation Platform - Frequently Asked Questions',
-  description: 'Common questions about Snarbles professional token creation platform',
-  mainEntity: [
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
     {
-      '@type': 'Question',
-      name: 'How do I create a token on Snarbles?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Creating a token on Snarbles takes under 30 seconds. Simply connect your wallet, choose your blockchain (Algorand or Solana), fill in your token details like name and symbol, and deploy. No coding required - our platform handles all the technical complexity.',
-      },
+      "@type": "Question",
+      "name": "How long does it take to create a token on Snarbles?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "You can create a professional cryptocurrency token in under 30 seconds with zero coding required. Simply connect your wallet, customize your token settings, and deploy instantly to Algorand or Solana networks."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'What blockchains does Snarbles support for token creation?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Snarbles currently supports token creation on Algorand (mainnet and testnet) and Solana (devnet) networks. We provide native integration with popular wallets like Pera Wallet for Algorand and Phantom for Solana.',
-      },
+      "@type": "Question", 
+      "name": "How much does it cost to create a token?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Token creation on Snarbles starts FREE on testnets. Mainnet deployment costs only network fees: ~0.2 ALGO ($0.03) for Algorand or ~0.01 SOL ($0.20) for Solana. No hidden fees or subscriptions required."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'How much does it cost to create a token?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Token creation costs vary by network. On Algorand, it typically costs around 5 ALGO plus network fees. You can also purchase credits with ALGO or USDT for convenient payment. Enterprise pricing is available for bulk token creation.',
-      },
+      "@type": "Question",
+      "name": "Do I need coding experience to create a token?",
+      "acceptedAnswer": {
+        "@type": "Answer", 
+        "text": "No coding experience required! Snarbles provides a visual, no-code interface for token creation. Over 8,000 users have successfully created tokens without any programming knowledge."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Can I create tokens without coding knowledge?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Yes! Snarbles is designed for users with no coding experience. Our intuitive interface guides you through the token creation process with real-time preview, form validation, and automated deployment to the blockchain.',
-      },
+      "@type": "Question",
+      "name": "Which blockchains does Snarbles support?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Snarbles supports Algorand and Solana networks for token creation, including both mainnet and testnet environments. We provide real-time analytics and management tools for both ecosystems."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'What features can I add to my token?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'You can configure various token features including custom supply, decimals, mintable/burnable options, pausable functionality, and rich metadata with logos, descriptions, and social links.',
-      },
+      "@type": "Question",
+      "name": "Is Snarbles safe and secure?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, Snarbles is built with enterprise-grade security. We never store your private keys, use audited smart contracts, and all transactions are processed directly through your wallet. Trusted by 8,000+ crypto innovators."
+      }
     },
     {
-      '@type': 'Question',
-      name: 'Do I get analytics for my created tokens?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Yes! Snarbles provides comprehensive analytics dashboard with real-time token performance, holder analytics, transaction history, and market insights for all tokens created on our platform.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'Is there enterprise support for businesses?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Yes, we offer enterprise solutions including white-label platforms, custom integrations, bulk token creation, dedicated support, and API access for businesses and organizations.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'How does the tokenomics designer work?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Our tokenomics designer allows you to model token economies, simulate distribution scenarios, analyze economic parameters, and generate professional reports with interactive visualizations and PDF exports.',
-      },
-    },
-  ],
-}
+      "@type": "Question",
+      "name": "Can I add liquidity and trading after creating my token?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Absolutely! After creating your token, you can add liquidity to DEXs, set up trading pairs, and use our advanced analytics dashboard to monitor performance, holder distribution, and trading activity."
+      }
+    }
+  ]
+};
 
 export function generateBreadcrumbStructuredData(breadcrumbs: Array<{name: string, url: string}>): string {
   const breadcrumbList = {

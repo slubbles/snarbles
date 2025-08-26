@@ -214,7 +214,7 @@ export default function CreateTokenPage() {
         {/* Credits Top-Up Modal */}
         <Dialog open={showCreditTopUpModal} onOpenChange={handleTopUpModalClose}>
           <DialogContent 
-            className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto z-[60] p-4 sm:p-6"
+            className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto z-[50] p-4 sm:p-6"
             aria-describedby="credits-modal-description"
           >
             <DialogHeader>
@@ -247,7 +247,7 @@ export default function CreateTokenPage() {
               </div>
             </div>
 
-            <div className="mt-4 sm:mt-6">
+            <div className="mt-4 sm:mt-6 max-h-[60vh] overflow-y-auto">
               <CreditTopUpNew onClose={handleTopUpModalClose} />
             </div>
           </DialogContent>

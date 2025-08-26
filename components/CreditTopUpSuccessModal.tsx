@@ -125,7 +125,7 @@ export default function CreditTopUpSuccessModal({
         }
       `}</style>
 
-      <div className="fixed inset-0 z-40 overflow-y-auto">
+      <div className="fixed inset-0 z-[70] overflow-y-auto">
         {/* Confetti */}
         {showConfetti && (
           <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -141,15 +141,15 @@ export default function CreditTopUpSuccessModal({
         )}
 
         <div className="flex min-h-screen items-center justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-          {/* Background overlay - Enhanced with design system */}
+          {/* Background overlay - Enhanced with design system and higher opacity for better separation */}
           <div 
-            className="fixed inset-0 transition-opacity backdrop-blur-sm"
-            style={{ background: 'rgba(0, 0, 0, 0.8)' }}
+            className="fixed inset-0 transition-opacity backdrop-blur-md"
+            style={{ background: 'rgba(0, 0, 0, 0.9)' }}
             onClick={onClose}
           />
 
-          {/* Modal panel - Updated to use design system */}
-          <div className="modal-enter relative inline-block transform overflow-hidden rounded-2xl glass-card border border-gray-800 text-left align-bottom shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle" style={{ background: 'rgba(8, 8, 8, 0.95)', backdropFilter: 'blur(20px)' }}>
+          {/* Modal panel - Updated to use design system and improved responsiveness */}
+          <div className="modal-enter relative inline-block transform overflow-hidden rounded-2xl glass-card border border-gray-800 text-left align-bottom shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:align-middle max-h-[85vh] overflow-y-auto" style={{ background: 'rgba(8, 8, 8, 0.95)', backdropFilter: 'blur(20px)' }}>
             {/* Success header with design system gradient */}
             <div className="px-6 py-8 text-center relative overflow-hidden" style={{ background: 'linear-gradient(135deg, rgb(239, 68, 68) 0%, rgba(239, 68, 68, 0.8) 50%, rgb(59, 130, 246) 100%)' }}>
               <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm border border-white/30">

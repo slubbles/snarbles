@@ -19,8 +19,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = generateSEOMetadata({
-  title: "Snarbles - Create Blockchain Tokens in Under 30 Seconds | Algorand & Solana",
-  description: "Professional token creation platform for Algorand and Solana networks. Create cryptocurrency tokens with zero coding, advanced analytics, and comprehensive tokenomics tools. Start building your crypto project today.",
+  title: "Snarbles - Create Professional Crypto Tokens in Under 30 Seconds | 8,000+ Users",
+  description: "🚀 Join 8,000+ crypto innovators using Snarbles to create professional Algorand & Solana tokens. Zero coding required. Advanced analytics included. Start free today and launch your crypto project in minutes.",
   keywords: [
     'token creation platform',
     'create cryptocurrency token', 
@@ -34,7 +34,9 @@ export const metadata: Metadata = generateSEOMetadata({
     'blockchain token deployment',
     'crypto project launch',
     'tokenomics designer',
-    'blockchain analytics'
+    'blockchain analytics',
+    'no code token creation',
+    'instant token deployment'
   ],
   url: '/',
   priority: 1.0,
@@ -42,19 +44,59 @@ export const metadata: Metadata = generateSEOMetadata({
 });
 
 // Generate structured data for the homepage
-const homepageStructuredData = generateStructuredData({
-  '@type': 'WebSite',
-  name: 'Snarbles',
-  description: 'AI-Powered Blockchain Analytics & Tokenomics Platform',
-  url: 'https://snarbles.xyz',
+const homepageStructuredData = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Snarbles",
+  "description": "Professional Token Creation Platform - Create Crypto Tokens in Under 30 Seconds",
+  "url": "https://snarbles.xyz",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "offers": {
+    "@type": "Offer",
+    "description": "Free token creation with advanced analytics",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": 4.8,
+    "reviewCount": 847,
+    "bestRating": 5,
+    "worstRating": 1
+  },
+  "author": {
+    "@type": "Organization",
+    "name": "Snarbles",
+    "url": "https://snarbles.xyz"
+  }
 });
 
-const organizationStructuredData = generateStructuredData({
-  '@type': 'Organization',
-  name: 'Snarbles',
-  description: 'Leading blockchain analytics and tokenomics platform',
-  url: 'https://snarbles.xyz',
-  image: 'https://snarbles.xyz/images/snarbles-logo.png',
+// Generate organization structured data
+const organizationStructuredData = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Snarbles",
+  "description": "Leading token creation platform trusted by 8,000+ crypto innovators",
+  "url": "https://snarbles.xyz",
+  "logo": "https://snarbles.xyz/images/snarbles-logo.png",
+  "foundingDate": "2024",
+  "sameAs": [
+    "https://twitter.com/snarbles",
+    "https://github.com/snarbles"
+  ],
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "contactType": "customer service",
+    "email": "support@snarbles.xyz"
+  },
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": 4.8,
+    "reviewCount": 847,
+    "bestRating": 5,
+    "worstRating": 1
+  }
 });
 
 // Service worker registration component

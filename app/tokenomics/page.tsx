@@ -441,11 +441,11 @@ function TokenomicsPage() {
       
       // Risk assessment based on distribution
       const getRiskLevel = () => {
-        if (teamRatio > 0.25) return { level: 'High', color: [239, 68, 68], reason: 'Team allocation exceeds 25%' };
-        if (liquidityRatio < 0.05) return { level: 'High', color: [239, 68, 68], reason: 'Insufficient liquidity allocation' };
-        if (communityRatio < 0.20) return { level: 'Medium', color: [251, 146, 60], reason: 'Low community allocation' };
-        if (reserveRatio > 0.20) return { level: 'Medium', color: [251, 146, 60], reason: 'High reserve allocation' };
-        return { level: 'Low', color: [34, 197, 94], reason: 'Well-balanced distribution' };
+        if (teamRatio > 0.25) return { level: 'High', color: [239, 68, 68] as const, reason: 'Team allocation exceeds 25%' };
+        if (liquidityRatio < 0.05) return { level: 'High', color: [239, 68, 68] as const, reason: 'Insufficient liquidity allocation' };
+        if (communityRatio < 0.20) return { level: 'Medium', color: [251, 146, 60] as const, reason: 'Low community allocation' };
+        if (reserveRatio > 0.20) return { level: 'Medium', color: [251, 146, 60] as const, reason: 'High reserve allocation' };
+        return { level: 'Low', color: [34, 197, 94] as const, reason: 'Well-balanced distribution' };
       };
       
       const riskAssessment = getRiskLevel();
@@ -509,10 +509,10 @@ function TokenomicsPage() {
       doc.text(`Analysis Date: ${new Date().toLocaleDateString()}`, margin + 10, yPos + 40);
       
       // Health Score with visual indicator
-      const healthColor = healthAnalysis.score >= 80 ? [34, 197, 94] : 
-                         healthAnalysis.score >= 60 ? [251, 146, 60] : [239, 68, 68];
+      const healthColor = healthAnalysis.score >= 80 ? [34, 197, 94] as const : 
+                         healthAnalysis.score >= 60 ? [251, 146, 60] as const : [239, 68, 68] as const;
       
-      doc.setTextColor(...healthColor);
+      doc.setTextColor(healthColor[0], healthColor[1], healthColor[2]);
       doc.setFont('helvetica', 'bold');
       doc.text(`Overall Health Score: ${healthAnalysis.score}/100`, margin + 120, yPos + 25);
       
@@ -544,14 +544,14 @@ function TokenomicsPage() {
       
       // Risk Assessment Box
       yPos = addNewPageIfNeeded(yPos, 50);
-      doc.setFillColor(...riskAssessment.color, 0.1);
+      doc.setFillColor(riskAssessment.color[0], riskAssessment.color[1], riskAssessment.color[2], 0.1);
       doc.rect(margin, yPos - 5, maxLineWidth, 40, 'F');
-      doc.setDrawColor(...riskAssessment.color);
+      doc.setDrawColor(riskAssessment.color[0], riskAssessment.color[1], riskAssessment.color[2]);
       doc.rect(margin, yPos - 5, maxLineWidth, 40);
       
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...riskAssessment.color);
+      doc.setTextColor(riskAssessment.color[0], riskAssessment.color[1], riskAssessment.color[2]);
       doc.text(`RISK LEVEL: ${riskAssessment.level.toUpperCase()}`, margin + 10, yPos + 10);
       
       doc.setFontSize(12);

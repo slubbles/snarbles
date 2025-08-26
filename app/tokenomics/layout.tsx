@@ -1,6 +1,5 @@
 import { Metadata } from 'next'
 import { generateMetadata as generateSEOMetadata, pageSEO, generateStructuredData, industryStructuredData } from '@/lib/seo'
-import TokenomicsDesigner from './TokenomicsDesigner'
 
 export const metadata: Metadata = generateSEOMetadata(pageSEO.tokenomics)
 
@@ -10,14 +9,18 @@ const structuredData = generateStructuredData({
   url: '/tokenomics',
 })
 
-export default function TokenomicsPage() {
+export default function TokenomicsLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: structuredData }}
       />
-      <TokenomicsDesigner />
+      {children}
     </>
   )
 }
