@@ -37,7 +37,7 @@ export default function CreditTopUp({ onClose }: CreditTopUpProps = {}) {
   const [successDetails, setSuccessDetails] = useState<any>(null);
   const { toast } = useToast();
   const { walletAddress, walletType, isAuthenticated } = useWalletAuth();
-  const { signTransaction } = useAlgorandWallet();
+  const { signTransaction, network } = useAlgorandWallet();
 
   useEffect(() => {
     let isMounted = true;
@@ -108,7 +108,9 @@ export default function CreditTopUp({ onClose }: CreditTopUpProps = {}) {
       const result = await purchaseCreditsWithAlgo(
         walletAddress,
         algoAmount,
-        signTransaction
+        signTransaction,
+        false, // isCustomAmount
+        network || 'algorand-mainnet' // Pass the current network
       );
 
       if (result.success) {

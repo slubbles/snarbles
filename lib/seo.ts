@@ -64,6 +64,14 @@ export interface StructuredDataConfig {
       text: string
     }
   }>
+  // Additional properties for WebApplication schema
+  applicationCategory?: string
+  operatingSystem?: string
+  browserRequirements?: string
+  featureList?: string[]
+  softwareVersion?: string
+  downloadUrl?: string
+  screenshot?: string[]
 }
 
 const BASE_URL = 'https://snarbles.xyz'
@@ -72,24 +80,39 @@ const DEFAULT_IMAGE = '/images/snarbles-og-image.png'
 const COMPANY_LOGO = '/images/snarbles-logo.png'
 
 export const defaultSEO: SEOConfig = {
-  title: 'Snarbles - AI-Powered Blockchain Analytics & Tokenomics Platform',
-  description: 'Professional blockchain analytics, AI-powered insights, and comprehensive tokenomics tools for DeFi, NFTs, and crypto projects. Real-time data, advanced charts, and actionable intelligence.',
+  title: 'Snarbles - Professional Token Creation Platform for Algorand & Solana',
+  description: 'Create blockchain tokens in under 30 seconds with zero coding required. Professional token creation platform for Algorand and Solana networks with advanced analytics, real-time insights, and comprehensive tokenomics tools.',
   keywords: [
+    // Primary keywords (high search volume)
+    'token creation platform',
+    'create cryptocurrency token',
+    'blockchain token generator',
+    'algorand token creation',
+    'solana token creation',
+    'token maker',
+    'crypto token builder',
+    
+    // Secondary keywords (medium search volume)
     'blockchain analytics',
     'cryptocurrency analysis',
     'DeFi analytics',
     'NFT analytics',
-    'tokenomics',
+    'tokenomics designer',
     'crypto intelligence',
     'blockchain data',
     'Web3 analytics',
     'smart contract analysis',
     'crypto market insights',
-    'digital asset analytics',
-    'blockchain intelligence',
-    'crypto research tools',
-    'DeFi metrics',
-    'token analysis'
+    
+    // Long-tail keywords (specific intent)
+    'how to create a token',
+    'token creation tool',
+    'professional token development',
+    'blockchain token deployment',
+    'crypto project launch',
+    'token economics modeling',
+    'decentralized finance tools',
+    'blockchain development platform'
   ],
   image: DEFAULT_IMAGE,
   url: BASE_URL,
@@ -220,57 +243,112 @@ export function generateStructuredData(config: StructuredDataConfig): string {
 // Page-specific SEO configurations
 export const pageSEO = {
   home: {
-    title: 'Snarbles - AI-Powered Blockchain Analytics & Tokenomics Platform',
-    description: 'Professional blockchain analytics, AI-powered insights, and comprehensive tokenomics tools for DeFi, NFTs, and crypto projects. Real-time data, advanced charts, and actionable intelligence.',
-    keywords: ['blockchain analytics', 'cryptocurrency analysis', 'DeFi analytics', 'NFT analytics', 'tokenomics', 'crypto intelligence'],
+    title: 'Snarbles - Create Blockchain Tokens in Under 30 Seconds | Algorand & Solana',
+    description: 'Professional token creation platform for Algorand and Solana networks. Create cryptocurrency tokens with zero coding, advanced analytics, and comprehensive tokenomics tools. Start building your crypto project today.',
+    keywords: [
+      'token creation platform', 'create cryptocurrency token', 'algorand token creation', 'solana token creation', 
+      'blockchain token generator', 'token maker', 'crypto token builder', 'how to create a token',
+      'professional token development', 'blockchain token deployment', 'crypto project launch'
+    ],
     url: '/',
     priority: 1.0,
     changefreq: 'daily' as const,
   },
   
+  create: {
+    title: 'Create Token - Professional Blockchain Token Creation | Snarbles',
+    description: 'Create your cryptocurrency token in under 30 seconds. Zero coding required. Support for Algorand and Solana networks with advanced features, real-time preview, and professional deployment.',
+    keywords: [
+      'create token', 'token creation', 'blockchain token generator', 'cryptocurrency token maker',
+      'algorand token deployment', 'solana token deployment', 'token builder', 'crypto token creation'
+    ],
+    url: '/create',
+    priority: 0.95,
+    changefreq: 'daily' as const,
+  },
+  
   tokenomics: {
-    title: 'Tokenomics Designer & Simulator - Advanced Token Economy Modeling | Snarbles',
-    description: 'Design, simulate, and analyze token economies with our advanced tokenomics designer. Create professional reports, visualize token distribution, and model economic scenarios for your crypto project.',
-    keywords: ['tokenomics designer', 'token economics', 'token distribution', 'tokenomics simulator', 'crypto economics', 'token modeling', 'DeFi tokenomics', 'token allocation'],
+    title: 'Tokenomics Designer & Simulator - Professional Token Economy Modeling | Snarbles',
+    description: 'Design and simulate token economies with our advanced tokenomics designer. Create professional reports, visualize token distribution, and model economic scenarios for your crypto project.',
+    keywords: [
+      'tokenomics designer', 'token economics', 'token distribution', 'tokenomics simulator', 
+      'crypto economics', 'token modeling', 'DeFi tokenomics', 'token allocation', 'economic modeling'
+    ],
     url: '/tokenomics',
     priority: 0.9,
     changefreq: 'weekly' as const,
   },
 
   dashboard: {
-    title: 'Analytics Dashboard - Real-time Blockchain Data & Insights | Snarbles',
-    description: 'Comprehensive blockchain analytics dashboard with real-time data, advanced metrics, and AI-powered insights for cryptocurrency, DeFi, and NFT analysis.',
-    keywords: ['analytics dashboard', 'blockchain dashboard', 'crypto analytics', 'DeFi metrics', 'NFT analytics', 'real-time crypto data'],
+    title: 'Analytics Dashboard - Real-time Token & Blockchain Data | Snarbles',
+    description: 'Comprehensive blockchain analytics dashboard with real-time data, advanced metrics, and AI-powered insights for your created tokens and blockchain projects.',
+    keywords: [
+      'analytics dashboard', 'blockchain dashboard', 'token analytics', 'crypto analytics', 
+      'DeFi metrics', 'real-time crypto data', 'token performance tracking'
+    ],
     url: '/dashboard',
     priority: 0.9,
     changefreq: 'hourly' as const,
   },
 
   about: {
-    title: 'About Snarbles - Leading Blockchain Analytics Platform',
-    description: 'Learn about Snarbles, the leading platform for blockchain analytics, AI-powered insights, and professional tokenomics tools. Our mission, team, and vision for the future of crypto analytics.',
-    keywords: ['about snarbles', 'blockchain analytics company', 'crypto analytics team', 'blockchain intelligence platform'],
+    title: 'About Snarbles - Leading Token Creation & Blockchain Analytics Platform',
+    description: 'Learn about Snarbles, the leading platform for professional token creation, blockchain analytics, and comprehensive tokenomics tools. Our mission to democratize blockchain development.',
+    keywords: [
+      'about snarbles', 'token creation company', 'blockchain development platform', 
+      'crypto analytics team', 'blockchain technology solutions'
+    ],
     url: '/about',
     priority: 0.8,
     changefreq: 'monthly' as const,
   },
 
   docs: {
-    title: 'Documentation - Snarbles API & Platform Guides',
-    description: 'Comprehensive documentation for Snarbles platform, APIs, and tools. Learn how to integrate blockchain analytics, use our tokenomics designer, and leverage our data services.',
-    keywords: ['snarbles documentation', 'blockchain analytics API', 'tokenomics API', 'crypto data API', 'developer guides'],
+    title: 'Documentation - Token Creation API & Platform Guides | Snarbles',
+    description: 'Comprehensive documentation for Snarbles token creation platform, APIs, and tools. Learn how to create tokens, integrate our services, and leverage blockchain analytics.',
+    keywords: [
+      'token creation API', 'blockchain API documentation', 'tokenomics API', 'crypto development guides',
+      'token deployment documentation', 'blockchain integration guides'
+    ],
     url: '/docs',
     priority: 0.8,
     changefreq: 'weekly' as const,
   },
 
   contact: {
-    title: 'Contact Snarbles - Get in Touch with Our Team',
-    description: 'Contact Snarbles for blockchain analytics solutions, enterprise partnerships, or technical support. Connect with our team of crypto and DeFi experts.',
-    keywords: ['contact snarbles', 'blockchain analytics support', 'enterprise crypto analytics', 'technical support'],
+    title: 'Contact Snarbles - Get Support for Token Creation & Blockchain Development',
+    description: 'Contact Snarbles for token creation support, enterprise blockchain solutions, or technical assistance. Connect with our team of blockchain and crypto experts.',
+    keywords: [
+      'contact snarbles', 'token creation support', 'blockchain development support', 
+      'enterprise crypto solutions', 'technical support'
+    ],
     url: '/contact',
     priority: 0.7,
     changefreq: 'monthly' as const,
+  },
+
+  enterprise: {
+    title: 'Enterprise Token Creation Solutions - White-Label Blockchain Platform | Snarbles',
+    description: 'Enterprise-grade token creation and blockchain analytics solutions. White-label platform, custom integrations, and scalable infrastructure for businesses and organizations.',
+    keywords: [
+      'enterprise token creation', 'white-label blockchain platform', 'enterprise crypto solutions',
+      'business blockchain tools', 'institutional token creation', 'blockchain infrastructure'
+    ],
+    url: '/enterprise',
+    priority: 0.8,
+    changefreq: 'weekly' as const,
+  },
+
+  verify: {
+    title: 'Token Verification - Verify & Audit Your Blockchain Tokens | Snarbles',
+    description: 'Verify and audit your blockchain tokens with our comprehensive verification system. Security analysis, trust indicators, and public registry for verified tokens.',
+    keywords: [
+      'token verification', 'token audit', 'blockchain security', 'crypto token verification',
+      'smart contract audit', 'token security analysis', 'verified tokens'
+    ],
+    url: '/verify',
+    priority: 0.75,
+    changefreq: 'daily' as const,
   }
 }
 
@@ -322,15 +400,63 @@ export const industryStructuredData = {
 // FAQ structured data for common questions
 export const faqStructuredData = {
   '@type': 'FAQPage',
-  name: 'Snarbles Frequently Asked Questions',
-  description: 'Common questions about Snarbles blockchain analytics platform',
+  name: 'Snarbles Token Creation Platform - Frequently Asked Questions',
+  description: 'Common questions about Snarbles professional token creation platform',
   mainEntity: [
     {
       '@type': 'Question',
-      name: 'What is Snarbles?',
+      name: 'How do I create a token on Snarbles?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Snarbles is a professional blockchain analytics platform that provides AI-powered insights, comprehensive tokenomics tools, and real-time data analysis for cryptocurrency, DeFi, and NFT projects.',
+        text: 'Creating a token on Snarbles takes under 30 seconds. Simply connect your wallet, choose your blockchain (Algorand or Solana), fill in your token details like name and symbol, and deploy. No coding required - our platform handles all the technical complexity.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What blockchains does Snarbles support for token creation?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Snarbles currently supports token creation on Algorand (mainnet and testnet) and Solana (devnet) networks. We provide native integration with popular wallets like Pera Wallet for Algorand and Phantom for Solana.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'How much does it cost to create a token?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Token creation costs vary by network. On Algorand, it typically costs around 5 ALGO plus network fees. You can also purchase credits with ALGO or USDT for convenient payment. Enterprise pricing is available for bulk token creation.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Can I create tokens without coding knowledge?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes! Snarbles is designed for users with no coding experience. Our intuitive interface guides you through the token creation process with real-time preview, form validation, and automated deployment to the blockchain.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What features can I add to my token?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'You can configure various token features including custom supply, decimals, mintable/burnable options, pausable functionality, and rich metadata with logos, descriptions, and social links.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Do I get analytics for my created tokens?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes! Snarbles provides comprehensive analytics dashboard with real-time token performance, holder analytics, transaction history, and market insights for all tokens created on our platform.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Is there enterprise support for businesses?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes, we offer enterprise solutions including white-label platforms, custom integrations, bulk token creation, dedicated support, and API access for businesses and organizations.',
       },
     },
     {
@@ -339,22 +465,6 @@ export const faqStructuredData = {
       acceptedAnswer: {
         '@type': 'Answer',
         text: 'Our tokenomics designer allows you to model token economies, simulate distribution scenarios, analyze economic parameters, and generate professional reports with interactive visualizations and PDF exports.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'Is Snarbles free to use?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Snarbles offers both free and premium tiers. Basic analytics and tokenomics tools are available for free, while advanced features and enterprise solutions require a subscription.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'What blockchains does Snarbles support?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Snarbles supports major blockchains including Ethereum, Algorand, Solana, Polygon, Binance Smart Chain, and other EVM-compatible networks.',
       },
     },
   ],

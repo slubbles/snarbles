@@ -50,24 +50,31 @@ export const PRICING = {
   ALGO_TO_CREDIT_RATE: 2,    // 1 ALGO = 2 credits
   packages: [
     {
-      credits: 20,
-      priceALGO: 10,
-      priceUSD: 10,
+      credits: 10,
+      priceALGO: 5,
+      priceUSD: 5,
       bonus: 0,
       popular: false
     },
     {
-      credits: 45,
-      priceALGO: 20,
-      priceUSD: 20,
-      bonus: 5,
+      credits: 20,
+      priceALGO: 10,
+      priceUSD: 10,
+      bonus: 0,
       popular: true
     },
     {
-      credits: 110,
+      credits: 50,
+      priceALGO: 25,
+      priceUSD: 25,
+      bonus: 5,
+      popular: false
+    },
+    {
+      credits: 100,
       priceALGO: 50,
       priceUSD: 50,
-      bonus: 10,
+      bonus: 15,
       popular: false
     }
   ]
@@ -174,7 +181,8 @@ export async function purchaseCreditsWithAlgo(
   walletAddress: string,
   algoAmount: number,
   signTransaction: (txn: algosdk.Transaction) => Promise<Uint8Array>,
-  isCustomAmount: boolean = false
+  isCustomAmount: boolean = false,
+  network: string = 'algorand-mainnet'
 ): Promise<PaymentResult> {
   if (!isSupabaseAvailable()) {
     return {
@@ -204,9 +212,12 @@ export async function purchaseCreditsWithAlgo(
 
     console.log(`Processing REAL ALGO payment: ${algoAmount} ALGO -> ${creditsToReceive} credits (${bonusCredits} bonus)`);
 
-    // Get Algorand client for mainnet (real transactions)
-    const config = ALGO_PAYMENT_CONFIG.MAINNET;
+    // Determine which network configuration to use
+    const isMainnet = network.includes('mainnet');
+    const config = isMainnet ? ALGO_PAYMENT_CONFIG.MAINNET : ALGO_PAYMENT_CONFIG.TESTNET;
     const algodClient = new algosdk.Algodv2('', config.algodServer, '');
+    
+    console.log(`🌐 Using ${isMainnet ? 'MAINNET' : 'TESTNET'} configuration for payment`);
     
     // Validate addresses
     if (!algosdk.isValidAddress(walletAddress)) {
@@ -236,7 +247,7 @@ export async function purchaseCreditsWithAlgo(
       receiver: config.receiverAddress,
       amount: amountMicroAlgos,
       suggestedParams,
-      note: new Uint8Array(Buffer.from(`Snarbles Credits Purchase: ${creditsToReceive} credits`))
+      note: new Uint8Array(new TextEncoder().encode(`Snarbles Credits Purchase: ${creditsToReceive} credits`))
     });
 
     // Debug transaction object to ensure it's the right type

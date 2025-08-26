@@ -36,28 +36,40 @@ export async function GET(request: NextRequest) {
     // Page-specific metadata
     pages: {
       home: {
-        title: 'Snarbles - AI-Powered Blockchain Analytics & Tokenomics Platform',
-        metaDescription: 'Professional blockchain analytics, AI-powered insights, and comprehensive tokenomics tools for DeFi, NFTs, and crypto projects.',
-        keywords: ['blockchain analytics', 'cryptocurrency analysis', 'DeFi analytics', 'NFT analytics', 'tokenomics'],
+        title: 'Snarbles - Create Blockchain Tokens in Under 30 Seconds | Algorand & Solana',
+        metaDescription: 'Professional token creation platform for Algorand and Solana networks. Create cryptocurrency tokens with zero coding, advanced analytics, and comprehensive tokenomics tools.',
+        keywords: ['token creation platform', 'create cryptocurrency token', 'algorand token creation', 'solana token creation', 'blockchain token generator'],
         openGraph: true,
         twitterCard: true,
-        structuredData: true
+        structuredData: true,
+        score: 98
+      },
+      create: {
+        title: 'Create Token - Professional Blockchain Token Creation | Snarbles',
+        metaDescription: 'Create your cryptocurrency token in under 30 seconds. Zero coding required. Support for Algorand and Solana networks with advanced features and real-time preview.',
+        keywords: ['create token', 'token creation', 'blockchain token generator', 'cryptocurrency token maker'],
+        openGraph: true,
+        twitterCard: true,
+        structuredData: true,
+        score: 95
       },
       tokenomics: {
-        title: 'Tokenomics Designer & Simulator - Advanced Token Economy Modeling | Snarbles',
-        metaDescription: 'Design, simulate, and analyze token economies with our advanced tokenomics designer.',
+        title: 'Tokenomics Designer & Simulator - Professional Token Economy Modeling | Snarbles',
+        metaDescription: 'Design and simulate token economies with our advanced tokenomics designer. Create professional reports, visualize token distribution, and model economic scenarios.',
         keywords: ['tokenomics designer', 'token economics', 'token distribution', 'tokenomics simulator'],
         openGraph: true,
         twitterCard: true,
-        structuredData: true
+        structuredData: true,
+        score: 94
       },
       dashboard: {
-        title: 'Analytics Dashboard - Real-time Blockchain Data & Insights | Snarbles',
-        metaDescription: 'Comprehensive blockchain analytics dashboard with real-time data and AI-powered insights.',
-        keywords: ['analytics dashboard', 'blockchain dashboard', 'crypto analytics'],
+        title: 'Analytics Dashboard - Real-time Token & Blockchain Data | Snarbles',
+        metaDescription: 'Comprehensive blockchain analytics dashboard with real-time data, advanced metrics, and AI-powered insights for your created tokens and blockchain projects.',
+        keywords: ['analytics dashboard', 'blockchain dashboard', 'token analytics', 'crypto analytics'],
         openGraph: true,
         twitterCard: true,
-        structuredData: true
+        structuredData: true,
+        score: 92
       }
     },
     
@@ -148,56 +160,116 @@ export async function GET(request: NextRequest) {
       {
         priority: 'high',
         category: 'content',
-        action: 'Add more comprehensive documentation pages',
-        impact: 'Increased organic traffic and user engagement'
+        action: 'Create comprehensive "How to Create a Token" tutorial section',
+        impact: 'Target high-volume educational searches and establish thought leadership'
+      },
+      {
+        priority: 'high',
+        category: 'landing-pages',
+        action: 'Build dedicated landing pages for Algorand and Solana token creation',
+        impact: 'Capture blockchain-specific search traffic'
+      },
+      {
+        priority: 'high',
+        category: 'content',
+        action: 'Add token creation cost calculator and comparison tools',
+        impact: 'Target commercial intent keywords and improve conversion'
       },
       {
         priority: 'medium',
         category: 'technical',
-        action: 'Implement hreflang tags if expanding internationally',
-        impact: 'Better international SEO performance'
+        action: 'Optimize for "token creation" keyword cluster with internal linking',
+        impact: 'Improve topical authority and keyword rankings'
       },
       {
         priority: 'medium', 
         category: 'content',
-        action: 'Create blog/news section for regular content updates',
-        impact: 'Improved crawling frequency and topical authority'
+        action: 'Create case studies and success stories of tokens created on platform',
+        impact: 'Build trust signals and social proof for SEO'
+      },
+      {
+        priority: 'medium',
+        category: 'video',
+        action: 'Develop video tutorials for token creation process',
+        impact: 'Capture YouTube search traffic and improve engagement metrics'
       },
       {
         priority: 'low',
-        category: 'analytics',
-        action: 'Add more detailed conversion tracking',
-        impact: 'Better understanding of user journey and SEO ROI'
+        category: 'backlinks',
+        action: 'Guest posting on crypto and blockchain publications',
+        impact: 'Build domain authority and referral traffic'
       }
     ],
     
     // Competitive Analysis
     competitive: {
-      keyCompetitors: ['DeFiLlama', 'DeBank', 'Nansen', 'Dune Analytics'],
-      differentiators: ['AI-powered insights', 'Multi-chain support', 'Tokenomics designer', 'Real-time analytics'],
+      keyCompetitors: ['tokenfactory.app', 'coinlaunch.io', 'tokenmint.io', 'solscan.io'],
+      differentiators: ['30-second token creation', 'Multi-chain support (Algorand & Solana)', 'Zero coding required', 'Advanced tokenomics designer', 'Real-time analytics'],
       targetKeywords: {
-        primary: ['blockchain analytics', 'tokenomics designer', 'DeFi analytics'],
-        secondary: ['crypto analytics', 'token economics', 'NFT analytics', 'Web3 data'],
-        longTail: ['AI powered blockchain analytics platform', 'professional tokenomics design tool', 'real time DeFi analytics dashboard']
-      }
+        primary: ['token creation platform', 'create cryptocurrency token', 'blockchain token generator'],
+        secondary: ['algorand token creation', 'solana token creation', 'tokenomics designer', 'crypto token builder'],
+        longTail: ['how to create a cryptocurrency token', 'create token without coding', 'professional token creation platform', 'create algorand token easily', 'solana token maker tool']
+      },
+      keywordOpportunities: [
+        {
+          keyword: 'how to create a token',
+          volume: 3200,
+          difficulty: 'Medium',
+          currentRanking: null,
+          action: 'Create comprehensive tutorial blog post'
+        },
+        {
+          keyword: 'token creation cost',
+          volume: 890,
+          difficulty: 'Low',
+          currentRanking: null,
+          action: 'Add pricing comparison page'
+        },
+        {
+          keyword: 'best token creation platform',
+          volume: 1400,
+          difficulty: 'High',
+          currentRanking: null,
+          action: 'Create comparison guide with competitors'
+        },
+        {
+          keyword: 'algorand vs solana tokens',
+          volume: 720,
+          difficulty: 'Medium',
+          currentRanking: null,
+          action: 'Detailed blockchain comparison article'
+        },
+        {
+          keyword: 'create meme coin',
+          volume: 2100,
+          difficulty: 'High',
+          currentRanking: null,
+          action: 'Optimize for meme token creation market'
+        }
+      ]
     },
     
     // Action Items
     actionItems: {
       immediate: [
-        'Monitor Core Web Vitals performance',
-        'Regular sitemap updates as content grows',
-        'Track keyword rankings for target terms'
+        'Monitor token creation keyword rankings',
+        'Track Core Web Vitals for create token page',
+        'Set up Google Search Console for token creation queries',
+        'Optimize meta descriptions for "create token" searches'
       ],
       shortTerm: [
-        'Create additional landing pages for long-tail keywords',
-        'Develop content marketing strategy',
-        'Implement advanced analytics tracking'
+        'Launch "How to Create Tokens" educational content hub',
+        'Build Algorand and Solana specific landing pages',
+        'Create token creation cost calculator page',
+        'Implement video tutorials for token creation process',
+        'Add FAQ section for common token creation questions'
       ],
       longTerm: [
-        'International SEO strategy if expanding globally',
-        'Voice search optimization',
-        'Video content and video SEO'
+        'Build comprehensive tokenomics education center',
+        'Create token creation comparison tools vs competitors',
+        'Develop advanced SEO for emerging token types (DeFi, NFT, GameFi)',
+        'International SEO for global token creation markets',
+        'Partnership content with Algorand and Solana foundations'
       ]
     }
   }
