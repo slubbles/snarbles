@@ -19,19 +19,22 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = generateSEOMetadata({
-  title: "Snarbles - AI-Powered Blockchain Analytics & Tokenomics Platform",
-  description: "Professional blockchain analytics, AI-powered insights, and comprehensive tokenomics tools for DeFi, NFTs, and crypto projects. Real-time data, advanced charts, and actionable intelligence.",
+  title: "Snarbles - Create Blockchain Tokens in Under 30 Seconds | Algorand & Solana",
+  description: "Professional token creation platform for Algorand and Solana networks. Create cryptocurrency tokens with zero coding, advanced analytics, and comprehensive tokenomics tools. Start building your crypto project today.",
   keywords: [
-    'blockchain analytics',
-    'cryptocurrency analysis', 
-    'DeFi analytics',
-    'NFT analytics',
-    'tokenomics',
-    'crypto intelligence',
-    'blockchain data',
-    'Web3 analytics',
-    'smart contract analysis',
-    'crypto market insights'
+    'token creation platform',
+    'create cryptocurrency token', 
+    'algorand token creation',
+    'solana token creation',
+    'blockchain token generator',
+    'token maker',
+    'crypto token builder',
+    'how to create a token',
+    'professional token development',
+    'blockchain token deployment',
+    'crypto project launch',
+    'tokenomics designer',
+    'blockchain analytics'
   ],
   url: '/',
   priority: 1.0,
@@ -154,8 +157,8 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} antialiased`}>
         <ChunkErrorBoundary>
-          <WalletAuthProvider>
-            <ClientWalletProvider>
+          <ClientWalletProvider>
+            <WalletAuthProvider>
               <MCPAnalyticsProvider />
               <SkipToMain />
               <div className="flex min-h-screen flex-col">
@@ -168,8 +171,8 @@ export default function RootLayout({
               <BoltBadge />
               <Toaster />
               <ServiceWorkerRegistration />
-            </ClientWalletProvider>
-          </WalletAuthProvider>
+            </WalletAuthProvider>
+          </ClientWalletProvider>
         </ChunkErrorBoundary>
       </body>
     </html>
