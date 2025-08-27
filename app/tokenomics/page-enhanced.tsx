@@ -501,112 +501,65 @@ function EnhancedTokenomicsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Enhanced Background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted opacity-50" />
-        <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute top-40 right-20 w-72 h-72 bg-gradient-to-br from-blue-500/15 to-blue-600/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '0.7s' }} />
-        <div className="absolute bottom-32 left-1/4 w-64 h-64 bg-gradient-to-br from-green-500/15 to-emerald-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        
-        {/* Grid Pattern */}
-        <div className="absolute inset-0 opacity-[0.02]" style={{
-          backgroundImage: `radial-gradient(circle at 1px 1px, rgb(239, 68, 68) 1px, transparent 0)`,
-          backgroundSize: '50px 50px'
-        }} />
-      </div>
-
-      {/* Enhanced Header */}
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted">
+      {/* Header */}
       <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-blue-500/10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-accent/10" />
         <div className="relative container mx-auto px-4 py-8 sm:py-16">
           <div className="text-center space-y-4 sm:space-y-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 mb-4 sm:mb-6 shadow-xl">
-              <Calculator className="w-8 h-8 sm:w-10 sm:h-10 text-primary" />
+            <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-primary/10 mb-2 sm:mb-4">
+              <Calculator className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
             </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold bg-gradient-to-br from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent leading-tight">
-              Enhanced Tokenomics 
-              <span className="bg-gradient-to-r from-primary via-blue-500 to-green-500 bg-clip-text text-transparent block mt-2">
-                Designer
-              </span>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent">
+              Enhanced Tokenomics Designer
             </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-4xl mx-auto px-4 leading-relaxed">
-              Create professional token distributions with 
-              <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent font-semibold"> enhanced PDF reports</span> 
-              and real-time analysis for better investor confidence.
+            <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
+              Create professional token distributions with enhanced PDF reports and real-time analysis.
             </p>
-            
-            {/* Feature Highlights */}
-            <div className="flex flex-wrap justify-center items-center gap-6 mt-8 text-sm text-muted-foreground">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span>Real-time Analysis</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                <span>Professional Reports</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-                <span>Interactive Charts</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-4 sm:py-8 space-y-6 sm:space-y-8 relative z-10">
-        {/* Enhanced Project Information */}
-        <Card className="glass-card border-0 bg-gradient-to-br from-background/80 to-muted/20 backdrop-blur shadow-xl rounded-xl overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-primary/10 via-background to-blue-500/10 border-b border-border/50">
-            <CardTitle className="flex items-center space-x-3 text-xl font-bold">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
-                <Settings className="w-4 h-4 text-white" />
-              </div>
-              <span className="bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-                Project Setup
-              </span>
+      <div className="container mx-auto px-4 py-4 sm:py-8 space-y-6 sm:space-y-8">
+        {/* Project Information */}
+        <Card className="glass-card border-0 bg-background/50 backdrop-blur">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Settings className="w-5 h-5" />
+              <span>Project Setup</span>
             </CardTitle>
-            <CardDescription className="text-muted-foreground">
-              Configure your project details for personalized reports and better tracking
+            <CardDescription>
+              Configure your project details for personalized reports
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6 p-6 sm:p-8">
-            <div className="grid gap-6 sm:grid-cols-2">
-              <div className="space-y-3">
-                <Label htmlFor="projectName" className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  Project Name
-                </Label>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="projectName">Project Name</Label>
                 <Input
                   id="projectName"
                   placeholder="Enter your project name"
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
-                  className="h-12 glass-card border border-border hover:border-primary/30 focus:border-primary/50 transition-all duration-300 rounded-lg"
                 />
               </div>
-              <div className="space-y-3">
-                <Label htmlFor="totalSupply" className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  Total Supply
-                </Label>
+              <div className="space-y-2">
+                <Label htmlFor="totalSupply">Total Supply</Label>
                 <Input
                   id="totalSupply"
                   type="number"
                   placeholder="100000000"
                   value={totalSupply}
                   onChange={(e) => setTotalSupply(Number(e.target.value))}
-                  className="h-12 glass-card border border-border hover:border-primary/30 focus:border-primary/50 transition-all duration-300 rounded-lg"
                 />
               </div>
             </div>
-            <div className="space-y-3">
-              <Label htmlFor="projectDescription" className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                Project Description
-              </Label>
+            <div className="space-y-2">
+              <Label htmlFor="projectDescription">Project Description</Label>
               <textarea
                 id="projectDescription"
-                className="w-full min-h-[100px] px-4 py-3 border border-border glass-card bg-background rounded-lg text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary/50 resize-none hover:border-primary/30 transition-all duration-300"
-                placeholder="Describe your project's mission, use case, and value proposition..."
+                className="w-full min-h-[80px] px-3 py-2 border border-input bg-background rounded-md text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                placeholder="Describe your project and its mission..."
                 value={projectDescription}
                 onChange={(e) => setProjectDescription(e.target.value)}
               />
@@ -614,85 +567,42 @@ function EnhancedTokenomicsPage() {
           </CardContent>
         </Card>
 
-        {/* Enhanced Main Tabs */}
+        {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="flex justify-center mb-8">
-            <TabsList className="glass-card border border-border p-2 rounded-xl bg-background/80 backdrop-blur-sm shadow-lg">
-              <TabsTrigger 
-                value="allocation" 
-                className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg transition-all duration-300 data-[state=active]:shadow-lg px-6 py-3"
-              >
-                <PieChartIcon className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Allocation</span>
-                <span className="sm:hidden">Setup</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="visualize" 
-                className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg transition-all duration-300 data-[state=active]:shadow-lg px-6 py-3"
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Visualize</span>
-                <span className="sm:hidden">Charts</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="analysis" 
-                className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg transition-all duration-300 data-[state=active]:shadow-lg px-6 py-3"
-              >
-                <BarChart3 className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Analysis</span>
-                <span className="sm:hidden">Health</span>
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="allocation">Allocation</TabsTrigger>
+            <TabsTrigger value="visualize">Visualize</TabsTrigger>
+            <TabsTrigger value="analysis">Analysis</TabsTrigger>
+          </TabsList>
 
-          {/* Enhanced Token Allocation Tab */}
+          {/* Token Allocation Tab */}
           <TabsContent value="allocation" className="space-y-6">
-            <Card className="glass-card border-0 bg-gradient-to-br from-background/80 to-muted/20 backdrop-blur shadow-xl rounded-xl overflow-hidden">
-              <CardHeader className="bg-gradient-to-r from-primary/10 via-background to-green-500/10 border-b border-border/50">
-                <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
-                      <PieChartIcon className="w-4 h-4 text-white" />
-                    </div>
-                    <span className="text-xl font-bold bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-                      Token Distribution
-                    </span>
+            <Card className="glass-card border-0 bg-background/50 backdrop-blur">
+              <CardHeader>
+                <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
+                  <div className="flex items-center space-x-2">
+                    <PieChartIcon className="w-5 h-5" />
+                    <span>Token Distribution</span>
                   </div>
-                  <div className={`px-4 py-2 rounded-full border text-sm font-bold shadow-sm transition-all duration-300 ${getHealthScoreColor(healthAnalysis.score)}`}>
+                  <div className={`px-3 py-1 rounded-full border text-sm font-medium ${getHealthScoreColor(healthAnalysis.score)}`}>
                     Health Score: {healthAnalysis.score}/100
-                    {healthAnalysis.score >= 80 && <span className="ml-2">🟢</span>}
-                    {healthAnalysis.score >= 60 && healthAnalysis.score < 80 && <span className="ml-2">🟡</span>}
-                    {healthAnalysis.score < 60 && <span className="ml-2">🔴</span>}
                   </div>
                 </CardTitle>
-                <CardDescription className="text-muted-foreground">
-                  Adjust allocation percentages. Total: <span className="font-semibold">{totalPercentage}%</span>
+                <CardDescription>
+                  Adjust allocation percentages. Total: {totalPercentage}%
                   {totalPercentage !== 100 && (
-                    <span className="text-primary ml-2 font-semibold animate-pulse">
+                    <span className="text-red-500 ml-2">
                       (Must equal 100%)
                     </span>
                   )}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-8 p-6 sm:p-8">
+              <CardContent className="space-y-6">
                 {Object.entries(distribution).map(([key, data]) => (
-                  <div key={key} className="space-y-4 p-4 rounded-lg glass-card border border-border/30 hover:border-border/50 transition-all duration-300">
+                  <div key={key} className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div 
-                          className="w-4 h-4 rounded-full shadow-sm" 
-                          style={{ backgroundColor: data.color }}
-                        ></div>
-                        <Label className="font-semibold text-foreground">{data.label}</Label>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <span className="text-lg font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-                          {data.value}%
-                        </span>
-                        <Badge variant="outline" className="bg-muted/50 border-border">
-                          {((totalSupply * data.value) / 100).toLocaleString()} tokens
-                        </Badge>
-                      </div>
+                      <Label className="font-medium">{data.label}</Label>
+                      <span className="text-sm font-semibold bg-muted px-2 py-1 rounded">{data.value}%</span>
                     </div>
                     <Slider
                       value={[data.value]}
@@ -701,12 +611,8 @@ function EnhancedTokenomicsPage() {
                       step={1}
                       className="w-full"
                     />
-                    <div className="flex items-center justify-between text-sm text-muted-foreground">
-                      <span>0%</span>
-                      <span className="font-medium">
-                        {Math.round((totalSupply * data.value) / 100 / 1000000 * 100) / 100}M tokens
-                      </span>
-                      <span>50%</span>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>Tokens: {((totalSupply * data.value) / 100).toLocaleString()}</span>
                     </div>
                   </div>
                 ))}
@@ -808,153 +714,100 @@ function EnhancedTokenomicsPage() {
           </TabsContent>
         </Tabs>
 
-        {/* Enhanced Actions */}
-        <Card className="glass-card border-0 bg-gradient-to-br from-background/80 to-muted/20 backdrop-blur shadow-xl rounded-xl overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-green-500/10 via-background to-blue-500/10 border-b border-border/50">
-            <CardTitle className="flex items-center space-x-3 text-xl font-bold">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
-                <Rocket className="w-4 h-4 text-white" />
-              </div>
-              <span className="bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-                Export & Deploy
-              </span>
+        {/* Actions */}
+        <Card className="glass-card border-0 bg-background/50 backdrop-blur">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Rocket className="w-5 h-5" />
+              <span>Actions</span>
             </CardTitle>
-            <CardDescription className="text-muted-foreground">
-              Export professional reports, save configurations, or apply to token creation
+            <CardDescription>
+              Export, save, or apply your tokenomics configuration
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-6 sm:p-8">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Button 
-                onClick={generatePDFReport}
-                disabled={isGeneratingPDF}
-                variant="outline" 
-                className="border-border hover:bg-muted relative group h-14 transition-all duration-300 hover:shadow-lg hover:border-primary/30"
-              >
-                {isGeneratingPDF ? (
-                  <div className="flex items-center space-x-2">
-                    <RefreshCw className="w-5 h-5 animate-spin" />
-                    <span className="hidden sm:inline font-medium">Generating...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    <Download className="w-5 h-5 group-hover:text-primary transition-colors" />
-                    <span className="hidden sm:inline font-medium">Export PDF</span>
-                    <span className="sm:hidden font-medium">PDF</span>
-                  </div>
-                )}
-                {!isGeneratingPDF && (
-                  <Badge className="absolute -top-2 -right-2 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs px-2 py-1 shadow-lg">
-                    Enhanced
-                  </Badge>
-                )}
-              </Button>
-              
-              <Button 
-                onClick={saveConfiguration}
-                variant="outline" 
-                className={`border-border hover:bg-muted h-14 transition-all duration-300 hover:shadow-lg group ${
-                  savedSuccess ? 'bg-green-50 border-green-200 text-green-700' : 'hover:border-primary/30'
-                }`}
-              >
-                <div className="flex items-center space-x-2">
-                  {savedSuccess ? (
-                    <Check className="w-5 h-5 text-green-600" />
-                  ) : (
-                    <Shield className="w-5 h-5 group-hover:text-primary transition-colors" />
-                  )}
-                  <span className="hidden sm:inline font-medium">
-                    {savedSuccess ? 'Saved!' : 'Save Config'}
-                  </span>
-                  <span className="sm:hidden font-medium">
-                    {savedSuccess ? 'Saved!' : 'Save'}
-                  </span>
-                </div>
-              </Button>
-              
-              <Button 
-                onClick={() => navigator.share?.({ 
-                  title: `${projectName || 'My Token'} Tokenomics`, 
-                  text: `Check out my ${projectName || 'token'} tokenomics design!`,
-                  url: window.location.href 
-                })}
-                variant="outline"
-                className="border-border hover:bg-muted h-14 transition-all duration-300 hover:shadow-lg hover:border-primary/30 group"
-              >
-                <div className="flex items-center space-x-2">
-                  <Share2 className="w-5 h-5 group-hover:text-primary transition-colors" />
-                  <span className="hidden sm:inline font-medium">Share</span>
-                  <span className="sm:hidden font-medium">Share</span>
-                </div>
-              </Button>
-              
-              <Button 
-                onClick={() => setActiveTab('visualize')}
-                variant="outline"
-                className="border-border hover:bg-muted h-14 transition-all duration-300 hover:shadow-lg hover:border-primary/30 group"
-              >
-                <div className="flex items-center space-x-2">
-                  <Eye className="w-5 h-5 group-hover:text-primary transition-colors" />
-                  <span className="hidden sm:inline font-medium">Preview</span>
-                  <span className="sm:hidden font-medium">View</span>
-                </div>
-              </Button>
-            </div>
+          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Button 
+              onClick={generatePDFReport}
+              disabled={isGeneratingPDF}
+              variant="outline" 
+              className="border-border hover:bg-muted relative"
+            >
+              {isGeneratingPDF ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  <span className="hidden sm:inline">Generating...</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Export Enhanced PDF</span>
+                  <span className="sm:hidden">PDF</span>
+                </>
+              )}
+              {!isGeneratingPDF && (
+                <Badge className="absolute -top-2 -right-2 bg-green-500 text-white text-xs">
+                  New
+                </Badge>
+              )}
+            </Button>
+            
+            <Button 
+              onClick={saveConfiguration}
+              variant="outline" 
+              className={`border-border hover:bg-muted ${savedSuccess ? 'bg-green-50 border-green-200' : ''}`}
+            >
+              {savedSuccess ? <Check className="w-4 h-4 mr-2" /> : <Shield className="w-4 h-4 mr-2" />}
+              <span className="hidden sm:inline">{savedSuccess ? 'Saved!' : 'Save Config'}</span>
+              <span className="sm:hidden">{savedSuccess ? 'Saved!' : 'Save'}</span>
+            </Button>
+            
+            <Button 
+              onClick={() => navigator.share?.({ 
+                title: 'My Tokenomics', 
+                text: `Check out my ${projectName || 'token'} tokenomics!`,
+                url: window.location.href 
+              })}
+              variant="outline"
+              className="border-border hover:bg-muted"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Share</span>
+              <span className="sm:hidden">Share</span>
+            </Button>
+            
+            <Button 
+              onClick={() => setActiveTab('visualize')}
+              variant="outline"
+              className="border-border hover:bg-muted"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Preview</span>
+              <span className="sm:hidden">View</span>
+            </Button>
           </CardContent>
         </Card>
 
-        {/* Enhanced CTA */}
-        <div className="text-center space-y-8 py-12 sm:py-16 relative">
-          {/* Background decoration */}
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-blue-500/5 rounded-2xl"></div>
-          
-          <div className="relative z-10 space-y-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 mb-4 shadow-xl">
-              <Rocket className="w-8 h-8 text-primary" />
-            </div>
-            
-            <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-br from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent">
-              Ready to Create Your Token?
-            </h2>
-            
-            <p className="text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto px-4 leading-relaxed">
-              Your enhanced tokenomics are configured with 
-              <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent font-semibold"> professional analysis</span>. 
-              Apply this distribution to create your token with confidence.
+        {/* CTA */}
+        <div className="text-center space-y-6 py-8 sm:py-12">
+          <div className="space-y-4">
+            <h2 className="text-2xl sm:text-3xl font-bold">Ready to Create Your Token?</h2>
+            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
+              Your enhanced tokenomics are configured with professional analysis. 
+              Apply this distribution to create your token now.
             </p>
-            
-            {/* Stats */}
-            <div className="flex flex-wrap justify-center gap-8 text-center py-6">
-              <div className="space-y-2">
-                <div className="text-2xl font-bold text-primary">{healthAnalysis.score}/100</div>
-                <div className="text-sm text-muted-foreground">Health Score</div>
-              </div>
-              <div className="space-y-2">
-                <div className="text-2xl font-bold text-green-500">{totalSupply.toLocaleString()}</div>
-                <div className="text-sm text-muted-foreground">Total Supply</div>
-              </div>
-              <div className="space-y-2">
-                <div className="text-2xl font-bold text-blue-500">{Object.keys(distribution).length}</div>
-                <div className="text-sm text-muted-foreground">Categories</div>
-              </div>
-            </div>
           </div>
-          
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 px-4 relative z-10">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 px-4">
             <Button 
               onClick={applyToToken}
-              className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white text-lg px-8 py-4 font-bold w-full sm:w-auto shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 rounded-xl"
+              className="bg-primary hover:bg-primary/90 text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 font-semibold w-full sm:w-auto"
             >
-              <Rocket className="w-6 h-6 mr-3" />
+              <Rocket className="w-5 h-5 mr-2" />
               Create Token Now
             </Button>
             <Link href="/create" className="w-full sm:w-auto">
-              <Button 
-                variant="outline" 
-                className="border-border hover:bg-muted text-lg px-8 py-4 w-full hover:border-primary/30 transition-all duration-300 rounded-xl"
-              >
+              <Button variant="outline" className="border-border hover:bg-muted text-base sm:text-lg px-6 sm:px-8 py-3 sm:py-4 w-full">
                 Browse Token Creator
-                <ChevronRight className="w-5 h-5 ml-3" />
+                <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
           </div>

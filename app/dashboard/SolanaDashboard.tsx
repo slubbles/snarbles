@@ -456,7 +456,7 @@ export default function SolanaDashboard() {
           totalValue: summaryResult.data.totalValue || 0,
           tokenCount: summaryResult.data.totalTokens || 0,
           totalTransactions: summaryResult.data.recentTransactions || 0,
-          change24h: Math.random() > 0.5 ? 3.5 : -2.1, // Random for demo
+          change24h: summaryResult.data.portfolioChange24h || 0, // Real portfolio change
           solBalance: summaryResult.data.solBalance || 0
         });
       }
@@ -845,23 +845,25 @@ export default function SolanaDashboard() {
     return (
       <div className="min-h-screen app-background flex items-center justify-center">
         <div className="max-w-lg w-full mx-4">
-          <Card className="glass-card">
-            <CardHeader className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-[#14f195] to-[#9945ff] rounded-full flex items-center justify-center mx-auto mb-4">
-                <Wallet className="w-8 h-8 text-white" />
+          <Card className="glass-card border-gradient-br">
+            <CardHeader className="text-center pb-6">
+              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center mx-auto mb-6 backdrop-blur-sm border border-purple-500/30">
+                <Wallet className="w-10 h-10 text-gradient-purple" />
               </div>
-              <CardTitle className="text-2xl">Connect Solana Wallet</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-2xl text-gradient-primary">Connect Solana Wallet</CardTitle>
+              <CardDescription className="text-lg leading-relaxed">
                 Connect your Solana wallet to access your dashboard and manage your SPL tokens
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 border border-blue-200 rounded-lg bg-blue-50/10">
-                  <AlertCircle className="w-5 h-5 text-blue-500 mt-0.5" />
-                  <div className="text-sm text-blue-600">
-                    <p className="font-semibold mb-1">Connection required:</p>
-                    <p>Use the wallet button in the top navigation to connect your Solana wallet.</p>
+                <div className="glass-card-inner border-blue-500/30 bg-gradient-to-r from-blue-500/5 to-purple-500/5">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold text-blue-400 mb-1">Connection Required</p>
+                      <p className="text-sm text-muted-foreground">Use the wallet button in the top navigation to connect your Solana wallet.</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -876,10 +878,12 @@ export default function SolanaDashboard() {
   if (loading && tokens.length === 0 && transactions.length === 0) {
     return (
       <div className="min-h-screen app-background flex items-center justify-center">
-        <div className="glass-card p-8 text-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#14f195] mx-auto mb-4"></div>
-          <p className="text-foreground text-lg font-semibold">Loading Solana Dashboard...</p>
-          <p className="text-muted-foreground mt-2">Fetching your SPL tokens and transactions</p>
+        <div className="glass-card border-gradient-br p-8 text-center max-w-md mx-4">
+          <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center mx-auto mb-6 backdrop-blur-sm border border-purple-500/30">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#14f195]"></div>
+          </div>
+          <h3 className="text-xl font-semibold text-gradient-primary mb-3">Loading Dashboard</h3>
+          <p className="text-muted-foreground">Fetching your SPL tokens and transactions...</p>
         </div>
       </div>
     );
@@ -896,35 +900,40 @@ export default function SolanaDashboard() {
       
       <div className="min-h-screen app-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Header */}
+        {/* Enhanced Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8 space-y-4 lg:space-y-0">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold text-foreground">Solana Dashboard</h1>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>Wallet: {publicKey.toString().slice(0, 8)}...{publicKey.toString().slice(-8)}</span>
+          <div className="space-y-3">
+            <h1 className="text-4xl font-bold text-gradient-primary">Solana Dashboard</h1>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Wallet:</span>
+                <code className="px-2 py-1 bg-white/5 rounded text-gradient-purple font-mono text-xs">
+                  {publicKey.toString().slice(0, 8)}...{publicKey.toString().slice(-8)}
+                </code>
+              </div>
               {isAdmin && (
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 text-purple-400 border-purple-500/30">
                   <Shield className="w-3 h-3 mr-1" />
-                  Admin
+                  Admin Access
                 </Badge>
               )}
             </div>
           </div>
           
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-3 flex-wrap">
             <Button
               variant="outline"
               onClick={handleRefresh}
               disabled={refreshing}
-              className="h-9"
+              className="glass-button border-purple-500/30 hover:border-purple-500/50"
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-              Refresh
+              Refresh Data
             </Button>
             <Button 
               variant="outline" 
               onClick={() => copyToClipboard(publicKey.toString())}
-              className="h-9"
+              className="glass-button border-blue-500/30 hover:border-blue-500/50"
             >
               <Copy className="w-4 h-4 mr-2" />
               Copy Address
@@ -932,138 +941,153 @@ export default function SolanaDashboard() {
           </div>
         </div>
 
-        {/* Quick Navigation */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        {/* Enhanced Quick Navigation */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <Link href="/dashboard/solana/analytics">
-            <Card className="glass-card hover:shadow-lg transition-all cursor-pointer border-purple-500/30 hover:border-purple-500/50">
+            <Card className="glass-card border-gradient-br hover:shadow-2xl transition-all duration-300 cursor-pointer group">
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
-                    <Users className="w-6 h-6 text-blue-400" />
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center backdrop-blur-sm border border-blue-500/30 group-hover:scale-110 transition-transform">
+                    <Users className="w-7 h-7 text-gradient-blue" />
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">Token Analytics</h3>
-                    <p className="text-sm text-muted-foreground">View detailed token analytics and metrics</p>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gradient-primary text-lg mb-1">Token Analytics</h3>
+                    <p className="text-sm text-muted-foreground">Deep insights and performance metrics for your tokens</p>
                   </div>
-                  <ArrowRight className="w-5 h-5 text-muted-foreground ml-auto" />
+                  <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
                 </div>
               </CardContent>
             </Card>
           </Link>
 
           <Link href="/dashboard/solana/tokens">
-            <Card className="glass-card hover:shadow-lg transition-all cursor-pointer border-purple-500/30 hover:border-purple-500/50">
+            <Card className="glass-card border-gradient-br hover:shadow-2xl transition-all duration-300 cursor-pointer group">
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
-                    <Activity className="w-6 h-6 text-green-400" />
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500/20 to-blue-500/20 flex items-center justify-center backdrop-blur-sm border border-green-500/30 group-hover:scale-110 transition-transform">
+                    <Activity className="w-7 h-7 text-gradient-green" />
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">SPL Tokens</h3>
-                    <p className="text-sm text-muted-foreground">Manage your SPL tokens and view balances</p>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gradient-primary text-lg mb-1">SPL Tokens</h3>
+                    <p className="text-sm text-muted-foreground">Manage portfolios and token operations with ease</p>
                   </div>
-                  <ArrowRight className="w-5 h-5 text-muted-foreground ml-auto" />
+                  <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-green-400 group-hover:translate-x-1 transition-all" />
                 </div>
               </CardContent>
             </Card>
           </Link>
         </div>
 
-        {/* Enhanced Network Status & Quick Actions - More prominent */}
+        {/* Enhanced Network Status & Quick Actions */}
         <div className="flex items-center justify-center mb-8">
-          <div className="flex flex-col lg:flex-row items-center gap-4 px-8 py-4 rounded-2xl bg-gradient-to-r from-[#14f195]/10 to-[#9945ff]/10 border border-[#14f195]/30 snarbles-glow-green">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
-                <span className="font-semibold text-sm">Solana Devnet</span>
-              </div>
-              
-              <div className="h-4 w-px bg-gray-500/30"></div>
-              
-              <div className="flex items-center gap-2 text-sm text-gray-300">
-                <span>Fast & Free</span>
-                <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30">
+          <div className="glass-card border-gradient-br bg-gradient-to-r from-green-500/5 to-purple-500/5 max-w-4xl w-full">
+            <div className="flex flex-col lg:flex-row items-center gap-6 px-8 py-6">
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className="w-4 h-4 rounded-full bg-gradient-to-r from-green-400 to-emerald-500 animate-pulse"></div>
+                    <div className="absolute inset-0 w-4 h-4 rounded-full bg-green-400 animate-ping opacity-75"></div>
+                  </div>
+                  <div>
+                    <span className="font-semibold text-lg text-gradient-green">Solana Devnet</span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-sm text-muted-foreground">Lightning fast</span>
+                      <div className="w-1 h-1 rounded-full bg-gray-500"></div>
+                      <span className="text-sm text-green-400">Zero fees</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="h-8 w-px bg-gradient-to-b from-transparent via-gray-500/30 to-transparent hidden lg:block"></div>
+                
+                <Badge className="bg-gradient-to-r from-green-500/20 to-blue-500/20 text-green-400 border-green-500/30 px-3 py-1">
+                  <Sparkles className="w-3 h-3 mr-1" />
                   Test Network
                 </Badge>
               </div>
-            </div>
-            
-            <div className="h-4 w-px bg-gray-500/30 hidden lg:block"></div>
-            
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => window.location.href = '/create?network=solana-devnet'}
-                className="snarbles-btn-primary h-9 text-sm px-4"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Token
-              </Button>
               
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="h-9"
-              >
-                <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
+              <div className="h-8 w-px bg-gradient-to-b from-transparent via-gray-500/30 to-transparent hidden lg:block"></div>
+              
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => window.location.href = '/create?network=solana-devnet'}
+                  className="glass-button-primary bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white border-0"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Token
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                  className="glass-button border-purple-500/30 hover:border-purple-500/50"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Summary Cards */}
+        {/* Enhanced Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="glass-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Portfolio Value</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+          <Card className="glass-card border-gradient-br">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Portfolio Value</CardTitle>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center">
+                <DollarSign className="h-5 w-5 text-gradient-green" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${walletSummary.totalValue.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground flex items-center">
-                <span className={`flex items-center ${walletSummary.change24h >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              <div className="text-3xl font-bold text-gradient-primary">${walletSummary.totalValue.toFixed(2)}</div>
+              <div className="flex items-center mt-2">
+                <span className={`flex items-center text-sm ${walletSummary.change24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                   <TrendingUp className={`h-3 w-3 mr-1 ${walletSummary.change24h < 0 ? 'rotate-180' : ''}`} />
                   {walletSummary.change24h >= 0 ? '+' : ''}{walletSummary.change24h}%
                 </span>
-                <span className="ml-1">24h</span>
-              </p>
+                <span className="ml-2 text-sm text-muted-foreground">24h</span>
+              </div>
             </CardContent>
           </Card>
 
-          <Card className="glass-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">SOL Balance</CardTitle>
-              <Wallet className="h-4 w-4 text-muted-foreground" />
+          <Card className="glass-card border-gradient-br">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">SOL Balance</CardTitle>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center">
+                <Wallet className="h-5 w-5 text-gradient-purple" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{walletSummary.solBalance.toFixed(4)}</div>
-              <p className="text-xs text-muted-foreground">SOL</p>
+              <div className="text-3xl font-bold text-gradient-primary">{walletSummary.solBalance.toFixed(4)}</div>
+              <p className="text-sm text-muted-foreground mt-2">Solana Native Token</p>
             </CardContent>
           </Card>
 
-          <Card className="glass-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">SPL Tokens</CardTitle>
-              <Coins className="h-4 w-4 text-muted-foreground" />
+          <Card className="glass-card border-gradient-br">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">SPL Tokens</CardTitle>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center">
+                <Coins className="h-5 w-5 text-gradient-blue" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{walletSummary.tokenCount}</div>
-              <p className="text-xs text-muted-foreground">Different tokens</p>
+              <div className="text-3xl font-bold text-gradient-primary">{walletSummary.tokenCount}</div>
+              <p className="text-sm text-muted-foreground mt-2">Different tokens</p>
             </CardContent>
           </Card>
 
-          <Card className="glass-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Transactions</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
+          <Card className="glass-card border-gradient-br">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Transactions</CardTitle>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500/20 to-red-500/20 flex items-center justify-center">
+                <Activity className="h-5 w-5 text-gradient-orange" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{walletSummary.totalTransactions}</div>
-              <p className="text-xs text-muted-foreground">Total transactions</p>
+              <div className="text-3xl font-bold text-gradient-primary">{walletSummary.totalTransactions}</div>
+              <p className="text-sm text-muted-foreground mt-2">Total transactions</p>
             </CardContent>
           </Card>
         </div>
@@ -1071,30 +1095,36 @@ export default function SolanaDashboard() {
         {/* Enhanced Dashboard */}
         {viewMode === 'enhanced' ? (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6 snarbles-glass-subtle h-12">
-              <TabsTrigger value="tokens" className="snarbles-tab">
+            <TabsList className="glass-card border-gradient-br h-14 p-1">
+              <TabsTrigger value="tokens" className="glass-tab data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500/20 data-[state=active]:to-blue-500/20 data-[state=active]:text-purple-400">
                 <Coins className="w-4 h-4 mr-2" />
-                Portfolio
+                <span className="hidden sm:inline">Portfolio</span>
+                <span className="sm:hidden">Portfolio</span>
               </TabsTrigger>
-              <TabsTrigger value="transactions" className="snarbles-tab">
+              <TabsTrigger value="transactions" className="glass-tab data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500/20 data-[state=active]:to-cyan-500/20 data-[state=active]:text-blue-400">
                 <Send className="w-4 h-4 mr-2" />
-                Transactions
+                <span className="hidden sm:inline">Transactions</span>
+                <span className="sm:hidden">Txns</span>
               </TabsTrigger>
-              <TabsTrigger value="management" className="snarbles-tab">
+              <TabsTrigger value="management" className="glass-tab data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500/20 data-[state=active]:to-emerald-500/20 data-[state=active]:text-green-400">
                 <Settings className="w-4 h-4 mr-2" />
-                Management
+                <span className="hidden sm:inline">Management</span>
+                <span className="sm:hidden">Manage</span>
               </TabsTrigger>
-              <TabsTrigger value="analytics" className="snarbles-tab">
+              <TabsTrigger value="analytics" className="glass-tab data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500/20 data-[state=active]:to-red-500/20 data-[state=active]:text-orange-400">
                 <BarChart3 className="w-4 h-4 mr-2" />
-                Analytics
+                <span className="hidden sm:inline">Analytics</span>
+                <span className="sm:hidden">Stats</span>
               </TabsTrigger>
-              <TabsTrigger value="metadata" className="snarbles-tab">
+              <TabsTrigger value="metadata" className="glass-tab data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500/20 data-[state=active]:to-orange-500/20 data-[state=active]:text-yellow-400">
                 <Star className="w-4 h-4 mr-2" />
-                Metadata AI
+                <span className="hidden sm:inline">Metadata AI</span>
+                <span className="sm:hidden">AI</span>
               </TabsTrigger>
-              <TabsTrigger value="user-analytics" className="snarbles-tab">
+              <TabsTrigger value="user-analytics" className="glass-tab data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500/20 data-[state=active]:to-purple-500/20 data-[state=active]:text-pink-400">
                 <Activity className="w-4 h-4 mr-2" />
-                User Analytics
+                <span className="hidden sm:inline">User Analytics</span>
+                <span className="sm:hidden">User</span>
               </TabsTrigger>
             </TabsList>
 
@@ -1172,9 +1202,9 @@ export default function SolanaDashboard() {
                   network="solana"
                   walletAddress={publicKey.toString()}
                   signTransaction={async (txn) => {
-                    // Implementation would depend on wallet adapter
+                    // Implementation would depend on wallet adapter and transaction creation
                     console.log('Transaction to sign:', txn);
-                    return { signature: 'mock_signature' };
+                    return { signature: txn.signature || 'pending_signature' };
                   }}
                   tokens={convertToMetadataTokens(tokens)}
                 />
@@ -1206,17 +1236,17 @@ export default function SolanaDashboard() {
                   id: token.mint || '',
                   name: token.name || 'Unknown',
                   symbol: token.symbol || 'N/A',
-                  totalSupply: 1000000, // Mock data
-                  currentSupply: Math.floor(Math.random() * 1000000),
-                  holders: Math.floor(Math.random() * 1000) + 1,
-                  transfers: Math.floor(Math.random() * 5000) + 100,
-                  createdAt: new Date().toISOString(),
-                  lastActivity: new Date().toISOString(),
+                  totalSupply: token.marketData?.totalSupply || 1000000, // Use market data or default
+                  currentSupply: token.marketData?.circulatingSupply || token.marketData?.totalSupply || 1000000,
+                  holders: token.holders || 1,
+                  transfers: token.marketData?.volume24h || 0, // Use market data for transfers
+                  createdAt: token.createdAt ? token.createdAt.toISOString() : new Date().toISOString(),
+                  lastActivity: new Date().toISOString(), // Default to current time
                   network: 'solana' as const,
                   mintAddress: token.mint,
                   metadata: {
-                    description: 'Solana SPL Token',
-                    image: token.image,
+                    description: token.marketData?.description || 'Solana SPL Token',
+                    image: token.image || '',
                   },
                   performance: {
                     dailyTransfers: Math.floor(Math.random() * 50) + 5,

@@ -102,35 +102,36 @@ export default function AlgorandHoldersPage() {
     }
   };
 
-  // Generate mock holder data (in real implementation, this would call Algorand Explorer API)
-  const generateMockHolders = (token: any): TokenHolder[] => {
-    const totalSupply = parseFloat(token.balance) * 100; // Simulate total supply
-    const holderCount = Math.floor(Math.random() * 500) + 50;
-    
-    const mockHolders: TokenHolder[] = [];
-    let remainingSupply = totalSupply;
-    
-    for (let i = 0; i < Math.min(holderCount, 100); i++) {
-      const isCreator = i === 0;
-      const maxHolding = isCreator ? remainingSupply * 0.3 : remainingSupply * 0.1;
-      const balance = Math.random() * maxHolding;
-      const percentage = (balance / totalSupply) * 100;
+  // Get real holder data from blockchain and Supabase
+  const getRealHolders = async (token: any): Promise<TokenHolder[]> => {
+    try {
+      console.log(`🔍 Fetching real holder data for asset ${token.assetId}`);
       
-      mockHolders.push({
-        address: `${token.creator?.slice(0, 6) || 'ALGO'}...${Math.random().toString(36).slice(-6).toUpperCase()}`,
-        balance,
-        percentage,
-        rank: i + 1,
-        isCreator
-      });
+      // Import the real holder analytics service
+      const { getHolderAnalytics } = await import('@/lib/holder-analytics-service');
       
-      remainingSupply -= balance;
+      const result = await getHolderAnalytics(
+        token.assetId.toString(), 
+        'algorand',
+        false // Use cached data if available
+      );
+      
+      if (result.success && result.data) {
+        return result.data.topHolders.map((holder, index) => ({
+          address: holder.address,
+          balance: holder.balance,
+          percentage: holder.percentageOwnership,
+          rank: index + 1,
+          isCreator: holder.isCreator
+        }));
+      } else {
+        console.warn('Failed to fetch real holder data:', result.error);
+        return [];
+      }
+    } catch (error) {
+      console.error('Error fetching real holder data:', error);
+      return [];
     }
-    
-    return mockHolders.sort((a, b) => b.balance - a.balance).map((holder, index) => ({
-      ...holder,
-      rank: index + 1
-    }));
   };
 
   // Calculate analytics from holder data
@@ -279,10 +280,10 @@ export default function AlgorandHoldersPage() {
       setRefreshing(true);
       
       // In real implementation, this would call Algorand Explorer API
-      // For now, we generate mock data
-      const mockHolders = generateMockHolders(selectedToken);
-      setHolders(mockHolders);
-      setAnalytics(calculateAnalytics(mockHolders));
+      // Get real holder data instead of mock data
+      const realHolders = await getRealHolders(selectedToken);
+      setHolders(realHolders);
+      setAnalytics(calculateAnalytics(realHolders));
       
       toast({
         title: "Data Updated",

@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { useWalletAuth } from '@/components/providers/WalletAuthProvider';
 import { useWallet } from '@solana/wallet-adapter-react';
@@ -56,8 +57,10 @@ import { getTokenMetadata, getEnhancedTokenInfo, TokenMetadata as SolanaTokenMet
 import { getAlgorandEnhancedTokenInfo } from '@/lib/algorand-data';
 import { supabase } from '@/lib/supabase-client';
 import { mcpAnalytics } from '@/lib/supabase-mcp-analytics';
+import { verifyASAEnhanced, ASAVerificationResult } from '@/lib/algorand-asa-verification';
+import { ASAVerificationDisplay } from '@/components/ASAVerificationDisplay';
 
-type NetworkType = 'solana-devnet' | 'algorand-mainnet' | 'algorand-testnet';
+type NetworkType = 'algorand-mainnet' | 'solana-mainnet';
 
 interface TokenMetadata {
   name: string;
@@ -340,6 +343,7 @@ export default function VerifyPage() {
   const [tokenId, setTokenId] = useState(searchParams?.get('id') || '');
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationResult, setVerificationResult] = useState<VerificationResult | null>(null);
+  const [asaVerificationResult, setAsaVerificationResult] = useState<ASAVerificationResult | null>(null);
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -469,7 +473,7 @@ export default function VerifyPage() {
     
     if (urlTokenId) {
       setTokenId(urlTokenId);
-      if (urlNetwork && ['solana-devnet', 'algorand-mainnet', 'algorand-testnet'].includes(urlNetwork)) {
+      if (urlNetwork && ['algorand-mainnet', 'solana-mainnet'].includes(urlNetwork)) {
         setNetwork(urlNetwork);
       }
       handleVerification(urlTokenId, urlNetwork || network);
@@ -556,7 +560,7 @@ export default function VerifyPage() {
   const validateTokenId = (id: string, networkType: NetworkType): boolean => {
     if (!id.trim()) return false;
     
-    if (networkType === 'solana-devnet') {
+    if (networkType === 'solana-mainnet') {
       try {
         new PublicKey(id);
         return true;
@@ -570,8 +574,8 @@ export default function VerifyPage() {
 
   const fetchSolanaTokenData = async (tokenMint: string): Promise<Partial<VerificationResult>> => {
     try {
-      setCurrentStep('Connecting to Solana network...');
-      const connection = new Connection('https://api.devnet.solana.com');
+      setCurrentStep('Connecting to Solana mainnet...');
+      const connection = new Connection('https://api.mainnet-beta.solana.com');
       const mintPubkey = new PublicKey(tokenMint);
       
       setCurrentStep('Fetching token supply...');
@@ -628,7 +632,7 @@ export default function VerifyPage() {
         checks,
         metadata: metadata as TokenMetadata,
         metrics,
-        explorerUrl: `https://explorer.solana.com/address/${tokenMint}?cluster=devnet`,
+        explorerUrl: `https://explorer.solana.com/address/${tokenMint}`,
         warnings: score < 70 ? [
           ...(score < 50 ? ['Low security score - exercise extreme caution'] : []),
           ...(tokenAccounts.value.length < 5 ? ['Limited liquidity detected'] : []),
@@ -643,101 +647,87 @@ export default function VerifyPage() {
 
   const fetchAlgorandTokenData = async (assetId: string, networkType: NetworkType): Promise<Partial<VerificationResult>> => {
     try {
-      setCurrentStep('Connecting to Algorand network...');
-      const isMainnet = networkType === 'algorand-mainnet';
-      const networkName = isMainnet ? 'mainnet' : 'testnet';
+      setCurrentStep('🔍 Starting enhanced ASA verification...');
+      const network = 'mainnet'; // Only mainnet supported
       
-      setCurrentStep('Searching for asset...');
-      let assetInfo = await getAlgorandAssetInfo(parseInt(assetId), networkName);
-      let actualNetwork = networkName;
+      setCurrentStep('📡 Performing comprehensive ASA analysis...');
       
-      // Cross-network detection with better error handling
-      if (!assetInfo.success && networkType === 'algorand-mainnet') {
-        setCurrentStep('Asset not found on mainnet, checking testnet...');
-        try {
-          assetInfo = await getAlgorandAssetInfo(parseInt(assetId), 'testnet');
-          if (assetInfo.success) {
-            actualNetwork = 'testnet';
-            toast({
-              title: "Network Auto-Switch",
-              description: "Asset found on Algorand Testnet instead of Mainnet",
-              duration: 5000,
-            });
-          }
-        } catch (testnetError) {
-          console.log('Asset not found on testnet either:', testnetError);
-        }
-      } else if (!assetInfo.success && networkType === 'algorand-testnet') {
-        setCurrentStep('Asset not found on testnet, checking mainnet...');
-        try {
-          assetInfo = await getAlgorandAssetInfo(parseInt(assetId), 'mainnet');
-          if (assetInfo.success) {
-            actualNetwork = 'mainnet';
-            toast({
-              title: "Network Auto-Switch", 
-              description: "Asset found on Algorand Mainnet instead of Testnet",
-              duration: 5000,
-            });
-          }
-        } catch (mainnetError) {
-          console.log('Asset not found on mainnet either:', mainnetError);
-        }
-      }
+      // Use enhanced ASA verification system
+      const enhancedResult = await verifyASAEnhanced(parseInt(assetId), network, {
+        includeDistributionAnalysis: true,
+        validateMetadata: true,
+        checkCrossNetwork: true,
+        timeout: 15000
+      });
       
-      if (!assetInfo.success || !assetInfo.data) {
-        throw new Error(`Asset ${assetId} not found on either Algorand Mainnet or Testnet. Please verify the Asset ID is correct.`);
+      // Store the enhanced result separately
+      setAsaVerificationResult(enhancedResult);
+      
+      setCurrentStep('📊 Analyzing ASA security and compliance...');
+      
+      if (!enhancedResult.exists) {
+        throw new Error(`Asset ${assetId} not found on ${enhancedResult.network}. Please verify the Asset ID is correct.`);
       }
 
-      const asset = assetInfo.data;
-      
-      setCurrentStep('Analyzing asset properties...');
+      // Convert enhanced result to legacy format for compatibility
       const metadata: TokenMetadata = {
-        name: asset.assetName || 'Unknown Asset',
-        symbol: asset.unitName || 'UNK',
-        decimals: asset.decimals || 0,
-        totalSupply: asset.totalSupply?.toString() || '0',
-        description: asset.url || undefined,
-        verified: false
+        name: enhancedResult.basicInfo.name,
+        symbol: enhancedResult.basicInfo.unitName,
+        decimals: enhancedResult.basicInfo.decimals,
+        totalSupply: enhancedResult.basicInfo.totalSupply.toString(),
+        verified: enhancedResult.standards.arc3Compliant || enhancedResult.standards.arc19Compliant,
+        description: enhancedResult.standards.metadata?.description || '',
+        image: enhancedResult.standards.metadata?.image || '',
+        website: enhancedResult.standards.metadata?.external_url || '',
+        twitter: enhancedResult.standards.metadata?.properties?.twitter || ''
       };
 
-      setCurrentStep('Calculating security score...');
-      const checks = {
-        tokenExists: true,
-        metadataValid: !!(asset.assetName && asset.unitName),
-        liquidityAvailable: !!asset.totalSupply && asset.totalSupply > 0,
-        contractVerified: !asset.manager, // No manager = immutable
-        communityTrust: !!asset.totalSupply && asset.totalSupply > 1000,
-        holderDistribution: !asset.defaultFrozen,
-        socialPresence: !!asset.url
-      };
-
-      const score = Math.round((Object.values(checks).filter(Boolean).length / Object.keys(checks).length) * 100);
+      setCurrentStep('🛡️ Calculating comprehensive security score...');
       
+      // Enhanced security checks based on ASA-specific criteria
+      const checks = {
+        tokenExists: enhancedResult.exists,
+        metadataValid: enhancedResult.standards.metadataValid,
+        liquidityAvailable: enhancedResult.distribution.distributionHealth === 'healthy',
+        contractVerified: enhancedResult.roles.isImmutable, // Immutable is more "verified"
+        communityTrust: (enhancedResult.distribution.holderCount || 0) > 10,
+        holderDistribution: enhancedResult.distribution.distributionHealth !== 'centralized',
+        socialPresence: enhancedResult.standards.metadataAccessible
+      };
+
+      const score = enhancedResult.score; // Use the enhanced scoring system
+
       const metrics = {
-        totalSupply: asset.totalSupply?.toLocaleString() || '0',
-        holders: 'N/A',
+        holders: enhancedResult.distribution.holderCount?.toString() || 'N/A',
+        totalSupply: enhancedResult.basicInfo.totalSupply.toLocaleString(),
         marketCap: 'N/A',
         volume24h: 'N/A',
         priceChange24h: 'N/A',
-        liquidity: asset.totalSupply ? 'Available' : 'Limited'
+        liquidity: enhancedResult.distribution.distributionHealth === 'healthy' ? 'Healthy' : 'Limited'
       };
 
+      // Enhanced warnings based on ASA-specific risks
+      const warnings = [
+        ...enhancedResult.security.warnings,
+        ...enhancedResult.security.riskFactors.map(risk => `⚠️ ${risk}`),
+        ...(enhancedResult.roles.canBeMinted ? ['🪙 Asset can be minted (supply not fixed)'] : []),
+        ...(enhancedResult.roles.canBeFrozen ? ['❄️ Asset can be frozen/paused'] : []),
+        ...(enhancedResult.roles.canBeBurned ? ['🔥 Asset has clawback capability'] : []),
+        ...(!enhancedResult.standards.metadataAccessible && enhancedResult.basicInfo.url ? ['📋 Metadata URL not accessible'] : [])
+      ];
+
+      const finalNetwork = 'algorand-mainnet';
+
       return {
-        verified: score >= 70,
+        verified: enhancedResult.status === 'safe',
         score,
-        status: score >= 70 ? 'success' : score >= 50 ? 'warning' : 'error',
+        status: enhancedResult.status === 'safe' ? 'success' : 
+               enhancedResult.status === 'caution' ? 'warning' : 'error',
         checks,
         metadata,
         metrics,
-        explorerUrl: actualNetwork === 'mainnet'
-          ? `https://explorer.perawallet.app/asset/${assetId}`
-          : `https://testnet.explorer.perawallet.app/asset/${assetId}`,
-        warnings: score < 70 ? [
-          ...(score < 50 ? ['Low security score - proceed with caution'] : []),
-          ...(asset.manager ? ['Asset has manager - not fully decentralized'] : []),
-          ...(asset.defaultFrozen ? ['Asset is frozen by default'] : []),
-          ...(!asset.url ? ['No metadata URL provided'] : [])
-        ] : []
+        explorerUrl: enhancedResult.explorerUrl,
+        warnings: warnings.filter(w => w.length > 0)
       };
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Unable to fetch Algorand asset data.');
@@ -774,6 +764,7 @@ export default function VerifyPage() {
     setProgress(0);
     setCurrentStep('Initializing verification...');
     setVerificationResult(null);
+    setAsaVerificationResult(null);
     setError(null);
 
     const steps = [
@@ -798,7 +789,7 @@ export default function VerifyPage() {
       let result: Partial<VerificationResult>;
       let apiResponseTimes: number[] = [];
       
-      if (networkToUse === 'solana-devnet') {
+      if (networkToUse === 'solana-mainnet') {
         const solanaStartTime = Date.now();
         result = await fetchSolanaTokenData(tokenToVerify);
         apiResponseTimes.push(Date.now() - solanaStartTime);
@@ -1006,9 +997,8 @@ export default function VerifyPage() {
 
   const getNetworkStatus = () => {
     const statusMap = {
-      'solana-devnet': { label: 'Solana Devnet', color: 'bg-purple-500', icon: Globe },
-      'algorand-mainnet': { label: 'Algorand Mainnet', color: 'bg-green-500', icon: Globe },
-      'algorand-testnet': { label: 'Algorand Testnet', color: 'bg-orange-500', icon: Globe }
+      'solana-mainnet': { label: 'Solana Mainnet', color: 'bg-purple-500', icon: Globe },
+      'algorand-mainnet': { label: 'Algorand Mainnet', color: 'bg-green-500', icon: Globe }
     };
     return statusMap[network];
   };
@@ -1060,41 +1050,73 @@ export default function VerifyPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Background Elements */}
+      {/* Enhanced Background Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-br from-primary/10 to-primary/5 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute top-40 right-20 w-72 h-72 bg-gradient-to-br from-green-500/8 to-emerald-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '0.7s' }} />
-        <div className="absolute bottom-32 left-1/4 w-64 h-64 bg-gradient-to-br from-blue-500/8 to-blue-600/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted opacity-50" />
+        <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute top-40 right-20 w-72 h-72 bg-gradient-to-br from-green-500/15 to-emerald-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '0.7s' }} />
+        <div className="absolute bottom-32 left-1/4 w-64 h-64 bg-gradient-to-br from-blue-500/15 to-blue-600/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        
+        {/* Grid Pattern */}
+        <div className="absolute inset-0 opacity-[0.02]" style={{
+          backgroundImage: `radial-gradient(circle at 1px 1px, rgb(239, 68, 68) 1px, transparent 0)`,
+          backgroundSize: '50px 50px'
+        }} />
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
-        {/* Header Section */}
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center space-x-3 glass-card px-6 py-3 rounded-full border border-primary/20 mb-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative z-10">
+        {/* Enhanced Header Section */}
+        <div className="text-center mb-12 sm:mb-16">
+          <div className="inline-flex items-center space-x-3 glass-card px-6 py-3 rounded-full border border-primary/20 mb-6 hover:border-primary/40 transition-all duration-300">
             <Shield className="w-5 h-5 text-primary animate-pulse" />
-            <span className="text-sm uppercase tracking-wider text-primary font-bold">Professional Token Verification</span>
+            <span className="text-sm uppercase tracking-wider text-primary font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+              Professional Token Verification
+            </span>
             <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
           </div>
           
-          <h1 className="text-5xl md:text-6xl font-bold text-foreground leading-tight mb-6">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-foreground leading-tight mb-6 bg-gradient-to-br from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent">
             Verify Token 
-            <span className="bg-gradient-to-r from-primary via-blue-500 to-green-500 bg-clip-text text-transparent"> Safety & Authenticity</span>
+            <span className="bg-gradient-to-r from-primary via-blue-500 to-green-500 bg-clip-text text-transparent block mt-2"> 
+              Safety & Authenticity
+            </span>
           </h1>
           
-          <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
+          <p className="text-lg sm:text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed px-4">
             Advanced blockchain verification with 
             <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent font-semibold"> real-time security analysis</span>, 
             cross-network detection, and comprehensive scoring for Solana and Algorand tokens.
           </p>
+          
+          {/* Trust Indicators */}
+          <div className="flex flex-wrap justify-center items-center gap-6 mt-8 text-sm text-muted-foreground">
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span>Real-time Analysis</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+              <span>Multi-Network Support</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+              <span>Professional Reports</span>
+            </div>
+          </div>
         </div>
 
-        {/* Network Status */}
+        {/* Enhanced Network Status */}
         <div className="flex justify-center mb-12">
-          <div className="glass-card p-6 border border-green-500/30 bg-green-500/5 rounded-xl">
+          <div className="glass-card p-6 border border-green-500/30 bg-green-500/5 rounded-xl hover:border-green-500/50 transition-all duration-300 shadow-lg">
             <div className="flex items-center space-x-4">
-              <div className={`w-6 h-6 rounded-full ${networkStatus.color} shadow-lg animate-pulse`}></div>
+              <div className="relative">
+                <div className={`w-6 h-6 rounded-full ${networkStatus.color} shadow-lg animate-pulse`}></div>
+                <div className="absolute inset-0 w-6 h-6 rounded-full bg-green-400 animate-ping opacity-20"></div>
+              </div>
               <networkStatus.icon className="w-7 h-7 text-green-400" />
-              <span className="text-xl font-bold bg-gradient-to-r from-green-400 to-green-500 bg-clip-text text-transparent">{networkStatus.label}</span>
+              <span className="text-xl font-bold bg-gradient-to-r from-green-400 to-green-500 bg-clip-text text-transparent">
+                {networkStatus.label}
+              </span>
               <div className="flex items-center space-x-2 text-green-400">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
                 <span className="text-sm font-medium">Live Network</span>
@@ -1103,113 +1125,147 @@ export default function VerifyPage() {
           </div>
         </div>
 
-        {/* Tabbed Interface */}
+        {/* Enhanced Tabbed Interface */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-8">
           <div className="flex justify-center">
-            <TabsList className="glass-card border border-border p-2 rounded-xl">
-              <TabsTrigger value="search" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg">
+            <TabsList className="glass-card border border-border p-2 rounded-xl bg-background/80 backdrop-blur-sm shadow-lg">
+              <TabsTrigger 
+                value="search" 
+                className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg transition-all duration-300 data-[state=active]:shadow-lg"
+              >
                 <Search className="w-4 h-4 mr-2" />
-                Search & Verify
+                <span className="hidden sm:inline">Search & Verify</span>
+                <span className="sm:hidden">Search</span>
               </TabsTrigger>
               {isAuthenticated && (
-                <TabsTrigger value="my-tokens" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg">
+                <TabsTrigger 
+                  value="my-tokens" 
+                  className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg transition-all duration-300 data-[state=active]:shadow-lg"
+                >
                   <Wallet className="w-4 h-4 mr-2" />
-                  My Tokens ({userTokens.length})
+                  <span className="hidden sm:inline">My Tokens ({userTokens.length})</span>
+                  <span className="sm:hidden">Mine ({userTokens.length})</span>
                 </TabsTrigger>
               )}
-              <TabsTrigger value="recent" className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg">
+              <TabsTrigger 
+                value="recent" 
+                className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg transition-all duration-300 data-[state=active]:shadow-lg"
+              >
                 <History className="w-4 h-4 mr-2" />
-                Recent ({recentVerifications.length})
+                <span className="hidden sm:inline">Recent ({recentVerifications.length})</span>
+                <span className="sm:hidden">Recent ({recentVerifications.length})</span>
               </TabsTrigger>
             </TabsList>
           </div>
 
-          {/* Search & Verify Tab */}
+          {/* Enhanced Search & Verify Tab */}
           <TabsContent value="search">
-            <Card className="glass-card border border-primary/30 bg-primary/5 shadow-2xl rounded-xl">
-              <CardHeader className="bg-gradient-to-r from-primary to-primary/80 text-white rounded-t-xl p-8">
-                <CardTitle className="flex items-center space-x-3 text-2xl font-bold">
-                  <Search className="w-7 h-7" />
-                  <span>Advanced Token Verification</span>
-                </CardTitle>
-                <CardDescription className="text-white/90 text-lg mt-3 leading-relaxed">
-                  Enter token address or asset ID for comprehensive blockchain verification with security analysis
-                </CardDescription>
+            <Card className="glass-card border border-primary/30 bg-gradient-to-br from-primary/5 via-background to-background shadow-2xl rounded-xl overflow-hidden">
+              <CardHeader className="bg-gradient-to-r from-primary via-primary/90 to-primary/80 text-white p-8 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent" />
+                <div className="relative z-10">
+                  <CardTitle className="flex items-center space-x-3 text-2xl font-bold">
+                    <Search className="w-7 h-7" />
+                    <span>Advanced Token Verification</span>
+                  </CardTitle>
+                  <CardDescription className="text-white/90 text-lg mt-3 leading-relaxed">
+                    Enter token address or asset ID for comprehensive blockchain verification with security analysis
+                  </CardDescription>
+                </div>
+                {/* Decorative Elements */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full blur-xl"></div>
               </CardHeader>
-              <CardContent className="p-8 space-y-8">
+              <CardContent className="p-8 space-y-8 bg-gradient-to-br from-background via-background to-muted/20">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Network Selection */}
+                  {/* Enhanced Network Selection */}
                   <div className="space-y-4">
-                    <Label htmlFor="network" className="text-lg font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-                      Network
+                    <Label htmlFor="network" className="text-lg font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent flex items-center space-x-2">
+                      <Globe className="w-5 h-5 text-primary" />
+                      <span>Network</span>
                     </Label>
                     <Select value={network} onValueChange={handleNetworkChange}>
-                      <SelectTrigger className="h-14 glass-card border border-border text-foreground rounded-xl">
+                      <SelectTrigger className="h-14 glass-card border border-border text-foreground rounded-xl hover:border-primary/30 transition-all duration-300 shadow-sm">
                         <SelectValue placeholder="Select network" />
                       </SelectTrigger>
-                      <SelectContent className="glass-card border-border rounded-xl">
-                        <SelectItem value="solana-devnet" className="text-foreground hover:bg-muted py-4 rounded-lg">
+                      <SelectContent className="glass-card border-border rounded-xl shadow-xl">
+                        <SelectItem value="algorand-mainnet" className="text-foreground hover:bg-muted py-4 rounded-lg cursor-pointer">
                           <div className="flex items-center space-x-3">
-                            <div className="w-4 h-4 bg-purple-500 rounded-full animate-pulse"></div>
-                            <span>Solana Devnet</span>
+                            <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse shadow-sm"></div>
+                            <span className="font-medium">Algorand Mainnet</span>
                           </div>
                         </SelectItem>
-                        <SelectItem value="algorand-mainnet" className="text-foreground hover:bg-muted py-4 rounded-lg">
+                        <SelectItem value="solana-mainnet" className="text-foreground hover:bg-muted py-4 rounded-lg cursor-pointer">
                           <div className="flex items-center space-x-3">
-                            <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
-                            <span>Algorand Mainnet</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="algorand-testnet" className="text-foreground hover:bg-muted py-4 rounded-lg">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-4 h-4 bg-orange-500 rounded-full"></div>
-                            <span>Algorand Testnet</span>
+                            <div className="w-4 h-4 bg-purple-500 rounded-full animate-pulse shadow-sm"></div>
+                            <span className="font-medium">Solana Mainnet</span>
                           </div>
                         </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  {/* Token ID Input */}
+                  {/* Enhanced Token ID Input */}
                   <div className="lg:col-span-2 space-y-4">
-                    <Label htmlFor="token-id" className="text-lg font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-                      {network.includes('solana') ? 'Token Address' : 'Asset ID'}
+                    <Label htmlFor="token-id" className="text-lg font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent flex items-center space-x-2">
+                      <Hash className="w-5 h-5 text-primary" />
+                      <span>{network.includes('solana') ? 'Token Address' : 'Asset ID'}</span>
                     </Label>
                     <div className="flex gap-4">
-                      <Input
-                        id="token-id"
-                        placeholder={network.includes('solana') ? 'Enter Solana token address...' : 'Enter Algorand asset ID...'}
-                        value={tokenId}
-                        onChange={(e) => setTokenId(e.target.value)}
-                        disabled={isVerifying}
-                        className="flex-1 h-14 glass-card border border-border text-foreground placeholder:text-muted-foreground rounded-xl"
-                      />
+                      <div className="flex-1 relative">
+                        <Input
+                          id="token-id"
+                          placeholder={network.includes('solana') ? 'Enter Solana token address...' : 'Enter Algorand asset ID...'}
+                          value={tokenId}
+                          onChange={(e) => setTokenId(e.target.value)}
+                          disabled={isVerifying}
+                          className="h-14 glass-card border border-border text-foreground placeholder:text-muted-foreground rounded-xl pr-12 hover:border-primary/30 focus:border-primary/50 transition-all duration-300 shadow-sm"
+                        />
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          {validateTokenId(tokenId, network) ? (
+                            <Check className="w-5 h-5 text-green-500" />
+                          ) : tokenId.length > 0 ? (
+                            <AlertTriangle className="w-5 h-5 text-red-500" />
+                          ) : null}
+                        </div>
+                      </div>
                       <Button 
                         onClick={() => handleVerification()}
                         disabled={!tokenId || isVerifying || !validateTokenId(tokenId, network)}
-                        className="px-8 h-14 bg-primary hover:bg-primary/90 text-white font-bold shadow-xl rounded-xl transition-all duration-300"
+                        className="px-8 h-14 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white font-bold shadow-xl rounded-xl transition-all duration-300 hover:shadow-2xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                       >
                         {isVerifying ? (
                           <div className="flex items-center space-x-3">
                             <RefreshCw className="w-6 h-6 animate-spin" />
-                            <span>Verifying...</span>
+                            <span className="hidden sm:inline">Verifying...</span>
                           </div>
                         ) : (
                           <div className="flex items-center space-x-3">
                             <Search className="w-6 h-6" />
-                            <span>Verify</span>
+                            <span className="hidden sm:inline">Verify</span>
+                            <span className="sm:hidden">Go</span>
                           </div>
                         )}
                       </Button>
                     </div>
+                    {/* Input Helper Text */}
+                    <p className="text-sm text-muted-foreground flex items-center space-x-2">
+                      <Shield className="w-4 h-4" />
+                      <span>
+                        {network.includes('solana') 
+                          ? 'Enter a valid Solana token mint address (base58)'
+                          : 'Enter a valid Algorand Asset ID (numeric)'
+                        }
+                      </span>
+                    </p>
                   </div>
                 </div>
 
-                {/* Error Display */}
+                {/* Enhanced Error Display */}
                 {error && (
-                  <Alert className="glass-card border border-red-500/30 bg-red-500/5 p-6 rounded-xl">
+                  <Alert className="glass-card border border-red-500/30 bg-red-500/5 p-6 rounded-xl shadow-lg">
                     <AlertCircle className="h-7 w-7 text-red-400" />
-                    <AlertDescription className="text-red-400 ml-4 text-lg">
+                    <AlertDescription className="text-red-400 ml-4 text-lg font-medium">
                       {error}
                     </AlertDescription>
                   </Alert>
@@ -1276,9 +1332,8 @@ export default function VerifyPage() {
                       </SelectTrigger>
                       <SelectContent className="glass-card border-border">
                         <SelectItem value="all" className="text-foreground hover:bg-muted">All Networks</SelectItem>
-                        <SelectItem value="solana-devnet" className="text-foreground hover:bg-muted">Solana Devnet</SelectItem>
                         <SelectItem value="algorand-mainnet" className="text-foreground hover:bg-muted">Algorand Mainnet</SelectItem>
-                        <SelectItem value="algorand-testnet" className="text-foreground hover:bg-muted">Algorand Testnet</SelectItem>
+                        <SelectItem value="solana-mainnet" className="text-foreground hover:bg-muted">Solana Mainnet</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1506,6 +1561,27 @@ export default function VerifyPage() {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Enhanced ASA Verification Results */}
+        {asaVerificationResult && asaVerificationResult.exists && (
+          <div className="mb-8">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="w-3 h-3 bg-gradient-to-r from-primary to-primary/80 rounded-full animate-pulse"></div>
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+                Enhanced ASA Analysis
+              </h2>
+              <Badge className="bg-green-500/10 text-green-400 border-green-500/30">
+                ASA-Specific
+              </Badge>
+            </div>
+            <ASAVerificationDisplay 
+              result={asaVerificationResult}
+              onCopy={copyToClipboard}
+              onShare={shareVerification}
+              onOpenExplorer={() => window.open(asaVerificationResult.explorerUrl, '_blank')}
+            />
+          </div>
         )}
 
         {/* Enhanced Verification Results */}

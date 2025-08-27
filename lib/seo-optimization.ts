@@ -77,7 +77,9 @@ export function trackCoreWebVitals() {
   // Track FID (First Input Delay)
   new PerformanceObserver((list) => {
     for (const entry of list.getEntries()) {
-      const fid = entry.processingStart - entry.startTime
+      // Type assertion for PerformanceEventTiming which has processingStart
+      const fidEntry = entry as PerformanceEventTiming
+      const fid = fidEntry.processingStart - fidEntry.startTime
       
       if (fid > 100) {
         console.warn(`⚠️ High FID detected: ${fid}ms. Consider optimizing JavaScript execution.`)
