@@ -38,6 +38,9 @@ export const metadata: Metadata = {
   },
 };
 
+// Disable static generation for all routes during countdown
+export const dynamic = 'force-dynamic';
+
 // Generate structured data for the homepage
 const homepageStructuredData = JSON.stringify({
   "@context": "https://schema.org",
