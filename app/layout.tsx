@@ -18,30 +18,25 @@ const inter = Inter({
   preload: true,
 });
 
-export const metadata: Metadata = generateSEOMetadata({
-  title: "Snarbles - Create Professional Crypto Tokens in Under 30 Seconds | 8,000+ Users",
-  description: "🚀 Join 8,000+ crypto innovators using Snarbles to create professional Algorand & Solana tokens. Zero coding required. Advanced analytics included. Start free today and launch your crypto project in minutes.",
-  keywords: [
-    'token creation platform',
-    'create cryptocurrency token', 
-    'algorand token creation',
-    'solana token creation',
-    'blockchain token generator',
-    'token maker',
-    'crypto token builder',
-    'how to create a token',
-    'professional token development',
-    'blockchain token deployment',
-    'crypto project launch',
-    'tokenomics designer',
-    'blockchain analytics',
-    'no code token creation',
-    'instant token deployment'
-  ],
-  url: '/',
-  priority: 1.0,
-  changefreq: 'daily'
-});
+export const metadata: Metadata = {
+  title: "Snarbles V2 - Coming Soon | 30 Day Developer Challenge",
+  description: "🚀 Snarbles V2 is coming! The ultimate token creation platform is undergoing a major upgrade. 30 days to launch. Stay tuned for something amazing.",
+  robots: {
+    index: false,
+    follow: false,
+  },
+  openGraph: {
+    title: "Snarbles V2 - Coming Soon",
+    description: "Building something incredible. 30 days to launch.",
+    type: "website",
+    url: "https://snarbles.xyz",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Snarbles V2 - Coming Soon",
+    description: "Building something incredible. 30 days to launch.",
+  },
+};
 
 // Generate structured data for the homepage
 const homepageStructuredData = JSON.stringify({
@@ -199,22 +194,8 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} antialiased`}>
         <ChunkErrorBoundary>
-          <ClientWalletProvider>
-            <WalletAuthProvider>
-              <MCPAnalyticsProvider />
-              <SkipToMain />
-              <div className="flex min-h-screen flex-col">
-                <NavbarOptimized />
-                <main className="flex-1">
-                  {children}
-                </main>
-                <Footer />
-              </div>
-              <BoltBadge />
-              <Toaster />
-              <ServiceWorkerRegistration />
-            </WalletAuthProvider>
-          </ClientWalletProvider>
+          {/* Countdown mode - no navbar/footer/providers needed */}
+          {children}
         </ChunkErrorBoundary>
       </body>
     </html>
